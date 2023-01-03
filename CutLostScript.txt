@@ -69,20 +69,24 @@ plot(
 //          text="This instrument trades at\n" + syminfo.prefix + 
 //              " with this symbol:\n" + syminfo.ticker)
 
-displayText = str.tostring(value = mPosition) + " 顆"
+displayText = str.tostring(value = mPosition, format = "#.###") + " 顆"
 
-if barstate.isrealtime
-    label.new(
+if barstate.islast
+    myLabel = label.new(
      x            =  bar_index + 2,
-     y            =  hl2,
-     text         = displayText,
+     y            =  close,
+    //  text         = displayText,
     //  xloc         =  ,
     //  yloc         =  ,
-    //  color        = color.new(color =  , transp = 0),
+     color        = color.new(color =  color.purple, transp = 0),
      style        =  label.style_label_left,
      textcolor    = color.new(color =  color.white, transp = 0)
     //  size         =  ,
     //  textalign    =  ,
     //  tooltip      = "" 
      )
+    label.set_text(id = myLabel, text = displayText)
+    label.delete(id = myLabel[1])
+
+
     
