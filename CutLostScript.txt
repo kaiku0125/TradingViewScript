@@ -6,7 +6,7 @@
 indicator(
  title                = "Cut lost finder",
  shorttitle           = "CLFinder",
- overlay              =  false
+ overlay              =  true
  )
 // # ========================================================================= #
 // #                   |   Indicator  |
@@ -52,14 +52,37 @@ mPosition := EACH_ORDER_LOST_INPUT/(1-((close-math.abs(close-CUT_LOST_PRICE_INPU
 plot(
  series       = mPosition,
  title        = " now price : ",
- color        = color.blue
+ color        = color.blue,
 //  linewidth    = ,
 //  style        =  ,
 //  trackprice   =  ,
 //  offset       = ,
 //  join         =  ,
 //  editable     =  ,
-//  show_last    = ,
-//  display      =  
+ show_last    = 1,
+ display      =  display.none
  )
 
+// if barstate.islastconfirmedhistory
+//     label.new(x=bar_index + 2, y=hl2, style=label.style_label_upper_left,
+//          color=color.new(color.yellow, 70), size=size.large,
+//          text="This instrument trades at\n" + syminfo.prefix + 
+//              " with this symbol:\n" + syminfo.ticker)
+
+displayText = str.tostring(value = mPosition) + " 顆"
+
+if barstate.isrealtime
+    label.new(
+     x            =  bar_index + 2,
+     y            =  hl2,
+     text         = displayText,
+    //  xloc         =  ,
+    //  yloc         =  ,
+    //  color        = color.new(color =  , transp = 0),
+     style        =  label.style_label_left,
+     textcolor    = color.new(color =  color.white, transp = 0)
+    //  size         =  ,
+    //  textalign    =  ,
+    //  tooltip      = "" 
+     )
+    
