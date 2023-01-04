@@ -14,22 +14,22 @@ indicator(
 
 
 
-
-var isAutoInput = true
+// Variable initialization
+var isAutoInput = false
 var float mPosition = 0.0
+var float CUT_LOST_PRICE_INPUT = na
+var mLine = line.new(bar_index - 1, close, bar_index, close, extend = extend.both, width = 1, color = color.yellow)
 
 // Get each order cut lost.
 EACH_ORDER_LOST_INPUT = input.float(defval = 5.0, title = "每單止損", minval =  1.0, maxval =  10000.0, step =  1, tooltip = "調整每單止損金額") 
 
 // If user want to set it's own cut lost, not by my strategy.
-IS_AUTO_INPUT = input.bool(defval = true, title = "自動判定", tooltip = "是否讓系統自動判定止損價格") 
+IS_AUTO_INPUT = input.bool(defval = false, title = "自動判定", tooltip = "是否讓系統自動判定止損價格") 
 isAutoInput := IS_AUTO_INPUT
 
-CUT_LOST_PRICE_INPUT = input.price(defval =  0.0, title = "止損價格", confirm =  true) 
+// if  isAutoInput
+CUT_LOST_PRICE_INPUT := input.price(defval =  0.0, title = " 止損 ", confirm =  true) 
 
-//D25 = EACH_ORDER_LOST_INPUT
-//E22 = close
-//D22 = CUT_LOST_PRICE_INPUT
 mPosition := EACH_ORDER_LOST_INPUT/(1-((close-math.abs(close-CUT_LOST_PRICE_INPUT))/close))/close
 
 
@@ -48,20 +48,6 @@ mPosition := EACH_ORDER_LOST_INPUT/(1-((close-math.abs(close-CUT_LOST_PRICE_INPU
 // //  display      =  
 //  )
 
-
-plot(
- series       = mPosition,
- title        = " now price : ",
- color        = color.blue,
-//  linewidth    = ,
-//  style        =  ,
-//  trackprice   =  ,
-//  offset       = ,
-//  join         =  ,
-//  editable     =  ,
- show_last    = 1,
- display      =  display.none
- )
 
 // if barstate.islastconfirmedhistory
 //     label.new(x=bar_index + 2, y=hl2, style=label.style_label_upper_left,
@@ -88,5 +74,22 @@ if barstate.islast
     label.set_text(id = myLabel, text = displayText)
     label.delete(id = myLabel[1])
 
+    line.set_xy1(mLine, bar_index-1, CUT_LOST_PRICE_INPUT)
+    line.set_xy2(mLine, bar_index, CUT_LOST_PRICE_INPUT)
 
-    
+
+
+
+// plot(
+//  series       = CUT_LOST_PRICE_INPUT,
+//  title        = "止損價格",
+//  color        = color.new(color = color.purple  , transp = 0),
+// //  linewidth    = ,
+//  style        =  plot.style_cross
+// //  trackprice   =  ,
+// //  offset       = ,
+// //  join         =  ,
+// //  editable     =  ,
+// //  show_last    = ,
+// //  display      =  
+//  )
