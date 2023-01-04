@@ -4,8 +4,8 @@
 // #                   |   Indicator  |
 // # ========================================================================= #
 indicator(
- title                = "Cut lost finder",
- shorttitle           = "CLFinder",
+ title                = "Cut lost Position finder",
+ shorttitle           = "CLPFinder",
  overlay              =  true
  )
 // # ========================================================================= #
@@ -18,7 +18,8 @@ indicator(
 var isAutoInput = false
 var float mPosition = 0.0
 var float CUT_LOST_PRICE_INPUT = na
-var mLine = line.new(bar_index - 1, close, bar_index, close, extend = extend.both, width = 1, color = color.yellow)
+var mLine = line.new(bar_index - 1, close, bar_index, close, extend = extend.both, width = 1, color = color.fuchsia)
+var string labelText = na
 
 // Get each order cut lost.
 EACH_ORDER_LOST_INPUT = input.float(defval = 5.0, title = "每單止損", minval =  1.0, maxval =  10000.0, step =  1, tooltip = "調整每單止損金額") 
@@ -55,23 +56,29 @@ mPosition := EACH_ORDER_LOST_INPUT/(1-((close-math.abs(close-CUT_LOST_PRICE_INPU
 //          text="This instrument trades at\n" + syminfo.prefix + 
 //              " with this symbol:\n" + syminfo.ticker)
 
-displayText = str.tostring(value = mPosition, format = "#.###") + " 顆"
+// displayText = str.tostring(value = mPosition, format = "#.###") + " " + syminfo.basecurrency + "\n"
+// displayText := displayText + "倉位價值 : " + str.tostring(value = mPosition * close, format =  "#")  + " " + syminfo.currency
+
 
 if barstate.islast
+    
+    labelText := str.tostring(value = mPosition, format = "#.###") + " " + syminfo.basecurrency + "\n"
+    labelText += "倉位價值 : " + str.tostring(value = mPosition * close, format =  "#")  + " " + syminfo.currency
+
     myLabel = label.new(
      x            =  bar_index + 2,
      y            =  close,
-    //  text         = displayText,
+     text         =  labelText,
     //  xloc         =  ,
     //  yloc         =  ,
-     color        = color.new(color =  color.purple, transp = 0),
+     color        =  color.new(color =  color.purple, transp = 0),
      style        =  label.style_label_left,
-     textcolor    = color.new(color =  color.white, transp = 0)
+     textcolor    =  color.new(color =  color.white, transp = 0)
     //  size         =  ,
     //  textalign    =  ,
     //  tooltip      = "" 
      )
-    label.set_text(id = myLabel, text = displayText)
+    // label.set_text(id = myLabel, text = displayText)
     label.delete(id = myLabel[1])
 
     line.set_xy1(mLine, bar_index-1, CUT_LOST_PRICE_INPUT)
