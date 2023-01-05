@@ -19,7 +19,31 @@ var isAutoInput = false
 var float mPosition = 0.0
 var float CUT_LOST_PRICE_INPUT = na
 var mLine = line.new(bar_index - 1, close, bar_index, close, extend = extend.both, width = 1, color = color.fuchsia)
-var string labelText = na
+var label mPositionLabel = na
+
+// Define functions
+getText() =>
+    output = str.tostring(value = mPosition, format = "#.###") + " " + syminfo.basecurrency + "\n"
+    output += "倉位價值 : " + str.tostring(value = mPosition * close, format =  "#")  + " " + syminfo.currency
+    output
+
+newLabel(labelText) =>
+    output = label.new(
+     x            =  bar_index + 2,
+     y            =  close,
+     text         =  labelText,
+    //  xloc         =  ,
+    //  yloc         =  ,
+     color        =  color.new(color =  color.purple, transp = 0),
+     style        =  label.style_label_left,
+     textcolor    =  color.new(color =  color.white, transp = 0)
+    //  size         =  ,
+    //  textalign    =  ,
+    //  tooltip      = "" 
+     )
+    output
+
+
 
 // Get each order cut lost.
 EACH_ORDER_LOST_INPUT = input.float(defval = 5.0, title = "每單止損", minval =  1.0, maxval =  10000.0, step =  1, tooltip = "調整每單止損金額") 
@@ -50,36 +74,9 @@ mPosition := EACH_ORDER_LOST_INPUT/(1-((close-math.abs(close-CUT_LOST_PRICE_INPU
 //  )
 
 
-// if barstate.islastconfirmedhistory
-//     label.new(x=bar_index + 2, y=hl2, style=label.style_label_upper_left,
-//          color=color.new(color.yellow, 70), size=size.large,
-//          text="This instrument trades at\n" + syminfo.prefix + 
-//              " with this symbol:\n" + syminfo.ticker)
-
-// displayText = str.tostring(value = mPosition, format = "#.###") + " " + syminfo.basecurrency + "\n"
-// displayText := displayText + "倉位價值 : " + str.tostring(value = mPosition * close, format =  "#")  + " " + syminfo.currency
-
-
 if barstate.islast
-    
-    labelText := str.tostring(value = mPosition, format = "#.###") + " " + syminfo.basecurrency + "\n"
-    labelText += "倉位價值 : " + str.tostring(value = mPosition * close, format =  "#")  + " " + syminfo.currency
-
-    myLabel = label.new(
-     x            =  bar_index + 2,
-     y            =  close,
-     text         =  labelText,
-    //  xloc         =  ,
-    //  yloc         =  ,
-     color        =  color.new(color =  color.purple, transp = 0),
-     style        =  label.style_label_left,
-     textcolor    =  color.new(color =  color.white, transp = 0)
-    //  size         =  ,
-    //  textalign    =  ,
-    //  tooltip      = "" 
-     )
-    // label.set_text(id = myLabel, text = displayText)
-    label.delete(id = myLabel[1])
+    mPositionLabel = newLabel(getText())
+    label.delete(id = mPositionLabel[1])
 
     line.set_xy1(mLine, bar_index-1, CUT_LOST_PRICE_INPUT)
     line.set_xy2(mLine, bar_index, CUT_LOST_PRICE_INPUT)
