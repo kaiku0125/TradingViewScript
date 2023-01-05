@@ -15,15 +15,14 @@ indicator(
 
 
 // Variable initialization
-var isAutoInput = false
 var float mPosition = 0.0
-var float CUT_LOST_PRICE_INPUT = na
-var mLine = line.new(bar_index - 1, close, bar_index, close, extend = extend.both, width = 1, color = color.fuchsia)
+var float INPUT_CUT_LOST_PRICE = na
+var mCutLossLine = line.new(bar_index - 1, close, bar_index, close, extend = extend.both, width = 1, color = color.fuchsia)
 var label mPositionLabel = na
 
 // Define functions
 getText() =>
-    output = str.tostring(value = mPosition, format = "#.###") + " " + syminfo.basecurrency + "\n"
+    output = "開 " + str.tostring(value = mPosition, format = "#.###") + " " + syminfo.basecurrency + "\n"
     output += "倉位價值 : " + str.tostring(value = mPosition * close, format =  "#")  + " " + syminfo.currency
     output
 
@@ -44,56 +43,27 @@ newLabel(labelText) =>
     output
 
 
-
-// Get each order cut lost.
-EACH_ORDER_LOST_INPUT = input.float(defval = 5.0, title = "每單止損", minval =  1.0, maxval =  10000.0, step =  1, tooltip = "調整每單止損金額") 
-
-// If user want to set it's own cut lost, not by my strategy.
-IS_AUTO_INPUT = input.bool(defval = false, title = "自動判定", tooltip = "是否讓系統自動判定止損價格") 
-isAutoInput := IS_AUTO_INPUT
-
-// if  isAutoInput
-CUT_LOST_PRICE_INPUT := input.price(defval =  0.0, title = " 止損 ", confirm =  true) 
-
-mPosition := EACH_ORDER_LOST_INPUT/(1-((close-math.abs(close-CUT_LOST_PRICE_INPUT))/close))/close
+// Define inputs settings
+var GROUP_SETTING = "📌 設定"
+var GROUN_VERSION = "💬 關於"
+var VERSION_NAME = "v1.0"
+var RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
+                     "[1] First release version." + "\n"
 
 
-// if isAutoInput = true, line is green
-// plot(
-//  series       = isAutoInput? 5 : 7,
-//  title        = "isAutoInput(true 5) = ",
-//  color        = isAutoInput? color.green : color.red
-// //  linewidth    = ,
-// //  style        =  ,
-// //  trackprice   =  ,
-// //  offset       = ,
-// //  join         =  ,
-// //  editable     =  ,
-// //  show_last    = ,
-// //  display      =  
-//  )
+INPUT_EACH_ORDER_LOST = input.float(defval = 5.0, title = "每單止損", minval = 1.0, maxval =  10000.0, step =  1, tooltip = "調整每單止損金額", group = GROUP_SETTING) 
+INPUT_CUT_LOST_PRICE := input.price(defval = 0.0, title = "止損價格", confirm = true, group = GROUP_SETTING) 
+INPUT_DISPLAY_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUN_VERSION) 
 
 
+
+// Code logic start
 if barstate.islast
+    mPosition := INPUT_EACH_ORDER_LOST / (1 - ((close - math.abs(close - INPUT_CUT_LOST_PRICE)) / close)) / close
     mPositionLabel = newLabel(getText())
     label.delete(id = mPositionLabel[1])
 
-    line.set_xy1(mLine, bar_index-1, CUT_LOST_PRICE_INPUT)
-    line.set_xy2(mLine, bar_index, CUT_LOST_PRICE_INPUT)
+    line.set_xy1(mCutLossLine, bar_index - 1, INPUT_CUT_LOST_PRICE)
+    line.set_xy2(mCutLossLine, bar_index, INPUT_CUT_LOST_PRICE)
 
 
-
-
-// plot(
-//  series       = CUT_LOST_PRICE_INPUT,
-//  title        = "止損價格",
-//  color        = color.new(color = color.purple  , transp = 0),
-// //  linewidth    = ,
-//  style        =  plot.style_cross
-// //  trackprice   =  ,
-// //  offset       = ,
-// //  join         =  ,
-// //  editable     =  ,
-// //  show_last    = ,
-// //  display      =  
-//  )
