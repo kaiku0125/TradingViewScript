@@ -15,15 +15,36 @@ indicator(
 
 
 // Variable initialization
-var float mPosition = 0.0
-var float INPUT_CUT_LOST_PRICE = na
-var mCutLossLine = line.new(bar_index - 1, close, bar_index, close, extend = extend.both, width = 1, color = color.fuchsia)
-var label mPositionLabel = na
+var float position = 0.0
+var float eachOrderLost = 5.0
+var float cutLostPrice = na
+var line cutLossLine = line.new(bar_index - 1, close, bar_index, close, extend = extend.both, width = 1, color = color.fuchsia)
+var color cutLossLineColor = color.purple
+var label positionLabel = na
+
+
+// Define inputs settings
+var GROUP_SETTING = "📌 設定"
+var GROUN_VERSION = "💬 關於"
+var VERSION_NAME = "v1.0"
+var RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
+                     "[1] First release." + "\n"
+
+
+INPUT_EACH_ORDER_LOST = input.float(defval = 5.0, title = "每單止損", minval = 1.0, maxval =  10000.0, step =  1, tooltip = "調整每單止損金額", group = GROUP_SETTING) 
+INPUT_CUT_LOST_PRICE = input.price(defval = 0.0, title = "止損價格", confirm = true, group = GROUP_SETTING, inline = "01")
+INPUT_CUT_LOST_PRICE_LINE_COLOR = input.color(defval = color.purple, title = "", inline = "01", group = GROUP_SETTING) 
+INPUT_DISPLAY_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUN_VERSION) 
+
+eachOrderLost := INPUT_EACH_ORDER_LOST
+cutLostPrice := INPUT_CUT_LOST_PRICE
+cutLossLineColor := INPUT_CUT_LOST_PRICE_LINE_COLOR
+
 
 // Define functions
 getText() =>
-    output = "開 " + str.tostring(value = mPosition, format = "#.###") + " " + syminfo.basecurrency + "\n"
-    output += "倉位價值 : " + str.tostring(value = mPosition * close, format =  "#")  + " " + syminfo.currency
+    output = "開 " + str.tostring(value = position, format = "#.###") + " " + syminfo.basecurrency + "\n"
+    output += "倉位價值 : " + str.tostring(value = position * close, format =  "#")  + " " + syminfo.currency
     output
 
 newLabel(labelText) =>
@@ -43,27 +64,14 @@ newLabel(labelText) =>
     output
 
 
-// Define inputs settings
-var GROUP_SETTING = "📌 設定"
-var GROUN_VERSION = "💬 關於"
-var VERSION_NAME = "v1.0"
-var RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
-                     "[1] First release version." + "\n"
-
-
-INPUT_EACH_ORDER_LOST = input.float(defval = 5.0, title = "每單止損", minval = 1.0, maxval =  10000.0, step =  1, tooltip = "調整每單止損金額", group = GROUP_SETTING) 
-INPUT_CUT_LOST_PRICE := input.price(defval = 0.0, title = "止損價格", confirm = true, group = GROUP_SETTING) 
-INPUT_DISPLAY_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUN_VERSION) 
-
-
-
 // Code logic start
 if barstate.islast
-    mPosition := INPUT_EACH_ORDER_LOST / (1 - ((close - math.abs(close - INPUT_CUT_LOST_PRICE)) / close)) / close
-    mPositionLabel = newLabel(getText())
-    label.delete(id = mPositionLabel[1])
+    position := eachOrderLost / (1 - ((close - math.abs(close - cutLostPrice)) / close)) / close
+    positionLabel = newLabel(getText())
+    label.delete(id = positionLabel[1])
 
-    line.set_xy1(mCutLossLine, bar_index - 1, INPUT_CUT_LOST_PRICE)
-    line.set_xy2(mCutLossLine, bar_index, INPUT_CUT_LOST_PRICE)
+    line.set_xy1(cutLossLine, bar_index - 1, cutLostPrice)
+    line.set_xy2(cutLossLine, bar_index, cutLostPrice)
+    line.set_color(id = cutLossLine, color = cutLossLineColor) 
 
 
