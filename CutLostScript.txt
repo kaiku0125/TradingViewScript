@@ -1,5 +1,6 @@
 //@version=5
 
+// import kaiku0125/ColorSDK/1 as sdk
 // # ========================================================================= #
 // #                   |   Indicator  |
 // # ========================================================================= #
@@ -21,7 +22,11 @@ var float cutLostPrice = na
 var line cutLossLine = line.new(bar_index - 1, close, bar_index, close, extend = extend.both, width = 1, color = color.fuchsia)
 var color cutLossLineColor = color.purple
 var label positionLabel = na
-
+var table panel = table.new(position.top_right, 1, 5)
+var color COLOR_FIRE_BRICK = color.rgb(red = 178, green = 34, blue = 34, transp = 0)  
+var color COLOR_DARK_RED = color.rgb(red = 139, green = 0, blue = 0, transp = 0)  
+var color COLOR_FOREST_GREEN = color.rgb(red = 34, green = 139, blue = 34, transp = 0) 
+var color COLOR_DARK_GREEN = color.rgb(red = 0, green = 100, blue = 0, transp = 0) 
 
 // Define inputs settings
 var GROUP_SETTING = "📌 設定"
@@ -42,36 +47,114 @@ cutLossLineColor := INPUT_CUT_LOST_PRICE_LINE_COLOR
 
 
 // Define functions
-getText() =>
-    output = "開 " + str.tostring(value = position, format = "#.###") + " " + syminfo.basecurrency + "\n"
+getText(isLong) =>
+    string direction = isLong ? "多 " : "空 "
+    output = direction + str.tostring(value = position, format = "#.###") + " " + syminfo.basecurrency + "\n"
     output += "倉位價值 : " + str.tostring(value = position * close, format =  "#")  + " " + syminfo.currency
     output
 
-newLabel(labelText) =>
+newLabel(labelText, labelColor) =>
     output = label.new(
      x            =  bar_index + 2,
      y            =  close,
      text         =  labelText,
     //  xloc         =  ,
     //  yloc         =  ,
-     color        =  color.new(color =  color.purple, transp = 0),
+     color        =  color.new(color = labelColor, transp = 0),
      style        =  label.style_label_left,
-     textcolor    =  color.new(color =  color.white, transp = 0)
+     textcolor    =  color.new(color.white, transp = 0)
     //  size         =  ,
     //  textalign    =  ,
     //  tooltip      = "" 
      )
     output
 
+isLong() =>
+    var bool isLong = true
+    if close < cutLostPrice
+        isLong := false
+    isLong
+
+
+
+debug() =>
+    table.cell(panel, 0, 1, "isLong : " + str.tostring(value = isLong()) , bgcolor=color.black, text_color=color.white)
+    table.cell(panel, 0, 0, "7777", bgcolor=color.black, text_color=color.white)
+
+// debug2() =>
+//     plotchar(
+//      series     = isLong(),
+//      title      = "isLong : ",
+//     //  char       = " ",
+//      location   =  location.top,
+//      color      = color.new(color = color.black , transp = 0),
+//     //  offset     = ,
+//     //  text       = "",
+//      textcolor  = color.new(color =  color.white, transp = 0)
+//     //  editable   =  ,
+//     //  size       =  ,
+//     //  show_last  = ,
+//     //  display    =  
+//      )
+    
+
 
 // Code logic start
 if barstate.islast
     position := eachOrderLost / (1 - ((close - math.abs(close - cutLostPrice)) / close)) / close
-    positionLabel = newLabel(getText())
+    debug()
+    positionLabel = newLabel(getText(isLong()), isLong() ? COLOR_FOREST_GREEN : COLOR_FIRE_BRICK)
     label.delete(id = positionLabel[1])
 
     line.set_xy1(cutLossLine, bar_index - 1, cutLostPrice)
     line.set_xy2(cutLossLine, bar_index, cutLostPrice)
     line.set_color(id = cutLossLine, color = cutLossLineColor) 
+    
+    textLabel = label.new(
+     x            = bar_index + 30,
+     y            =  cutLostPrice,
+     text         = "止損線",
+    //  xloc         =  xloc.bar_time,
+    //  yloc         =  ,
+    //  color        = color.new(color =  , transp = 0),
+     style        =  label.style_none,
+     textcolor    = color.new(color =  color.white, transp = 0)
+    //  size         =  ,
+    //  textalign    =  ,
+    //  tooltip      = "" 
+     )
+    label.delete(id = textLabel[1])
+
+    
+// plotchar(
+//      series     = position,
+//     //  title      = "",
+//     //  char       = " ",
+//     //  location   =  lo,
+//     //  color      = color.new(color =  , transp = 0),
+//     //  offset     = 10,
+//      text       = "止損線",
+//      textcolor  = color.new(color =  color.white, transp = 0),
+//     //  editable   =  ,
+//     //  size       =  ,
+//      show_last  = 2
+//     //  display    =  
+//      )
+
+
+// plotchar(
+//      series     = sss,
+//     //  title      = "",
+//     //  char       = " ",
+//     //  location   =  lo,
+//     //  color      = color.new(color =  , transp = 0),
+//     //  offset     = 10,
+//      text       = "ssssss",
+//      textcolor  = color.new(color =  color.white, transp = 0)
+//     //  editable   =  ,
+//     //  size       =  ,
+//     //  show_last  = 2
+//     //  display    =  
+//      ) 
 
 
