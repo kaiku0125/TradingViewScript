@@ -1,5 +1,10 @@
 //@version=5
 
+//日線陰陽轉換條件
+//1.陰陽轉換
+//2.區域高低點
+//3.成交量要大
+//4.
 
 // # ========================================================================= #
 // #                   |   Indicator  |
@@ -7,19 +12,171 @@
 indicator(
  title                = "MajorDailyOpenFinder",
  shorttitle           = "MDOFinder",
- overlay              =  true
+ overlay              =  true,
 //  format               =  ,
 //  precision            =  ,
 //  scale                =  ,
-//  timeframe            = " ",
-//  timeframe_gaps       =  ,
+//   timeframe            = "D",
+//  timeframe_gaps       =  true
 //  explicit_plot_zorder =  ,
-//  max_lines_count      =  ,
-//  max_labels_count     =  ,
+ max_lines_count      =  6,
+ max_labels_count     =  500
 //  max_boxes_count      =  
  )
 // # ========================================================================= #
 // #                   |   Indicator  |
 // # ========================================================================= #
 
+
+//variable
+//time series(Day = 1440 min, so 6hr offset = 1440 / 360)
+
+var string hour_6 = "360"
+var float hour_6_offset = 4
+var string hour_4 = "240"
+var float hour_4_offset = 6
+
+var string hour_3 = "180"
+var float hour_3_offset = 8
+var string hour_2 = "120"
+var float hour_2_offset = 12
+
+var string hour_1 = "60"
+var float hour_1_offset = 24
+
+
+var int BEAR = 0
+var int BULL = 1
+var bool isBarChanged = false
+var bool nextBarNeedShow = false
+var int lastState = BULL
+var int currentState = BULL
+
+var float testFloat = 0.0
+
+var label mLabel = na
+var label realTimeLabel = na
+var string realTimeText = ""
+var float realTimeFloat = 0.0
+var string output = "轉"
+
+var line line777 = na
+
+
+//function
+isBullBar(_close, _open) =>
+    bool isBullBar = false
+    if _close >= _open
+        isBullBar := true
+    
+    isBullBar
+
+newLabel(labelText, labelColor) =>
+    outputt = label.new(
+     x            =  bar_index + 2,
+     y            =  close,
+     text         =  labelText,
+    //  xloc         =  ,
+    //  yloc         =  ,
+     color        =  color.new(color = labelColor, transp = 0),
+     style        =  label.style_label_left,
+     textcolor    =  color.new(color.white, transp = 0)
+    //  size         =  ,
+    //  textalign    =  ,
+    //  tooltip      = "" 
+     )
+    outputt
+
+getTimeFrameOffset() =>
+    float offset = switch timeframe.period
+        hour_6 => hour_6_offset
+        hour_4 => hour_4_offset
+        hour_3 => hour_3_offset
+        hour_2 => hour_2_offset
+        hour_1 => hour_1_offset
+        => 
+            hour_4_offset
+    offset
+
+//Code login start
+//抓出陰陽轉換bar
+dayHigh = request.security(syminfo.tickerid, 'D', high)
+dayLow = request.security(syminfo.tickerid, 'D', low)
+dayOpen = request.security(syminfo.tickerid, 'D', open)
+dayClose = request.security(syminfo.tickerid, 'D', close)
+dayVolume = request.security(syminfo.tickerid, 'D', volume)
+dayTimeClose = request.security(syminfo.tickerid, 'D', time_close)
+
+
+currentState := isBullBar(dayClose, dayOpen) ? BULL : BEAR
+// if lastState != currentState and bt == bar_time
+//   output := "轉"
+
+// if currentState == BULL
+    // mLabel := label.new(x =  bar_index, y =  bt, text = "牛", color = color.new(color =  color.black, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
+// else
+    // mLabel := label.new(x =  bar_index, y =  bt, text = ".", color = color.new(color =  color.black, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
+
+//日線是否陰陽轉換
+cond1 = lastState != currentState ? true : false
+if cond1
+    mLabel := label.new(x =  bar_index, y =  low * 0.97, text = "1", color = color.new(color =  color.purple, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
+
+
+//找出現在時框此bar是否 = 日線開盤的位置
+cond2 = dayTimeClose == time_close[1] ? true : false
+// if cond2
+    // mLabel := label.new(x =  bar_index, y =  low * 0.94, text = "2", color = color.new(color =  color.black, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
+
+
+// 如果此時 上一個顯示要show && 是日線開盤位置
+bool result = nextBarNeedShow and cond2
+
+// if nextBarNeedShow
+    // mLabel := label.new(x =  bar_index, y =  low * 0.91, text = "n", color = color.new(color =  color.black, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
+
+if result
+    testFloat := open[getTimeFrameOffset()]
+    string test = str.tostring(value = testFloat) 
+    mLabel := label.new(x =  bar_index[getTimeFrameOffset()], y =  low[getTimeFrameOffset()]*0.999, text = test, color = color.new(color =  color.black, transp = 0), textcolor = color.new(color =  color.white, transp = 0), style = label.style_label_up)
+    line777 := line.new(bar_index[getTimeFrameOffset()], open[getTimeFrameOffset()], bar_index + 1, open[getTimeFrameOffset()], extend=extend.right, color=color.orange, width=1)
+    // line.delete(id = line777[9]) 
+
+if cond1
+    nextBarNeedShow := true
+else
+    nextBarNeedShow := false
+
+    
+lastState := currentState
+
+
+
+if barstate.islast
+    realTimeText := str.tostring(value = volume) 
+    realTimeLabel := newLabel("eee" + ", " + realTimeText, color.maroon)
+
+
+//plot previous day Hi/lo
+// plot(dayOpen, color=color.blue)
+// plot(l,color= color.blue)
+// plot(open, color = color.gray)
+
+// plot(time, color = color.green)
+// plot(bt, color = color.gray)
+
+// plotchar(
+//  series     = open,
+// //  title      = "",
+// //  char       = output,
+//  location   =  location.belowbar,
+// //  color      = color.new(color =  , transp = 0),
+// //  offset     = ,
+//  text       = ".",
+//  textcolor  = color.new(color =  color.white, transp = 0)
+// //  editable   =  ,
+// //  size       =  ,
+// //  show_last  = ,
+// //  display    =  
+//  )
 
