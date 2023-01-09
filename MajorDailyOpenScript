@@ -49,8 +49,8 @@ var int BEAR = 0
 var int BULL = 1
 var bool isBarChanged = false
 var bool nextBarNeedShow = false
-var int lastState = BULL
-var int currentState = BULL
+var int lastDayState = BULL
+var int currentDayState = BULL
 
 var float testFloat = 0.0
 
@@ -62,6 +62,9 @@ var string output = "轉"
 
 var line line777 = na
 
+//垂直柱
+var float percent = 0.0
+var int percentIndex = 0
 
 //function
 isBullBar(_close, _open) =>
@@ -98,6 +101,13 @@ getTimeFrameOffset() =>
             hour_4_offset
     offset
 
+getBarPercentage(_close, _open) =>
+    float percent = na
+    percent := ((_close - _open) / _open) * 100
+
+    percent
+
+
 //Code login start
 //抓出陰陽轉換bar
 dayHigh = request.security(syminfo.tickerid, 'D', high)
@@ -105,22 +115,22 @@ dayLow = request.security(syminfo.tickerid, 'D', low)
 dayOpen = request.security(syminfo.tickerid, 'D', open)
 dayClose = request.security(syminfo.tickerid, 'D', close)
 dayVolume = request.security(syminfo.tickerid, 'D', volume)
+dayBarIndex = request.security(syminfo.tickerid, 'D', bar_index)
 dayTimeClose = request.security(syminfo.tickerid, 'D', time_close)
 
 
-currentState := isBullBar(dayClose, dayOpen) ? BULL : BEAR
-// if lastState != currentState and bt == bar_time
-//   output := "轉"
-
-// if currentState == BULL
-    // mLabel := label.new(x =  bar_index, y =  bt, text = "牛", color = color.new(color =  color.black, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
-// else
-    // mLabel := label.new(x =  bar_index, y =  bt, text = ".", color = color.new(color =  color.black, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
+currentDayState := isBullBar(dayClose, dayOpen) ? BULL : BEAR
 
 //日線是否陰陽轉換
-cond1 = lastState != currentState ? true : false
-if cond1
-    mLabel := label.new(x =  bar_index, y =  low * 0.97, text = "1", color = color.new(color =  color.purple, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
+cond1 = lastDayState != currentDayState ? true : false
+// if cond1
+//     mLabel := label.new(x =  bar_index, y =  low * 0.97, text = "轉", color = color.new(color =  color.purple, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
+
+//日線垂直柱
+percent := getBarPercentage(dayClose, dayOpen)
+// float seriesPercent = getBarPercentage(dayClose, dayOpen)
+
+cond3 = math.abs(number = percent)  > 5
 
 
 //找出現在時框此bar是否 = 日線開盤的位置
@@ -129,26 +139,50 @@ cond2 = dayTimeClose == time_close[1] ? true : false
     // mLabel := label.new(x =  bar_index, y =  low * 0.94, text = "2", color = color.new(color =  color.black, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
 
 
-// 如果此時 上一個顯示要show && 是日線開盤位置
-bool result = nextBarNeedShow and cond2
-
 // if nextBarNeedShow
     // mLabel := label.new(x =  bar_index, y =  low * 0.91, text = "n", color = color.new(color =  color.black, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
 
-if result
+// 如果此時 上一個顯示要show && 是日線開盤位置 && 漲幅5%以上
+if nextBarNeedShow and cond2 and cond3
     testFloat := open[getTimeFrameOffset()]
     string test = str.tostring(value = testFloat) 
-    mLabel := label.new(x =  bar_index[getTimeFrameOffset()], y =  low[getTimeFrameOffset()]*0.999, text = test, color = color.new(color =  color.black, transp = 0), textcolor = color.new(color =  color.white, transp = 0), style = label.style_label_up)
-    line777 := line.new(bar_index[getTimeFrameOffset()], open[getTimeFrameOffset()], bar_index + 1, open[getTimeFrameOffset()], extend=extend.right, color=color.orange, width=1)
+    mLabel := label.new(
+     x            =  bar_index[getTimeFrameOffset()],
+     y            =  percent > 0 ? low[getTimeFrameOffset()]*0.999 : high[getTimeFrameOffset()]*1.001,
+     text         = test,
+     color        = color.new(color = percent > 0 ? color.green : color.red, transp = 0),
+     style        =  percent > 0 ? label.style_label_up : label.style_label_down,
+     textcolor    = color.new(color = color.white, transp = 0)
+     )
+    
+
+    // mLabel := label.new(x =  bar_index[getTimeFrameOffset()], y =  low[getTimeFrameOffset()]*0.999, text = test, color = color.new(color =  color.black, transp = 0), textcolor = color.new(color =  color.white, transp = 0), style = percent > 0 ? label.style_label_up : label.style_label_down)
+    line777 := line.new(bar_index[getTimeFrameOffset()], open[getTimeFrameOffset()], bar_index + 1, open[getTimeFrameOffset()], extend=extend.right, color=percent > 0 ? color.green : color.red, width=1)
     // line.delete(id = line777[9]) 
+
+    string percentText = str.tostring(value = percent, format =  "#.##")
+    mLabel := label.new(
+     x            =  bar_index[getTimeFrameOffset()],
+     y            =  percent > 0 ? low[getTimeFrameOffset()]*0.9 : high[getTimeFrameOffset()]*1.1,
+     text         = percentText + " %",
+     color        = color.new(color = percent > 0 ? color.green : color.red, transp = 0),
+     style        =  percent > 0 ? label.style_label_up : label.style_label_down,
+     textcolor    = color.new(color =  color.white, transp = 0)
+     )
+
+    // mLabel := label.new(x =  bar_index, y =  low * 0.97, text = percentText, color = color.new(color = percent > 0 ? color.green : color.red, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
 
 if cond1
     nextBarNeedShow := true
 else
     nextBarNeedShow := false
 
+// 如果這根是垂直柱
+// if nextBarNeedShow and cond3
+//     string percentText = str.tostring(value = percent, format =  "#.##")
+//     mLabel := label.new(x =  bar_index, y =  low * 0.97, text = percentText, color = color.new(color =  color.orange, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
     
-lastState := currentState
+lastDayState := currentDayState
 
 
 
@@ -165,18 +199,4 @@ if barstate.islast
 // plot(time, color = color.green)
 // plot(bt, color = color.gray)
 
-// plotchar(
-//  series     = open,
-// //  title      = "",
-// //  char       = output,
-//  location   =  location.belowbar,
-// //  color      = color.new(color =  , transp = 0),
-// //  offset     = ,
-//  text       = ".",
-//  textcolor  = color.new(color =  color.white, transp = 0)
-// //  editable   =  ,
-// //  size       =  ,
-// //  show_last  = ,
-// //  display    =  
-//  )
 
