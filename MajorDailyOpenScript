@@ -19,7 +19,7 @@ indicator(
 //   timeframe            = "D",
 //  timeframe_gaps       =  true
 //  explicit_plot_zorder =  ,
- max_lines_count      =  6,
+ max_lines_count      =  4,
  max_labels_count     =  500
 //  max_boxes_count      =  
  )
@@ -52,13 +52,12 @@ var bool nextBarNeedShow = false
 var int lastDayState = BULL
 var int currentDayState = BULL
 
-var float testFloat = 0.0
+var float openPrice = 0.0
 
 var label mLabel = na
 var label realTimeLabel = na
 var string realTimeText = ""
 var float realTimeFloat = 0.0
-var string output = "轉"
 
 var line line777 = na
 
@@ -75,7 +74,7 @@ isBullBar(_close, _open) =>
     isBullBar
 
 newLabel(labelText, labelColor) =>
-    outputt = label.new(
+    output = label.new(
      x            =  bar_index + 2,
      y            =  close,
      text         =  labelText,
@@ -88,7 +87,7 @@ newLabel(labelText, labelColor) =>
     //  textalign    =  ,
     //  tooltip      = "" 
      )
-    outputt
+    output
 
 getTimeFrameOffset() =>
     float offset = switch timeframe.period
@@ -126,11 +125,11 @@ cond1 = lastDayState != currentDayState ? true : false
 // if cond1
 //     mLabel := label.new(x =  bar_index, y =  low * 0.97, text = "轉", color = color.new(color =  color.purple, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
 
-//日線垂直柱
+//日線垂直柱 > 5%漲跌幅
 percent := getBarPercentage(dayClose, dayOpen)
-// float seriesPercent = getBarPercentage(dayClose, dayOpen)
+// float seriesPercent = math.abs(getBarPercentage(dayClose, dayOpen)) // ta.sma(source = seriesPercent, length = 20) 
 
-cond3 = math.abs(number = percent)  > 5
+cond3 = math.abs(number = percent)  >  5
 
 
 //找出現在時框此bar是否 = 日線開盤的位置
@@ -139,17 +138,16 @@ cond2 = dayTimeClose == time_close[1] ? true : false
     // mLabel := label.new(x =  bar_index, y =  low * 0.94, text = "2", color = color.new(color =  color.black, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
 
 
-// if nextBarNeedShow
-    // mLabel := label.new(x =  bar_index, y =  low * 0.91, text = "n", color = color.new(color =  color.black, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
 
 // 如果此時 上一個顯示要show && 是日線開盤位置 && 漲幅5%以上
 if nextBarNeedShow and cond2 and cond3
-    testFloat := open[getTimeFrameOffset()]
-    string test = str.tostring(value = testFloat) 
+    openPrice := open[getTimeFrameOffset()]
+    string openPriceText = str.tostring(value = openPrice) 
+    string percentText = str.tostring(value = percent, format =  "#.##")
     mLabel := label.new(
      x            =  bar_index[getTimeFrameOffset()],
      y            =  percent > 0 ? low[getTimeFrameOffset()]*0.999 : high[getTimeFrameOffset()]*1.001,
-     text         = test,
+     text         = openPriceText + "( " + percentText + "% )",
      color        = color.new(color = percent > 0 ? color.green : color.red, transp = 0),
      style        =  percent > 0 ? label.style_label_up : label.style_label_down,
      textcolor    = color.new(color = color.white, transp = 0)
@@ -160,15 +158,6 @@ if nextBarNeedShow and cond2 and cond3
     line777 := line.new(bar_index[getTimeFrameOffset()], open[getTimeFrameOffset()], bar_index + 1, open[getTimeFrameOffset()], extend=extend.right, color=percent > 0 ? color.green : color.red, width=1)
     // line.delete(id = line777[9]) 
 
-    string percentText = str.tostring(value = percent, format =  "#.##")
-    mLabel := label.new(
-     x            =  bar_index[getTimeFrameOffset()],
-     y            =  percent > 0 ? low[getTimeFrameOffset()]*0.9 : high[getTimeFrameOffset()]*1.1,
-     text         = percentText + " %",
-     color        = color.new(color = percent > 0 ? color.green : color.red, transp = 0),
-     style        =  percent > 0 ? label.style_label_up : label.style_label_down,
-     textcolor    = color.new(color =  color.white, transp = 0)
-     )
 
     // mLabel := label.new(x =  bar_index, y =  low * 0.97, text = percentText, color = color.new(color = percent > 0 ? color.green : color.red, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
 
