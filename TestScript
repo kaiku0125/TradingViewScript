@@ -22,4 +22,30 @@ indicator(
 // #                   |   Indicator  |
 // # ========================================================================= #
 
+var float[] storedOpenPrice = array.new_float()
+// var float[] storedOpenPrice = array.new_float(size = 4, initial_value = 0)
+// var float[] storedOpenPrice = array.from(arg0 = 1.0, arg1 = 3.0, arg3 = 5.0, arg4 = 7.0) 
+
+getArray(input) =>
+    float[] array_out = array.new_float()
+    array.push(id = array_out, value = 3.0)
+    array.push(id = array_out, value = 1.0) 
+    array.push(id = array_out, value = 5.0)  
+    array.push(id = array_out, value = input) 
+    float temp = 0.0
+    for i = 0 to (array.size(array_out) == 0 ? na : array.size(array_out) - 1)
+        for j = 0 to (array.size(array_out) == 0 ? na : array.size(array_out) - 1)
+            if array.get(id = array_out, index = i) < array.get(id = array_out, index = j)
+                temp = array.get(id = array_out, index = i)
+                array.set(id = array_out, index = i, value = array.get(id = array_out, index = j))  
+                array.set(id = array_out, index = j, value = temp) 
+    
+    if array.size(id = array_out) == 4 
+        array.shift(id = array_out)      
+
+    array_out
+
+if barstate.islast
+    storedOpenPrice = array.copy(id = getArray(7.0)) 
+    label.new(bar_index, high, text = str.tostring(value = storedOpenPrice))
 
