@@ -31,21 +31,21 @@ var bool[] storedIsBull = array.new_bool()
 
 getArray(price, barIndex, isBull) =>
     float[] aFloatPrice = array.new_float()
-    array.push(id = aFloatPrice, value = 3.0)
-    array.push(id = aFloatPrice, value = 1.0) 
-    array.push(id = aFloatPrice, value = 5.0)  
+    // array.push(id = aFloatPrice, value = 3.0)
+    // array.push(id = aFloatPrice, value = 1.0) 
+    // array.push(id = aFloatPrice, value = 5.0)  
     array.push(id = aFloatPrice, value = price) 
 
     int[] aIntBarIndex = array.new_int()
-    array.push(id = aIntBarIndex, value = 333)  
-    array.push(id = aIntBarIndex, value = 111) 
-    array.push(id = aIntBarIndex, value = 555)
+    // array.push(id = aIntBarIndex, value = 333)  
+    // array.push(id = aIntBarIndex, value = 111) 
+    // array.push(id = aIntBarIndex, value = 555)
     array.push(id = aIntBarIndex, value = barIndex)
 
     bool[] aBoolIsBull = array.new_bool() 
-    array.push(id = aBoolIsBull, value = false) 
-    array.push(id = aBoolIsBull, value = true) 
-    array.push(id = aBoolIsBull, value = true) 
+    // array.push(id = aBoolIsBull, value = false) 
+    // array.push(id = aBoolIsBull, value = true) 
+    // array.push(id = aBoolIsBull, value = true) 
     array.push(id = aBoolIsBull, value = isBull) 
 
     float temp_float = 0.0
@@ -73,6 +73,43 @@ getArray(price, barIndex, isBull) =>
         array.shift(id = aBoolIsBull)        
 
     [aFloatPrice, aIntBarIndex, aBoolIsBull]
+
+
+getArray(price, priceArray, barIndex, barIndexArray, percent, percentArray) =>
+    float[] aFloatPrice = array.copy(id = priceArray) 
+    array.push(id = aFloatPrice, value = price) 
+
+    int[] aIntBarIndex = array.copy(id = barIndexArray) 
+    array.push(id = aIntBarIndex, value = barIndex)
+
+    float[] aFloatPercent = array.copy(id = percentArray)  
+    array.push(id = aFloatPercent, value = percent) 
+
+    float temp_floatPrice = 0.0
+    int temp_barIndex = 0
+    float temp_floatPercent = 0.0
+
+    for i = 0 to (array.size(aFloatPrice) == 0 ? na : array.size(aFloatPrice) - 1)
+        for j = 0 to (array.size(aFloatPrice) == 0 ? na : array.size(aFloatPrice) - 1)
+            if array.get(id = aFloatPrice, index = i) < array.get(id = aFloatPrice, index = j)
+                temp_floatPrice := array.get(id = aFloatPrice, index = i)
+                array.set(id = aFloatPrice, index = i, value = array.get(id = aFloatPrice, index = j))  
+                array.set(id = aFloatPrice, index = j, value = temp_floatPrice) 
+
+                temp_barIndex := array.get(id = aIntBarIndex, index = i)
+                array.set(id = aIntBarIndex, index = i, value = array.get(id = aIntBarIndex, index = j)) 
+                array.set(id = aIntBarIndex, index = j, value = temp_barIndex) 
+
+                temp_floatPercent := array.get(id = aFloatPercent, index = i)
+                array.set(id = aFloatPercent, index = i, value = array.get(id = aFloatPercent, index = j)) 
+                array.set(id = aFloatPercent, index = j, value = temp_floatPercent) 
+
+    // if array.size(id = aFloatPrice) == 4 
+    //     array.shift(id = aFloatPrice)
+    //     array.shift(id = aIntBarIndex)
+    //     array.shift(id = aFloatPercent)        
+
+    [aFloatPrice, aIntBarIndex, aFloatPercent]
 
 if barstate.islast
     [array1, array2, array3] = getArray(7.0, 777, false)
