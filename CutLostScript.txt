@@ -1,5 +1,6 @@
 //@version=5
 
+// import kaiku0125/ColorSDK/1 as sdk
 // # ========================================================================= #
 // #                   |   Indicator  |
 // # ========================================================================= #
@@ -18,60 +19,105 @@ indicator(
 var float position = 0.0
 var float eachOrderLost = 5.0
 var float cutLostPrice = na
+var string cutLostPriceText = na
+var bool needShowCutLostText = true
 var line cutLossLine = line.new(bar_index - 1, close, bar_index, close, extend = extend.both, width = 1, color = color.fuchsia)
 var color cutLossLineColor = color.purple
 var label positionLabel = na
-
+var table panel = table.new(position.top_right, 1, 5)
+var color COLOR_FIRE_BRICK = color.rgb(red = 178, green = 34, blue = 34, transp = 0)  
+var color COLOR_DARK_RED = color.rgb(red = 139, green = 0, blue = 0, transp = 0)  
+var color COLOR_FOREST_GREEN = color.rgb(red = 34, green = 139, blue = 34, transp = 0) 
+var color COLOR_DARK_GREEN = color.rgb(red = 0, green = 100, blue = 0, transp = 0) 
 
 // Define inputs settings
 var GROUP_SETTING = "📌 設定"
 var GROUN_VERSION = "💬 關於"
-var VERSION_NAME = "v1.0"
+var VERSION_NAME = "v1.1"
 var RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
-                     "[1] First release." + "\n"
+                     "[1] Label switches color depends on long or short." + "\n" + 
+                     "[2] Cut lost price label shows customized." + "\n"
 
 
 INPUT_EACH_ORDER_LOST = input.float(defval = 5.0, title = "每單止損", minval = 1.0, maxval =  10000.0, step =  1, tooltip = "調整每單止損金額", group = GROUP_SETTING) 
 INPUT_CUT_LOST_PRICE = input.price(defval = 0.0, title = "止損價格", confirm = true, group = GROUP_SETTING, inline = "01")
 INPUT_CUT_LOST_PRICE_LINE_COLOR = input.color(defval = color.purple, title = "", inline = "01", group = GROUP_SETTING) 
+INPUT_NEED_SHOW_CUT_LOST_TEXT = input.bool(defval =  true, title = "顯示止損價格", group = GROUP_SETTING) 
 INPUT_DISPLAY_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUN_VERSION) 
 
 eachOrderLost := INPUT_EACH_ORDER_LOST
 cutLostPrice := INPUT_CUT_LOST_PRICE
+cutLostPriceText := str.tostring(value = cutLostPrice,format = "#.###") 
 cutLossLineColor := INPUT_CUT_LOST_PRICE_LINE_COLOR
+needShowCutLostText := INPUT_NEED_SHOW_CUT_LOST_TEXT
+
 
 
 // Define functions
-getText() =>
-    output = "開 " + str.tostring(value = position, format = "#.###") + " " + syminfo.basecurrency + "\n"
+getText(isLong) =>
+    string direction = isLong ? "多 " : "空 "
+    output = direction + str.tostring(value = position, format = "#.###") + " " + syminfo.basecurrency + "\n"
     output += "倉位價值 : " + str.tostring(value = position * close, format =  "#")  + " " + syminfo.currency
     output
 
-newLabel(labelText) =>
+newLabel(labelText, labelColor) =>
     output = label.new(
      x            =  bar_index + 2,
      y            =  close,
      text         =  labelText,
     //  xloc         =  ,
     //  yloc         =  ,
-     color        =  color.new(color =  color.purple, transp = 0),
+     color        =  color.new(color = labelColor, transp = 0),
      style        =  label.style_label_left,
-     textcolor    =  color.new(color =  color.white, transp = 0)
+     textcolor    =  color.new(color.white, transp = 0)
     //  size         =  ,
     //  textalign    =  ,
     //  tooltip      = "" 
      )
     output
 
+isLong() =>
+    var bool isLong = true
+    if close < cutLostPrice
+        isLong := false
+    isLong
+
+
+
+debug() =>
+    table.cell(panel, 0, 1, "isLong : " + str.tostring(value = isLong()) , bgcolor=color.black, text_color=color.white)
+    table.cell(panel, 0, 0, "7777", bgcolor=color.black, text_color=color.white)  
+
 
 // Code logic start
 if barstate.islast
     position := eachOrderLost / (1 - ((close - math.abs(close - cutLostPrice)) / close)) / close
-    positionLabel = newLabel(getText())
+    positionLabel = newLabel(getText(isLong()), isLong() ? COLOR_FOREST_GREEN : COLOR_FIRE_BRICK)
     label.delete(id = positionLabel[1])
 
     line.set_xy1(cutLossLine, bar_index - 1, cutLostPrice)
     line.set_xy2(cutLossLine, bar_index, cutLostPrice)
     line.set_color(id = cutLossLine, color = cutLossLineColor) 
+    
+    if needShowCutLostText
+        textLabel = label.new(
+         x            =  bar_index + 30,
+         y            =  cutLostPrice,
+         text         = "止損價格 : " + cutLostPriceText,
+        //  xloc         = xloc.bar_time,
+        //  yloc         =  ,
+         color        = color.new(color =  color.black, transp = 0),
+         style        =  label.style_none,
+         textcolor    = color.new(color =  color.white, transp = 0)
+        //  size         =  ,
+        //  textalign    =  ,
+        //  tooltip      = "" 
+         )
+        label.delete(id = textLabel[1])
+
+
+
+
+
 
 

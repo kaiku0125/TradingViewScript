@@ -1,0 +1,241 @@
+//@version=5
+
+//日線陰陽轉換條件
+//1.陰陽轉換
+//2.區域高低點
+//3.成交量要大
+//4.
+
+// # ========================================================================= #
+// #                   |   Indicator  |
+// # ========================================================================= #
+indicator(
+ title                = "MajorDailyOpenFinder",
+ shorttitle           = "MDOFinder",
+ overlay              =  true,
+//  format               =  ,
+//  precision            =  ,
+//  scale                =  ,
+//   timeframe            = "D",
+//  timeframe_gaps       =  true
+//  explicit_plot_zorder =  ,
+ max_lines_count      =  4,
+ max_labels_count     =  500
+//  max_boxes_count      =  
+ )
+// # ========================================================================= #
+// #                   |   Indicator  |
+// # ========================================================================= #
+
+
+//variable
+//time series(Day = 1440 min, so 6hr offset = 1440 / 360)
+
+var string hour_6 = "360"
+var float hour_6_offset = 4
+var string hour_4 = "240"
+var float hour_4_offset = 6
+
+var string hour_3 = "180"
+var float hour_3_offset = 8
+var string hour_2 = "120"
+var float hour_2_offset = 12
+
+var string hour_1 = "60"
+var float hour_1_offset = 24
+
+
+var int BEAR = 0
+var int BULL = 1
+var bool isBarChanged = false
+var bool nextBarNeedShow = false
+var int lastDayState = BULL
+var int currentDayState = BULL
+
+var float openPrice = 0.0
+
+var label mLabel = na
+var label realTimeLabel = na
+var string realTimeText = ""
+var float realTimeFloat = 0.0
+
+var line line777 = na
+
+//垂直柱
+var float percent = 0.0
+var int percentIndex = 0
+
+//輸出圖表
+var float[] storedOpenPrice = array.new_float()
+var int[] storedBarIndex = array.new_int() 
+var bool[] storedIsBull = array.new_bool() 
+
+//function
+isBullBar(_close, _open) =>
+    bool isBullBar = false
+    if _close >= _open
+        isBullBar := true
+    
+    isBullBar
+
+newLabel(labelText, labelColor) =>
+    output = label.new(
+     x            =  bar_index + 2,
+     y            =  close,
+     text         =  labelText,
+    //  xloc         =  ,
+    //  yloc         =  ,
+     color        =  color.new(color = labelColor, transp = 0),
+     style        =  label.style_label_left,
+     textcolor    =  color.new(color.white, transp = 0)
+    //  size         =  ,
+    //  textalign    =  ,
+    //  tooltip      = "" 
+     )
+    output
+
+getTimeFrameOffset() =>
+    float offset = switch timeframe.period
+        hour_6 => hour_6_offset
+        hour_4 => hour_4_offset
+        hour_3 => hour_3_offset
+        hour_2 => hour_2_offset
+        hour_1 => hour_1_offset
+        => 
+            hour_4_offset
+    offset
+
+getBarPercentage(_close, _open) =>
+    float percent = na
+    percent := ((_close - _open) / _open) * 100
+
+    percent
+
+getArray(price, barIndex, isBull) =>
+    float[] aFloatPrice = array.new_float()
+    // array.push(id = aFloatPrice, value = 3.0)
+    // array.push(id = aFloatPrice, value = 1.0) 
+    // array.push(id = aFloatPrice, value = 5.0)  
+    array.push(id = aFloatPrice, value = price) 
+
+    int[] aIntBarIndex = array.new_int()
+    // array.push(id = aIntBarIndex, value = 333)  
+    // array.push(id = aIntBarIndex, value = 111) 
+    // array.push(id = aIntBarIndex, value = 555)
+    array.push(id = aIntBarIndex, value = barIndex)
+
+    bool[] aBoolIsBull = array.new_bool() 
+    // array.push(id = aBoolIsBull, value = false) 
+    // array.push(id = aBoolIsBull, value = true) 
+    // array.push(id = aBoolIsBull, value = true) 
+    array.push(id = aBoolIsBull, value = isBull) 
+
+    float temp_float = 0.0
+    int temp_barIndex = 0
+    bool temp_isBull = false
+
+    for i = 0 to (array.size(aFloatPrice) == 0 ? na : array.size(aFloatPrice) - 1)
+        for j = 0 to (array.size(aFloatPrice) == 0 ? na : array.size(aFloatPrice) - 1)
+            if array.get(id = aFloatPrice, index = i) < array.get(id = aFloatPrice, index = j)
+                temp_float := array.get(id = aFloatPrice, index = i)
+                array.set(id = aFloatPrice, index = i, value = array.get(id = aFloatPrice, index = j))  
+                array.set(id = aFloatPrice, index = j, value = temp_float) 
+
+                temp_barIndex := array.get(id = aIntBarIndex, index = i)
+                array.set(id = aIntBarIndex, index = i, value = array.get(id = aIntBarIndex, index = j)) 
+                array.set(id = aIntBarIndex, index = j, value = temp_barIndex) 
+
+                temp_isBull := array.get(id = aBoolIsBull, index = i)
+                array.set(id = aBoolIsBull, index = i, value = array.get(id = aBoolIsBull, index = j)) 
+                array.set(id = aBoolIsBull, index = j, value = temp_isBull) 
+
+    if array.size(id = aFloatPrice) == 4 
+        array.shift(id = aFloatPrice)
+        array.shift(id = aIntBarIndex)
+        array.shift(id = aBoolIsBull)        
+
+    [aFloatPrice, aIntBarIndex, aBoolIsBull]
+
+
+//Code login start
+//抓出陰陽轉換bar
+dayHigh = request.security(syminfo.tickerid, 'D', high)
+dayLow = request.security(syminfo.tickerid, 'D', low)
+dayOpen = request.security(syminfo.tickerid, 'D', open)
+dayClose = request.security(syminfo.tickerid, 'D', close)
+dayVolume = request.security(syminfo.tickerid, 'D', volume)
+dayBarIndex = request.security(syminfo.tickerid, 'D', bar_index)
+dayTimeClose = request.security(syminfo.tickerid, 'D', time_close)
+
+
+currentDayState := isBullBar(dayClose, dayOpen) ? BULL : BEAR
+
+//日線是否陰陽轉換
+cond1 = lastDayState != currentDayState ? true : false
+// if cond1
+//     mLabel := label.new(x =  bar_index, y =  low * 0.97, text = "轉", color = color.new(color =  color.purple, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
+
+//日線垂直柱 > 5%漲跌幅
+percent := getBarPercentage(dayClose, dayOpen)
+// float seriesPercent = math.abs(getBarPercentage(dayClose, dayOpen)) // ta.sma(source = seriesPercent, length = 20) 
+
+cond3 = math.abs(number = percent)  >  5
+
+
+//找出現在時框此bar是否 = 日線開盤的位置
+cond2 = dayTimeClose == time_close[1] ? true : false
+// if cond2
+    // mLabel := label.new(x =  bar_index, y =  low * 0.94, text = "2", color = color.new(color =  color.black, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
+
+
+
+// 如果此時 上一個顯示要show && 是日線開盤位置 && 漲幅5%以上
+if nextBarNeedShow and cond2 and cond3
+    openPrice := open[getTimeFrameOffset()]
+    string openPriceText = str.tostring(value = openPrice) 
+    string percentText = str.tostring(value = percent, format =  "#.##")
+    mLabel := label.new(
+     x            =  bar_index[getTimeFrameOffset()],
+     y            =  percent > 0 ? low[getTimeFrameOffset()]*0.999 : high[getTimeFrameOffset()]*1.001,
+     text         = openPriceText + "( " + percentText + "% )",
+     color        = color.new(color = percent > 0 ? color.green : color.red, transp = 0),
+     style        =  percent > 0 ? label.style_label_up : label.style_label_down,
+     textcolor    = color.new(color = color.white, transp = 0)
+     )
+    
+
+    // mLabel := label.new(x =  bar_index[getTimeFrameOffset()], y =  low[getTimeFrameOffset()]*0.999, text = test, color = color.new(color =  color.black, transp = 0), textcolor = color.new(color =  color.white, transp = 0), style = percent > 0 ? label.style_label_up : label.style_label_down)
+    line777 := line.new(bar_index[getTimeFrameOffset()], open[getTimeFrameOffset()], bar_index + 1, open[getTimeFrameOffset()], extend=extend.right, color=percent > 0 ? color.green : color.red, width=1)
+    // line.delete(id = line777[9]) 
+
+
+    // mLabel := label.new(x =  bar_index, y =  low * 0.97, text = percentText, color = color.new(color = percent > 0 ? color.green : color.red, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
+
+if cond1
+    nextBarNeedShow := true
+else
+    nextBarNeedShow := false
+
+// 如果這根是垂直柱
+// if nextBarNeedShow and cond3
+//     string percentText = str.tostring(value = percent, format =  "#.##")
+//     mLabel := label.new(x =  bar_index, y =  low * 0.97, text = percentText, color = color.new(color =  color.orange, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
+    
+lastDayState := currentDayState
+
+
+
+if barstate.islast
+    realTimeText := str.tostring(value = volume) 
+    realTimeLabel := newLabel("eee" + ", " + realTimeText, color.maroon)
+
+
+//plot previous day Hi/lo
+// plot(dayOpen, color=color.blue)
+// plot(l,color= color.blue)
+// plot(open, color = color.gray)
+
+// plot(time, color = color.green)
+// plot(bt, color = color.gray)
+
+
