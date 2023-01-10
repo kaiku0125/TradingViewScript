@@ -172,14 +172,13 @@ getLastBullOpenIndex(arrayOpen, arrayIndex, arrayPercent) =>
     array.reverse(id = arrayCopyIndexReverse) 
     float[] arrayCopyPercentReverse = array.copy(id = arrayPercent)
     array.reverse(id = arrayCopyPercentReverse)
-
     int[] outputIndex = array.new_int(0) 
 
     int barIndexSize = array.size(id = arrayCopyIndexReverse)
     if barIndexSize >= 3
         for i = 0 to (barIndexSize == 0 ? na : array.size(arrayCopyPercentReverse) - 1)
             cond1 = array.get(id = arrayCopyPercentReverse, index = i) > 0 // 是陽柱
-            cond2 = array.get(id = arrayCopyOpenPriceReverse, index = i) - open < 0 
+            cond2 = array.get(id = arrayCopyOpenPriceReverse, index = i) - open < 0 //現在價格 > 過去日線
             if cond1 and cond2
                 array.push(id = outputIndex, value = barIndexSize - i - 1)
                 if array.size(id = outputIndex) == 3
@@ -187,6 +186,55 @@ getLastBullOpenIndex(arrayOpen, arrayIndex, arrayPercent) =>
 
     outputIndex
     
+getLastBearOpenIndex(arrayOpen, arrayIndex, arrayPercent) =>
+    float[] arrayCopyOpenPriceReverse = array.copy(id = arrayOpen)
+    array.reverse(id = arrayCopyOpenPriceReverse)
+    int[] arrayCopyIndexReverse = array.copy(id = arrayIndex)
+    array.reverse(id = arrayCopyIndexReverse) 
+    float[] arrayCopyPercentReverse = array.copy(id = arrayPercent)
+    array.reverse(id = arrayCopyPercentReverse)
+    int[] outputIndex = array.new_int(0)
+
+    int barIndexSize = array.size(id = arrayCopyIndexReverse)
+    if barIndexSize >= 3
+        for i = 0 to (barIndexSize == 0 ? na : array.size(arrayCopyPercentReverse) - 1)
+            cond1 = array.get(id = arrayCopyPercentReverse, index = i) < 0 // 是陰柱
+            cond2 = array.get(id = arrayCopyOpenPriceReverse, index = i) - open > 0 //現在價格 < 過去日線
+            if cond1 and cond2
+                array.push(id = outputIndex, value = barIndexSize - i - 1)
+                if array.size(id = outputIndex) == 3
+                    break 
+
+    outputIndex
+
+
+getLatestOpenIndexArray(arrayOpen, arrayIndex, arrayPercent, isBull) =>
+    float[] arrayCopyOpenPriceReverse = array.copy(id = arrayOpen)
+    array.reverse(id = arrayCopyOpenPriceReverse)
+    int[] arrayCopyIndexReverse = array.copy(id = arrayIndex)
+    array.reverse(id = arrayCopyIndexReverse) 
+    float[] arrayCopyPercentReverse = array.copy(id = arrayPercent)
+    array.reverse(id = arrayCopyPercentReverse)
+    int[] outputIndex = array.new_int(0)
+
+    int barIndexSize = array.size(id = arrayCopyIndexReverse)
+    if barIndexSize >= 3
+        for i = 0 to (barIndexSize == 0 ? na : array.size(arrayCopyPercentReverse) - 1)
+            cond1 = isBull ? array.get(id = arrayCopyPercentReverse, index = i) > 0 : array.get(id = arrayCopyPercentReverse, index = i) < 0 
+            cond2 = isBull ? array.get(id = arrayCopyOpenPriceReverse, index = i) - open < 0 : array.get(id = arrayCopyOpenPriceReverse, index = i) - open > 0
+            // if isBull
+            //     cond1 = array.get(id = arrayCopyPercentReverse, index = i) > 0 // 是陽柱
+            //     cond2 = array.get(id = arrayCopyOpenPriceReverse, index = i) - open < 0 //現在價格 > 過去日線
+            // else 
+            //     cond1 = array.get(id = arrayCopyPercentReverse, index = i) < 0 
+            //     cond2 = array.get(id = arrayCopyOpenPriceReverse, index = i) - open > 0 
+
+            if cond1 and cond2
+                array.push(id = outputIndex, value = barIndexSize - i - 1)
+                if array.size(id = outputIndex) == 3
+                    break 
+
+    outputIndex
 
 
 //Code login start
@@ -290,16 +338,23 @@ if barstate.islast
     //     realTimeLabel := newLabel("price : " + ", " + mOutput, color.maroon)
     //     label.delete(id = realTimeLabel[1])
 
-    int[] mOutputIndex = getLastBullOpenIndex(storedOpenPrice, storedBarIndex, storedPercent)
+    int[] mBullOutputIndex = getLatestOpenIndexArray(storedOpenPrice, storedBarIndex, storedPercent, true)
+    int[] mBearOutputIndex = getLatestOpenIndexArray(storedOpenPrice, storedBarIndex, storedPercent, false)
     array.clear(id = displayOpenPrice) 
     array.clear(id = displayBarIndex) 
     array.clear(id = displayPercent)
 
-    for i = 0 to (array.size(mOutputIndex) == 0 ? na : array.size(mOutputIndex) - 1)
-        int targetIndex = array.get(id = mOutputIndex, index = i)
-        array.push(id = displayOpenPrice, value = array.get(id = storedOpenPrice, index =  targetIndex) ) 
-        array.push(id = displayBarIndex, value = array.get(id = storedBarIndex, index =  targetIndex) ) 
-        array.push(id = displayPercent, value = array.get(id = storedPercent, index =  targetIndex) ) 
+    for i = 0 to (array.size(mBullOutputIndex) == 0 ? na : array.size(mBullOutputIndex) - 1)
+        int targetBullIndex = array.get(id = mBullOutputIndex, index = i)
+        array.push(id = displayOpenPrice, value = array.get(id = storedOpenPrice, index =  targetBullIndex) ) 
+        array.push(id = displayBarIndex, value = array.get(id = storedBarIndex, index =  targetBullIndex) ) 
+        array.push(id = displayPercent, value = array.get(id = storedPercent, index =  targetBullIndex) ) 
+
+    for i = 0 to (array.size(mBearOutputIndex) == 0 ? na : array.size(mBearOutputIndex) - 1)
+        int targetBearIndex = array.get(id = mBearOutputIndex, index = i)
+        array.push(id = displayOpenPrice, value = array.get(id = storedOpenPrice, index =  targetBearIndex) ) 
+        array.push(id = displayBarIndex, value = array.get(id = storedBarIndex, index =  targetBearIndex) ) 
+        array.push(id = displayPercent, value = array.get(id = storedPercent, index =  targetBearIndex) ) 
 
     mOutput = str.tostring(value = displayOpenPrice) + "\n"
     mOutput += str.tostring(value = displayBarIndex) + "\n"
