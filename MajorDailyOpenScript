@@ -19,7 +19,7 @@ indicator(
 //   timeframe            = "D",
 //  timeframe_gaps       =  true
 //  explicit_plot_zorder =  ,
- max_lines_count      =  4,
+ max_lines_count      =  6,
  max_labels_count     =  500
 //  max_boxes_count      =  
  )
@@ -32,17 +32,17 @@ indicator(
 //time series(Day = 1440 min, so 6hr offset = 1440 / 360)
 
 var string hour_6 = "360"
-var float hour_6_offset = 4
+var int hour_6_offset = 4
 var string hour_4 = "240"
-var float hour_4_offset = 6
+var int hour_4_offset = 6
 
 var string hour_3 = "180"
-var float hour_3_offset = 8
+var int hour_3_offset = 8
 var string hour_2 = "120"
-var float hour_2_offset = 12
+var int hour_2_offset = 12
 
 var string hour_1 = "60"
-var float hour_1_offset = 24
+var int hour_1_offset = 24
 
 
 var int BEAR = 0
@@ -72,6 +72,8 @@ var int[] storedBarIndex = array.new_int()
 var int[] displayBarIndex = array.new_int() 
 var float[] storedPercent = array.new_float() 
 var float[] displayPercent = array.new_float()
+var label displayLabel = na
+var line displayLine = na
 
 //function
 isBullBar(_close, _open) =>
@@ -98,7 +100,7 @@ newLabel(labelText, labelColor) =>
     output
 
 getTimeFrameOffset() =>
-    float offset = switch timeframe.period
+    int offset = switch timeframe.period
         hour_6 => hour_6_offset
         hour_4 => hour_4_offset
         hour_3 => hour_3_offset
@@ -127,6 +129,8 @@ getArray(price, priceArray, barIndex, barIndexArray, percent, percentArray) =>
     float[] outputPercent = array.new_float()  
     array.push(id = aFloatPercent, value = percent) 
 
+
+    //排序
     // float temp_floatPrice = 0.0
     // int temp_barIndex = 0
     // float temp_floatPercent = 0.0
@@ -222,12 +226,6 @@ getLatestOpenIndexArray(arrayOpen, arrayIndex, arrayPercent, isBull) =>
         for i = 0 to (barIndexSize == 0 ? na : array.size(arrayCopyPercentReverse) - 1)
             cond1 = isBull ? array.get(id = arrayCopyPercentReverse, index = i) > 0 : array.get(id = arrayCopyPercentReverse, index = i) < 0 
             cond2 = isBull ? array.get(id = arrayCopyOpenPriceReverse, index = i) - open < 0 : array.get(id = arrayCopyOpenPriceReverse, index = i) - open > 0
-            // if isBull
-            //     cond1 = array.get(id = arrayCopyPercentReverse, index = i) > 0 // 是陽柱
-            //     cond2 = array.get(id = arrayCopyOpenPriceReverse, index = i) - open < 0 //現在價格 > 過去日線
-            // else 
-            //     cond1 = array.get(id = arrayCopyPercentReverse, index = i) < 0 
-            //     cond2 = array.get(id = arrayCopyOpenPriceReverse, index = i) - open > 0 
 
             if cond1 and cond2
                 array.push(id = outputIndex, value = barIndexSize - i - 1)
@@ -272,18 +270,18 @@ cond2 = dayTimeClose == time_close[1] ? true : false
 // 如果此時 上一個顯示要show && 是日線開盤位置 && 漲幅5%以上
 if nextBarNeedShow and cond2 and cond3
     openPrice := open[getTimeFrameOffset()]
-    string openPriceText = str.tostring(value = openPrice) 
-    string percentText = str.tostring(value = percent, format =  "#.##")
-    mLabel := label.new(
-     x            =  bar_index[getTimeFrameOffset()],
-     y            =  percent > 0 ? low[getTimeFrameOffset()]*0.999 : high[getTimeFrameOffset()]*1.001,
-     text         = openPriceText + "( " + percentText + "% )",
-     color        = color.new(color = percent > 0 ? color.green : color.red, transp = 0),
-     style        =  percent > 0 ? label.style_label_up : label.style_label_down,
-     textcolor    = color.new(color = color.white, transp = 0)
-     )
+    // string openPriceText = str.tostring(value = openPrice) 
+    // string percentText = str.tostring(value = percent, format =  "#.##")
+    // mLabel := label.new(
+    //  x            =  bar_index[getTimeFrameOffset()],
+    //  y            =  percent > 0 ? low[getTimeFrameOffset()]*0.999 : high[getTimeFrameOffset()]*1.001,
+    //  text         = openPriceText + "( " + percentText + "% )",
+    //  color        = color.new(color = percent > 0 ? color.green : color.red, transp = 0),
+    //  style        =  percent > 0 ? label.style_label_up : label.style_label_down,
+    //  textcolor    = color.new(color = color.white, transp = 0)
+    //  )
     
-    line777 := line.new(bar_index[getTimeFrameOffset()], open[getTimeFrameOffset()], bar_index + 1, open[getTimeFrameOffset()], extend=extend.right, color=percent > 0 ? color.green : color.red, width=1)
+    // line777 := line.new(bar_index[getTimeFrameOffset()], open[getTimeFrameOffset()], bar_index + 1, open[getTimeFrameOffset()], extend=extend.right, color=percent > 0 ? color.green : color.red, width=1)
     
     [array1, array2, array3] = getArray(openPrice, storedOpenPrice, bar_index[getTimeFrameOffset()], storedBarIndex, percent, storedPercent)
     storedOpenPrice := array.copy(id = array1)
@@ -356,13 +354,32 @@ if barstate.islast
         array.push(id = displayBarIndex, value = array.get(id = storedBarIndex, index =  targetBearIndex) ) 
         array.push(id = displayPercent, value = array.get(id = storedPercent, index =  targetBearIndex) ) 
 
-    mOutput = str.tostring(value = displayOpenPrice) + "\n"
-    mOutput += str.tostring(value = displayBarIndex) + "\n"
-    mOutput += str.tostring(value = displayPercent) 
+    // mOutput = str.tostring(value = displayOpenPrice) + "\n"
+    // mOutput += str.tostring(value = displayBarIndex) + "\n"
+    // mOutput += str.tostring(value = displayPercent) 
 
-    realTimeText := str.tostring(value = volume) 
-    realTimeLabel := newLabel("price : " + ", " + mOutput, color.maroon)
-    label.delete(id = realTimeLabel[1])
+    // realTimeText := str.tostring(value = volume) 
+    // realTimeLabel := newLabel("price : " + ", " + mOutput, color.maroon)
+    // label.delete(id = realTimeLabel[1])
+
+    // Draw all data on chart
+    for i = 0 to (array.size(displayOpenPrice) == 0 ? na : array.size(displayOpenPrice) - 1)
+        float tempPrice = array.get(id = displayOpenPrice, index = i)
+        string tempPriceText = str.tostring(value = tempPrice) 
+        int tempIndex = array.get(id = displayBarIndex, index = i)
+        float percent = array.get(id = displayPercent, index = i) 
+        displayLabel := label.new(
+        //  x            = tempIndex,
+         x            = bar_index + getTimeFrameOffset() * 5,
+         y            = percent > 0 ? low[bar_index - tempIndex]*0.999 : high[bar_index - tempIndex]*1.001,
+         text         = tempPriceText,
+         color        = color.new(color = percent > 0 ? color.green : color.red, transp = 0),
+         style        = percent > 0 ? label.style_label_up : label.style_label_down,
+         textcolor    = color.new(color =  color.white, transp = 0)
+         )
+        displayLine := line.new(x1 = tempIndex, y1 = tempPrice, x2 = tempIndex + 1, y2 = tempPrice, extend =  extend.right, color = color.new(color =  percent > 0 ? color.green : color.red, transp = 0), width = 1) 
+        
+
 
 
 
