@@ -22,43 +22,58 @@ indicator(
 // #                   |   Indicator  |
 // # ========================================================================= #
 var int TOTAL_CURRENCY_CLASS = 2
+var string REMAIN_TITLE = "殘值(U)"
+var string PROFIT_TITLE = "損益"
+var string PROFIT_PERCENT_TITLE = "利潤"
 var string GROUP_CURRENCY = "💲 現貨"
 
 var string BTC_SYMBOL = "BYBIT:BTCUSDT.P"
-var float MY_BTC_POSITION = input.float(defval = 0.07548, title = "BTC總量",  step =  1, inline = "01", group = GROUP_CURRENCY) 
-var float MY_BTC_COST = input.float(defval = 1683, title = " 成本",  step =  1, inline = "01", group = GROUP_CURRENCY) 
-var float MY_BTC_AVERAGE_PRICE = input.float(defval = 22343, title = " 均價",  step =  1, inline = "01", group = GROUP_CURRENCY) 
+var float MY_BTC_POSITION = input.float(defval = 0.082221, title = "BTC總量",  step =  1, inline = "01", group = GROUP_CURRENCY) 
+var float MY_BTC_COST = input.float(defval = 1800.48, title = " 成本",  step =  1, inline = "01", group = GROUP_CURRENCY) 
+var float MY_BTC_AVERAGE_PRICE = input.float(defval = 21941.85, title = " 均價",  step =  1, inline = "01", group = GROUP_CURRENCY) 
 var float currentBTCPrice = 0.0
-// var float 
+var float remainBTC = 0.0
+var float profitBTC = 0.0
+var float profitPercentBTC = 0.0
 
 var string CRO_SYMBOL = "COINBASE:CROUSD"
 var float MY_CRO_POSITION = input.float(defval = 21849, title = "CRO總量",  step =  1, inline = "02", group = GROUP_CURRENCY) 
 var float MY_CRO_COST = input.float(defval = 3632, title = " 成本",  step =  1, inline = "02", group = GROUP_CURRENCY) 
 var float MY_CRO_AVERAGE_PRICE = input.float(defval = 0.183, title = " 均價",  step =  1, inline = "02", group = GROUP_CURRENCY) 
 var float currentCROPrice = 0.0
+var float remainCRO = 0.0
+var float profitCRO = 0.0
+var float profitPercentCRO = 0.0
 
 var label debugLabel = na
 var table resultTabel = table.new(
  position       =  position.bottom_right,
- columns        =  TOTAL_CURRENCY_CLASS,
- rows           =  3,
- bgcolor        =  color.new(color = color.orange, transp = 0),
- frame_color    =  color.new(color =  color.green, transp = 0),
-//  frame_width    =  ,
- border_color   =  color.new(color =  color.red, transp = 0)
-//  border_width   =  
+ columns        =  4,
+ rows           =  TOTAL_CURRENCY_CLASS + 1,
+ bgcolor        =  color.new(color = color.gray, transp = 0),
+ frame_color    =  color.new(color =  color.black, transp = 0),
+ frame_width    =  2,
+ border_color   =  color.new(color =  color.black, transp = 0),
+ border_width   =  3
  )
 
 
 currentBTCPrice := request.security(symbol =  BTC_SYMBOL, timeframe = "S", expression = close)
-currentCROPrice := request.security(symbol =  CRO_SYMBOL, timeframe = "S", expression = close)
+remainBTC := currentBTCPrice * MY_BTC_POSITION
+profitBTC := remainBTC - MY_BTC_COST
+profitPercentBTC := (profitBTC / MY_BTC_COST) * 100
 
-cell(rowID, title, totalValue) =>
+currentCROPrice := request.security(symbol =  CRO_SYMBOL, timeframe = "S", expression = close)
+remainCRO := currentCROPrice * MY_CRO_POSITION
+profitCRO := remainCRO - MY_CRO_COST
+profitPercentCRO := (profitCRO / MY_CRO_COST) * 100
+
+cell(rowID, title, remain, profit, profitPercent) =>
     table.cell(
-     table_id       = resultTabel, 
+     table_id       =  resultTabel, 
      column         =  0, 
      row            =  rowID, 
-     text           = title, 
+     text           =  title, 
     //  width          =  , 
     //  height         =  , 
      text_color     = color.new(color =  color.white, transp = 0), 
@@ -67,29 +82,65 @@ cell(rowID, title, totalValue) =>
     //  text_size      =  , 
      bgcolor        = color.new(color =  color.gray, transp = 0)
      )
+
+    var string remainText = str.tostring(value = remain, format =  "#")
     table.cell(
-     table_id       = resultTabel, 
+     table_id       =  resultTabel, 
      column         =  1, 
      row            =  rowID, 
-     text           = totalValue, 
+     text           =  remainText, 
     //  width          =  , 
     //  height         =  , 
-     text_color     = color.new(color =  color.white, transp = 0), 
+     text_color     =  color.new(color =  color.white, transp = 0), 
     //  text_halign    =  , 
     //  text_valign    =  , 
     //  text_size      =  , 
-     bgcolor        = color.new(color =  color.gray, transp = 0)
+     bgcolor        =  color.new(color =  color.gray, transp = 0)
+     )
+
+    var string profitText = str.tostring(value = profit, format =  "#.#") 
+    table.cell(
+     table_id       =  resultTabel, 
+     column         =  2, 
+     row            =  rowID, 
+     text           =  profitText, 
+    //  width          =  , 
+    //  height         =  , 
+     text_color     =  color.new(color =  profit > 0 ? color.green : color.red, transp = 0), 
+    //  text_halign    =  , 
+    //  text_valign    =  , 
+    //  text_size      =  , 
+     bgcolor        =  color.new(color =  color.gray, transp = 0)
+     )
+    
+    var string profitPercentText = str.tostring(value = profitPercent, format =  "#.#") + " %"
+    table.cell(
+     table_id       =  resultTabel, 
+     column         =  3, 
+     row            =  rowID, 
+     text           =  profitPercentText, 
+    //  width          =  , 
+    //  height         =  , 
+     text_color     =  color.new(color =  profitPercent > 0 ? color.green : color.red, transp = 0), 
+    //  text_halign    =  , 
+    //  text_valign    =  , 
+    //  text_size      =  , 
+     bgcolor        =  color.new(color =  color.gray, transp = 0)
      )
     
     
 
 if barstate.islast
     // debugLabel := debug.printLabel(syminfo.tickerid)
-    string mOutput = str.tostring(value = currentCROPrice,format =  "#.####")  
-    debugLabel := debug.printLabel(mOutput)
-    label.delete(id = debugLabel[1])
+    // string mOutput = str.tostring(value = currentCROPrice,format =  "#.####")  
+    // debugLabel := debug.printLabel(mOutput)
+    // label.delete(id = debugLabel[1])
 
     // Draw table
-    cell(0, "BTC", str.tostring(value = currentBTCPrice * MY_BTC_POSITION, format =  "#") )
-    cell(1, "CRO", str.tostring(value = currentCROPrice * MY_CRO_POSITION, format =  "#") )
+    table.cell(resultTabel, column = 0, row = 0, text = "損益神器")
+    table.cell(resultTabel, column = 1, row = 0, text = REMAIN_TITLE)
+    table.cell(resultTabel, column = 2, row = 0, text = PROFIT_TITLE)
+    table.cell(resultTabel, column = 3, row = 0, text =  PROFIT_PERCENT_TITLE)
+    cell(1, "BTC", remainBTC, profitBTC, profitPercentBTC)
+    cell(2, "CRO", remainCRO, profitCRO, profitPercentCRO)
     
