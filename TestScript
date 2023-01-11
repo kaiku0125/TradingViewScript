@@ -29,6 +29,7 @@ var bool[] storedIsBull = array.new_bool()
 // var float[] storedOpenPrice = array.new_float(size = 4, initial_value = 0)
 // var float[] storedOpenPrice = array.from(arg0 = 1.0, arg1 = 3.0, arg3 = 5.0, arg4 = 7.0) 
 
+//排序
 getArray(price, barIndex, isBull) =>
     float[] aFloatPrice = array.new_float()
     // array.push(id = aFloatPrice, value = 3.0)
@@ -122,3 +123,15 @@ if barstate.islast
     output += str.tostring(value = storedIsBull)  
     label.new(bar_index, high, text = output)
 
+
+var color DEFALUT = color.white
+var color WHITE = color.white
+var color BLACK = color.black
+getColor(int code) =>
+    color output = switch code
+        0 => WHITE
+        1 => BLACK
+        =>
+            DEFALUT
+
+    output

@@ -1,5 +1,7 @@
 //@version=5
 
+import kaiku0125/Debug/1 as debug
+import kaiku0125/Colour/1 as colour
 //日線陰陽轉換條件
 //1.陰陽轉換
 //2.區域高低點
@@ -44,7 +46,7 @@ var int hour_2_offset = 12
 var string hour_1 = "60"
 var int hour_1_offset = 24
 
-
+var bool isDEBUG = false
 var int BEAR = 0
 var int BULL = 1
 var bool isBarChanged = false
@@ -52,14 +54,7 @@ var bool nextBarNeedShow = false
 var int lastDayState = BULL
 var int currentDayState = BULL
 
-var float openPrice = 0.0
-
-var label mLabel = na
-var label realTimeLabel = na
-var string realTimeText = ""
-var float realTimeFloat = 0.0
-
-var line line777 = na
+var label debugLabel = na
 
 //垂直柱
 var float percent = 0.0
@@ -111,12 +106,12 @@ getTimeFrameOffset() =>
     offset
 
 getBarPercentage(_close, _open) =>
-    float percent_output = na
-    percent_output := ((_close - _open) / _open) * 100
+    float returnPercent = na
+    returnPercent := ((_close - _open) / _open) * 100
 
-    percent_output
+    returnPercent
 
-getArray(price, priceArray, barIndex, barIndexArray, percent, percentArray) =>
+updateArray(price, priceArray, barIndex, barIndexArray, percent, percentArray) =>
     float[] aFloatPrice = array.copy(id = priceArray) 
     float[] outputPrice = array.new_float() 
     array.push(id = aFloatPrice, value = price) 
@@ -129,89 +124,10 @@ getArray(price, priceArray, barIndex, barIndexArray, percent, percentArray) =>
     float[] outputPercent = array.new_float()  
     array.push(id = aFloatPercent, value = percent) 
 
-
-    //排序
-    // float temp_floatPrice = 0.0
-    // int temp_barIndex = 0
-    // float temp_floatPercent = 0.0
-
-    // for i = 0 to (array.size(aFloatPrice) == 0 ? na : array.size(aFloatPrice) - 1)
-    //     for j = 0 to (array.size(aFloatPrice) == 0 ? na : array.size(aFloatPrice) - 1)
-    //         if array.get(id = aFloatPrice, index = i) < array.get(id = aFloatPrice, index = j)
-    //             temp_floatPrice := array.get(id = aFloatPrice, index = i)
-    //             array.set(id = aFloatPrice, index = i, value = array.get(id = aFloatPrice, index = j))  
-    //             array.set(id = aFloatPrice, index = j, value = temp_floatPrice) 
-
-    //             temp_barIndex := array.get(id = aIntBarIndex, index = i)
-    //             array.set(id = aIntBarIndex, index = i, value = array.get(id = aIntBarIndex, index = j)) 
-    //             array.set(id = aIntBarIndex, index = j, value = temp_barIndex) 
-
-    //             temp_floatPercent := array.get(id = aFloatPercent, index = i)
-    //             array.set(id = aFloatPercent, index = i, value = array.get(id = aFloatPercent, index = j)) 
-    //             array.set(id = aFloatPercent, index = j, value = temp_floatPercent) 
-
-    // if array.size(id = aFloatPrice) == 4 
-    //     array.shift(id = aFloatPrice)
-    //     array.shift(id = aIntBarIndex)
-    //     array.shift(id = aFloatPercent)  
-       
-
     [aFloatPrice, aIntBarIndex, aFloatPercent]
 
-getArrayIndexBelowCurrentPrice(array, currentPrice) =>
-    float[] arrayCopy = array.copy(id = array)  
-    int index = 0
-    for i = 0 to (array.size(arrayCopy) == 0 ? na : array.size(arrayCopy) - 1)
-        if currentPrice < array.get(id = arrayCopy, index = i)
-            index := i
-            break
 
-    [index - 3, index - 2, index - 1]
-
-//往前取3跟陽
-getLastBullOpenIndex(arrayOpen, arrayIndex, arrayPercent) =>
-    float[] arrayCopyOpenPriceReverse = array.copy(id = arrayOpen)
-    array.reverse(id = arrayCopyOpenPriceReverse)
-    int[] arrayCopyIndexReverse = array.copy(id = arrayIndex)
-    array.reverse(id = arrayCopyIndexReverse) 
-    float[] arrayCopyPercentReverse = array.copy(id = arrayPercent)
-    array.reverse(id = arrayCopyPercentReverse)
-    int[] outputIndex = array.new_int(0) 
-
-    int barIndexSize = array.size(id = arrayCopyIndexReverse)
-    if barIndexSize >= 3
-        for i = 0 to (barIndexSize == 0 ? na : array.size(arrayCopyPercentReverse) - 1)
-            cond1 = array.get(id = arrayCopyPercentReverse, index = i) > 0 // 是陽柱
-            cond2 = array.get(id = arrayCopyOpenPriceReverse, index = i) - open < 0 //現在價格 > 過去日線
-            if cond1 and cond2
-                array.push(id = outputIndex, value = barIndexSize - i - 1)
-                if array.size(id = outputIndex) == 3
-                    break 
-
-    outputIndex
-    
-getLastBearOpenIndex(arrayOpen, arrayIndex, arrayPercent) =>
-    float[] arrayCopyOpenPriceReverse = array.copy(id = arrayOpen)
-    array.reverse(id = arrayCopyOpenPriceReverse)
-    int[] arrayCopyIndexReverse = array.copy(id = arrayIndex)
-    array.reverse(id = arrayCopyIndexReverse) 
-    float[] arrayCopyPercentReverse = array.copy(id = arrayPercent)
-    array.reverse(id = arrayCopyPercentReverse)
-    int[] outputIndex = array.new_int(0)
-
-    int barIndexSize = array.size(id = arrayCopyIndexReverse)
-    if barIndexSize >= 3
-        for i = 0 to (barIndexSize == 0 ? na : array.size(arrayCopyPercentReverse) - 1)
-            cond1 = array.get(id = arrayCopyPercentReverse, index = i) < 0 // 是陰柱
-            cond2 = array.get(id = arrayCopyOpenPriceReverse, index = i) - open > 0 //現在價格 < 過去日線
-            if cond1 and cond2
-                array.push(id = outputIndex, value = barIndexSize - i - 1)
-                if array.size(id = outputIndex) == 3
-                    break 
-
-    outputIndex
-
-
+// Get recently bar and chosen three bull bear bar.
 getLatestOpenIndexArray(arrayOpen, arrayIndex, arrayPercent, isBull) =>
     float[] arrayCopyOpenPriceReverse = array.copy(id = arrayOpen)
     array.reverse(id = arrayCopyOpenPriceReverse)
@@ -219,7 +135,7 @@ getLatestOpenIndexArray(arrayOpen, arrayIndex, arrayPercent, isBull) =>
     array.reverse(id = arrayCopyIndexReverse) 
     float[] arrayCopyPercentReverse = array.copy(id = arrayPercent)
     array.reverse(id = arrayCopyPercentReverse)
-    int[] outputIndex = array.new_int(0)
+    int[] returnIndexArray = array.new_int(0)
 
     int barIndexSize = array.size(id = arrayCopyIndexReverse)
     if barIndexSize >= 3
@@ -228,11 +144,11 @@ getLatestOpenIndexArray(arrayOpen, arrayIndex, arrayPercent, isBull) =>
             cond2 = isBull ? array.get(id = arrayCopyOpenPriceReverse, index = i) - open < 0 : array.get(id = arrayCopyOpenPriceReverse, index = i) - open > 0
 
             if cond1 and cond2
-                array.push(id = outputIndex, value = barIndexSize - i - 1)
-                if array.size(id = outputIndex) == 3
+                array.push(id = returnIndexArray, value = barIndexSize - i - 1)
+                if array.size(id = returnIndexArray) == 3
                     break 
 
-    outputIndex
+    returnIndexArray
 
 
 //Code login start
@@ -250,8 +166,6 @@ currentDayState := isBullBar(dayClose, dayOpen) ? BULL : BEAR
 
 //日線是否陰陽轉換
 cond1 = lastDayState != currentDayState ? true : false
-// if cond1
-//     mLabel := label.new(x =  bar_index, y =  low * 0.97, text = "轉", color = color.new(color =  color.purple, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
 
 //日線垂直柱 > 5%漲跌幅
 percent := getBarPercentage(dayClose, dayOpen)
@@ -262,80 +176,26 @@ cond3 = math.abs(number = percent)  >  5
 
 //找出現在時框此bar是否 = 日線開盤的位置
 cond2 = dayTimeClose == time_close[1] ? true : false
-// if cond2
-    // mLabel := label.new(x =  bar_index, y =  low * 0.94, text = "2", color = color.new(color =  color.black, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
-
 
 
 // 如果此時 上一個顯示要show && 是日線開盤位置 && 漲幅5%以上
 if nextBarNeedShow and cond2 and cond3
-    openPrice := open[getTimeFrameOffset()]
-    // string openPriceText = str.tostring(value = openPrice) 
-    // string percentText = str.tostring(value = percent, format =  "#.##")
-    // mLabel := label.new(
-    //  x            =  bar_index[getTimeFrameOffset()],
-    //  y            =  percent > 0 ? low[getTimeFrameOffset()]*0.999 : high[getTimeFrameOffset()]*1.001,
-    //  text         = openPriceText + "( " + percentText + "% )",
-    //  color        = color.new(color = percent > 0 ? color.green : color.red, transp = 0),
-    //  style        =  percent > 0 ? label.style_label_up : label.style_label_down,
-    //  textcolor    = color.new(color = color.white, transp = 0)
-    //  )
-    
-    // line777 := line.new(bar_index[getTimeFrameOffset()], open[getTimeFrameOffset()], bar_index + 1, open[getTimeFrameOffset()], extend=extend.right, color=percent > 0 ? color.green : color.red, width=1)
-    
-    [array1, array2, array3] = getArray(openPrice, storedOpenPrice, bar_index[getTimeFrameOffset()], storedBarIndex, percent, storedPercent)
+    float thisOpenPrice = open[getTimeFrameOffset()]    
+    [array1, array2, array3] = updateArray(thisOpenPrice, storedOpenPrice, bar_index[getTimeFrameOffset()], storedBarIndex, percent, storedPercent)
     storedOpenPrice := array.copy(id = array1)
     storedBarIndex := array.copy(id = array2)
     storedPercent := array.copy(id = array3)
 
 
-    // mLabel := label.new(x =  bar_index, y =  low * 0.97, text = percentText, color = color.new(color = percent > 0 ? color.green : color.red, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
-
 if cond1
     nextBarNeedShow := true
 else
     nextBarNeedShow := false
-
-// 如果這根是垂直柱
-// if nextBarNeedShow and cond3
-//     string percentText = str.tostring(value = percent, format =  "#.##")
-//     mLabel := label.new(x =  bar_index, y =  low * 0.97, text = percentText, color = color.new(color =  color.orange, transp = 0), textcolor = color.new(color =  color.white, transp = 0))
     
 lastDayState := currentDayState
 
 
-
 if barstate.islast
-    // if array.size(id = storedOpenPrice) > 0 
-    //     [index2, index1, index0] = getArrayIndexBelowCurrentPrice(storedOpenPrice, close)
-    //     array.clear(id = displayOpenPrice) 
-    //     array.clear(id = displayBarIndex) 
-    //     array.clear(id = displayPercent)
-
-    //     if index2 >= 0
-    //         array.push(id = displayOpenPrice, value = array.get(id = storedOpenPrice, index = index2) )  
-    //         array.push(id = displayBarIndex, value = array.get(id = storedBarIndex, index = index2) ) 
-    //         array.push(id = displayPercent, value = array.get(id = storedPercent, index = index2) ) 
-            
-            
-    //     if index1 >= 0
-    //         array.push(id = displayOpenPrice, value = array.get(id = storedOpenPrice, index = index1) )
-    //         array.push(id = displayPercent, value = array.get(id = storedPercent, index = index1) )
-    //         array.push(id = displayBarIndex, value = array.get(id = storedBarIndex, index = index1) ) 
-            
-    //     if index0 >= 0
-    //         array.push(id = displayOpenPrice, value = array.get(id = storedOpenPrice, index = index0) ) 
-    //         array.push(id = displayBarIndex, value = array.get(id = storedBarIndex, index = index0) ) 
-    //         array.push(id = displayPercent, value = array.get(id = storedPercent, index = index0) ) 
-
-    //     mOutput = str.tostring(value = displayOpenPrice) + "\n"
-    //     mOutput += str.tostring(value = displayBarIndex) + "\n"
-    //     mOutput += str.tostring(value = displayPercent) 
-
-    //     realTimeText := str.tostring(value = volume) 
-    //     realTimeLabel := newLabel("price : " + ", " + mOutput, color.maroon)
-    //     label.delete(id = realTimeLabel[1])
-
     int[] mBullOutputIndex = getLatestOpenIndexArray(storedOpenPrice, storedBarIndex, storedPercent, true)
     int[] mBearOutputIndex = getLatestOpenIndexArray(storedOpenPrice, storedBarIndex, storedPercent, false)
     array.clear(id = displayOpenPrice) 
@@ -354,34 +214,34 @@ if barstate.islast
         array.push(id = displayBarIndex, value = array.get(id = storedBarIndex, index =  targetBearIndex) ) 
         array.push(id = displayPercent, value = array.get(id = storedPercent, index =  targetBearIndex) ) 
 
-    // mOutput = str.tostring(value = displayOpenPrice) + "\n"
-    // mOutput += str.tostring(value = displayBarIndex) + "\n"
-    // mOutput += str.tostring(value = displayPercent) 
-
-    // realTimeText := str.tostring(value = volume) 
-    // realTimeLabel := newLabel("price : " + ", " + mOutput, color.maroon)
-    // label.delete(id = realTimeLabel[1])
-
     // Draw all data on chart
     for i = 0 to (array.size(displayOpenPrice) == 0 ? na : array.size(displayOpenPrice) - 1)
         float tempPrice = array.get(id = displayOpenPrice, index = i)
         string tempPriceText = str.tostring(value = tempPrice) 
         int tempIndex = array.get(id = displayBarIndex, index = i)
-        float percent = array.get(id = displayPercent, index = i) 
+        float tempPercent = array.get(id = displayPercent, index = i) 
         displayLabel := label.new(
         //  x            = tempIndex,
          x            = bar_index + getTimeFrameOffset() * 5,
-         y            = percent > 0 ? low[bar_index - tempIndex]*0.999 : high[bar_index - tempIndex]*1.001,
+        //  y            = tempPercent > 0 ? low[bar_index - tempIndex]*0.999 : high[bar_index - tempIndex]*1.001,
+         y            = tempPrice,
          text         = tempPriceText,
-         color        = color.new(color = percent > 0 ? color.green : color.red, transp = 0),
-         style        = percent > 0 ? label.style_label_up : label.style_label_down,
-         textcolor    = color.new(color =  color.white, transp = 0)
+        //  color        = color.new(color = tempPercent > 0 ? color.green : color.red, transp = 0),
+        //  style        = tempPercent > 0 ? label.style_label_up : label.style_label_down,
+         style        = label.style_none,
+        //  textcolor    = color.new(color =  color.white, transp = 0)
+         textcolor    = color.new(color = tempPercent > 0 ? color.green : color.red, transp = 0)
          )
-        displayLine := line.new(x1 = tempIndex, y1 = tempPrice, x2 = tempIndex + 1, y2 = tempPrice, extend =  extend.right, color = color.new(color =  percent > 0 ? color.green : color.red, transp = 0), width = 1) 
+        displayLine := line.new(x1 = tempIndex, y1 = tempPrice, x2 = tempIndex + 1, y2 = tempPrice, extend =  extend.right, color = color.new(color =  tempPercent > 0 ? colour.DARK_GREEN() : colour.DARK_RED(), transp = 0), width = 1) 
+        
         
 
-
-
+        if isDEBUG
+            mOutput = str.tostring(value = displayOpenPrice) + "\n"
+            mOutput += str.tostring(value = displayBarIndex) + "\n"
+            mOutput += str.tostring(value = displayPercent) 
+            debugLabel := debug.printLabel(mOutput)
+            label.delete(id = debugLabel[1])
 
 
 
