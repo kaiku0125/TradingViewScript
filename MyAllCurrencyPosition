@@ -1,0 +1,95 @@
+//@version=5
+
+import kaiku0125/Debug/1 as debug
+// # ========================================================================= #
+// #                   |   Indicator  |
+// # ========================================================================= #
+indicator(
+ title                = "MyAllCurrencyPosition",
+ shorttitle           = "總現貨",
+ overlay              =  true
+//  format               =  ,
+//  precision            =  ,
+//  scale                =  ,
+//  timeframe            = " ",
+//  timeframe_gaps       =  ,
+//  explicit_plot_zorder =  ,
+//  max_lines_count      =  ,
+//  max_labels_count     =  ,
+//  max_boxes_count      =  
+ )
+// # ========================================================================= #
+// #                   |   Indicator  |
+// # ========================================================================= #
+var int TOTAL_CURRENCY_CLASS = 2
+var string GROUP_CURRENCY = "💲 現貨"
+
+var string BTC_SYMBOL = "BYBIT:BTCUSDT.P"
+var float MY_BTC_POSITION = input.float(defval = 0.07548, title = "BTC總量",  step =  1, inline = "01", group = GROUP_CURRENCY) 
+var float MY_BTC_COST = input.float(defval = 1683, title = " 成本",  step =  1, inline = "01", group = GROUP_CURRENCY) 
+var float MY_BTC_AVERAGE_PRICE = input.float(defval = 22343, title = " 均價",  step =  1, inline = "01", group = GROUP_CURRENCY) 
+var float currentBTCPrice = 0.0
+// var float 
+
+var string CRO_SYMBOL = "COINBASE:CROUSD"
+var float MY_CRO_POSITION = input.float(defval = 21849, title = "CRO總量",  step =  1, inline = "02", group = GROUP_CURRENCY) 
+var float MY_CRO_COST = input.float(defval = 3632, title = " 成本",  step =  1, inline = "02", group = GROUP_CURRENCY) 
+var float MY_CRO_AVERAGE_PRICE = input.float(defval = 0.183, title = " 均價",  step =  1, inline = "02", group = GROUP_CURRENCY) 
+var float currentCROPrice = 0.0
+
+var label debugLabel = na
+var table resultTabel = table.new(
+ position       =  position.bottom_right,
+ columns        =  TOTAL_CURRENCY_CLASS,
+ rows           =  3,
+ bgcolor        =  color.new(color = color.orange, transp = 0),
+ frame_color    =  color.new(color =  color.green, transp = 0),
+//  frame_width    =  ,
+ border_color   =  color.new(color =  color.red, transp = 0)
+//  border_width   =  
+ )
+
+
+currentBTCPrice := request.security(symbol =  BTC_SYMBOL, timeframe = "S", expression = close)
+currentCROPrice := request.security(symbol =  CRO_SYMBOL, timeframe = "S", expression = close)
+
+cell(rowID, title, totalValue) =>
+    table.cell(
+     table_id       = resultTabel, 
+     column         =  0, 
+     row            =  rowID, 
+     text           = title, 
+    //  width          =  , 
+    //  height         =  , 
+     text_color     = color.new(color =  color.white, transp = 0), 
+    //  text_halign    =  , 
+    //  text_valign    =  , 
+    //  text_size      =  , 
+     bgcolor        = color.new(color =  color.gray, transp = 0)
+     )
+    table.cell(
+     table_id       = resultTabel, 
+     column         =  1, 
+     row            =  rowID, 
+     text           = totalValue, 
+    //  width          =  , 
+    //  height         =  , 
+     text_color     = color.new(color =  color.white, transp = 0), 
+    //  text_halign    =  , 
+    //  text_valign    =  , 
+    //  text_size      =  , 
+     bgcolor        = color.new(color =  color.gray, transp = 0)
+     )
+    
+    
+
+if barstate.islast
+    // debugLabel := debug.printLabel(syminfo.tickerid)
+    string mOutput = str.tostring(value = currentCROPrice,format =  "#.####")  
+    debugLabel := debug.printLabel(mOutput)
+    label.delete(id = debugLabel[1])
+
+    // Draw table
+    cell(0, "BTC", str.tostring(value = currentBTCPrice * MY_BTC_POSITION, format =  "#") )
+    cell(1, "CRO", str.tostring(value = currentCROPrice * MY_CRO_POSITION, format =  "#") )
+    
