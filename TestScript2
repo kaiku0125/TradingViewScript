@@ -2,18 +2,12 @@
 
 import kaiku0125/Debug/1 as debug
 import kaiku0125/Colour/1 as colour
-//日線陰陽轉換條件
-//1.陰陽轉換
-//2.區域高低點
-//3.成交量要大
-//4.
-
 // # ========================================================================= #
 // #                   |   Indicator  |
 // # ========================================================================= #
 indicator(
- title                = "MajorDailyOpenFinder",
- shorttitle           = "MDOFinder",
+ title                = "TestScript2",
+ shorttitle           = "Test2",
  overlay              =  true,
 //  format               =  ,
 //  precision            =  ,
@@ -28,10 +22,6 @@ indicator(
 // # ========================================================================= #
 // #                   |   Indicator  |
 // # ========================================================================= #
-
-
-//variable
-//time series(Day = 1440 min, so 6hr offset = 1440 / 360)
 var string daily = "D"
 var int daily_offset = 0
 
@@ -148,17 +138,12 @@ dayVolume = request.security(syminfo.tickerid, 'D', volume)
 dayBarIndex = request.security(syminfo.tickerid, 'D', bar_index)
 dayTimeClose = request.security(syminfo.tickerid, 'D', time_close)
 
-
+// string textt = str.tostring(value = dayOpen) 
+// label.new(bar_index, low, textt)
 currentDayState := isBullBar(dayClose, dayOpen) ? BULL : BEAR
 
 //日線是否陰陽轉換
 cond1 = lastDayState != currentDayState ? true : false
-
-//找出現在時框此bar是否 = 日線開盤的位置
-cond2 = if timeframe.period != daily
-    dayTimeClose == time_close[1] ? true : false
-else 
-    true
 
 //日線垂直柱 > 5%漲跌幅
 percent := getBarPercentage(dayClose, dayOpen)
@@ -167,6 +152,16 @@ percent := getBarPercentage(dayClose, dayOpen)
 cond3 = math.abs(number = percent)  >  5
 
 
+//找出現在時框此bar是否 = 日線開盤的位置
+// cond2 = dayTimeClose == time_close[1] ? true : false
+cond2 = if timeframe.period != daily
+    dayTimeClose == time_close[1] ? true : false
+else 
+    true
+    
+// if cond2
+//     label.new(bar_index, low, "7")
+
 // 如果此時 上一個顯示要show && 是日線開盤位置 && 漲幅5%以上
 bool finalCond = if timeframe.period != daily
     nextBarNeedShow and cond2 and cond3
@@ -174,7 +169,7 @@ else
     cond1 and cond2 and cond3
 
 if finalCond
-    float thisOpenPrice = open[getTimeFrameOffset()]    
+    float thisOpenPrice = open[getTimeFrameOffset()]  
     [array1, array2, array3] = updateArray(thisOpenPrice, storedOpenPrice, bar_index[getTimeFrameOffset()], storedBarIndex, percent, storedPercent)
     storedOpenPrice := array.copy(id = array1)
     storedBarIndex := array.copy(id = array2)
