@@ -91,6 +91,18 @@ getTimeFrameOffset() =>
         => 
             hour_4_offset
     offset
+isCurrentTimeFrameAvailable() =>
+    bool isAvailable = switch timeframe.period
+        daily => true
+        hour_6 => true
+        hour_4 => true
+        hour_3 => true
+        hour_2 => true
+        hour_1 => true
+        => 
+            false
+
+    isAvailable
 
 getBarPercentage(_close, _open) =>
     float returnPercent = na
@@ -137,6 +149,26 @@ getLatestOpenIndexArray(arrayOpen, arrayIndex, arrayPercent, isBull) =>
 
     returnIndexArray
 
+choseDisplayParamsOutput() =>
+    int[] mBullOutputIndex = getLatestOpenIndexArray(storedOpenPrice, storedBarIndex, storedPercent, true)
+    int[] mBearOutputIndex = getLatestOpenIndexArray(storedOpenPrice, storedBarIndex, storedPercent, false)
+    array.clear(id = displayOpenPrice) 
+    array.clear(id = displayBarIndex) 
+    array.clear(id = displayPercent)
+
+    // Get bull output
+    for i = 0 to (array.size(mBullOutputIndex) == 0 ? na : array.size(mBullOutputIndex) - 1)
+        int targetBullIndex = array.get(id = mBullOutputIndex, index = i)
+        array.push(id = displayOpenPrice, value = array.get(id = storedOpenPrice, index =  targetBullIndex) ) 
+        array.push(id = displayBarIndex, value = array.get(id = storedBarIndex, index =  targetBullIndex) ) 
+        array.push(id = displayPercent, value = array.get(id = storedPercent, index =  targetBullIndex) ) 
+
+    //Get bear output
+    for i = 0 to (array.size(mBearOutputIndex) == 0 ? na : array.size(mBearOutputIndex) - 1)
+        int targetBearIndex = array.get(id = mBearOutputIndex, index = i)
+        array.push(id = displayOpenPrice, value = array.get(id = storedOpenPrice, index =  targetBearIndex) ) 
+        array.push(id = displayBarIndex, value = array.get(id = storedBarIndex, index =  targetBearIndex) ) 
+        array.push(id = displayPercent, value = array.get(id = storedPercent, index =  targetBearIndex) ) 
 
 //Code login start
 //抓出陰陽轉換bar
@@ -169,9 +201,9 @@ cond3 = math.abs(number = percent)  >  5
 
 // 如果此時 上一個顯示要show && 是日線開盤位置 && 漲幅5%以上
 bool finalCond = if timeframe.period != daily
-    nextBarNeedShow and cond2 and cond3
+    nextBarNeedShow and cond2 and cond3 and isCurrentTimeFrameAvailable()
 else
-    cond1 and cond2 and cond3
+    cond1 and cond2 and cond3 and isCurrentTimeFrameAvailable()
 
 if finalCond
     float thisOpenPrice = open[getTimeFrameOffset()]    
@@ -190,24 +222,7 @@ lastDayState := currentDayState
 
 
 if barstate.islast
-    int[] mBullOutputIndex = getLatestOpenIndexArray(storedOpenPrice, storedBarIndex, storedPercent, true)
-    int[] mBearOutputIndex = getLatestOpenIndexArray(storedOpenPrice, storedBarIndex, storedPercent, false)
-    array.clear(id = displayOpenPrice) 
-    array.clear(id = displayBarIndex) 
-    array.clear(id = displayPercent)
-
-    for i = 0 to (array.size(mBullOutputIndex) == 0 ? na : array.size(mBullOutputIndex) - 1)
-        int targetBullIndex = array.get(id = mBullOutputIndex, index = i)
-        array.push(id = displayOpenPrice, value = array.get(id = storedOpenPrice, index =  targetBullIndex) ) 
-        array.push(id = displayBarIndex, value = array.get(id = storedBarIndex, index =  targetBullIndex) ) 
-        array.push(id = displayPercent, value = array.get(id = storedPercent, index =  targetBullIndex) ) 
-
-    for i = 0 to (array.size(mBearOutputIndex) == 0 ? na : array.size(mBearOutputIndex) - 1)
-        int targetBearIndex = array.get(id = mBearOutputIndex, index = i)
-        array.push(id = displayOpenPrice, value = array.get(id = storedOpenPrice, index =  targetBearIndex) ) 
-        array.push(id = displayBarIndex, value = array.get(id = storedBarIndex, index =  targetBearIndex) ) 
-        array.push(id = displayPercent, value = array.get(id = storedPercent, index =  targetBearIndex) ) 
-
+    choseDisplayParamsOutput()
     // Draw all data on chart
     for i = 0 to (array.size(displayOpenPrice) == 0 ? na : array.size(displayOpenPrice) - 1)
         float tempPrice = array.get(id = displayOpenPrice, index = i)
@@ -228,14 +243,13 @@ if barstate.islast
          )
         displayLine := line.new(x1 = tempIndex, y1 = tempPrice, x2 = tempIndex + 1, y2 = tempPrice, extend =  extend.right, color = color.new(color =  tempPercent > 0 ? colour.DARK_GREEN() : colour.DARK_RED(), transp = 0), width = 1) 
         
-        
-
-        if isDEBUG
-            mOutput = str.tostring(value = displayOpenPrice) + "\n"
-            mOutput += str.tostring(value = displayBarIndex) + "\n"
-            mOutput += str.tostring(value = displayPercent) 
-            debugLabel := debug.printLabel(mOutput)
-            label.delete(id = debugLabel[1])
+    
+    if isDEBUG
+        mOutput = str.tostring(value = displayOpenPrice) + "\n"
+        mOutput += str.tostring(value = displayBarIndex) + "\n"
+        mOutput += str.tostring(value = displayPercent) 
+        debugLabel := debug.printLabel(mOutput)
+        label.delete(id = debugLabel[1])
 
 
 
