@@ -1,8 +1,8 @@
 //@version=5
 
-var VERSION_NAME = "v1.0"
-
 library(title = "Debug", overlay =  true) 
+
+var VERSION_NAME = "v1.0"
 
 export printLabel(string labelText) =>
     label returnLabel = label.new(
@@ -15,3 +15,6 @@ export printLabel(string labelText) =>
      )
     
     returnLabel
+
+export getSDKVersion() =>
+    VERSION_NAME

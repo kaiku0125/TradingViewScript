@@ -14,7 +14,7 @@ import kaiku0125/Util/1 as util
 // # ========================================================================= #
 indicator(
  title                = "MajorDailyOpenFinder",
- shorttitle           = "重點日開",
+ shorttitle           = "重要日開",
  overlay              =  true,
 //  format               =  ,
 //  precision            =  ,
@@ -56,22 +56,13 @@ var float[] displayPercent = array.new_float()
 var label displayLabel = na
 var line displayLine = na
 
-//function
-updateArray(price, priceArray, barIndex, barIndexArray, percent, percentArray) =>
-    float[] aFloatPrice = array.copy(id = priceArray) 
-    float[] outputPrice = array.new_float() 
-    array.push(id = aFloatPrice, value = price) 
-
-    int[] aIntBarIndex = array.copy(id = barIndexArray) 
-    int[] outputBarIndex = array.new_int() 
-    array.push(id = aIntBarIndex, value = barIndex)
-
-    float[] aFloatPercent = array.copy(id = percentArray) 
-    float[] outputPercent = array.new_float()  
-    array.push(id = aFloatPercent, value = percent) 
-
-    [aFloatPrice, aIntBarIndex, aFloatPercent]
-
+// Define inputs settings
+var GROUN_VERSION = "💬 關於"
+var VERSION_NAME = "v1.0"
+var RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
+                     "[1] First release."
+                     
+INPUT_DISPLAY_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUN_VERSION) 
 
 // Get recently bar and chosen three bull bear bar.
 getLatestOpenIndexArray(arrayOpen, arrayIndex, arrayPercent, isBull) =>
@@ -154,10 +145,9 @@ else
 
 if finalCond
     float thisOpenPrice = open[util.getCandleOffestByTimeFrame()]    
-    [array1, array2, array3] = updateArray(thisOpenPrice, storedOpenPrice, bar_index[util.getCandleOffestByTimeFrame()], storedBarIndex, percent, storedPercent)
-    storedOpenPrice := array.copy(id = array1)
-    storedBarIndex := array.copy(id = array2)
-    storedPercent := array.copy(id = array3)
+    array.push(id = storedOpenPrice, value = thisOpenPrice)
+    array.push(id = storedBarIndex, value = bar_index[util.getCandleOffestByTimeFrame()])  
+    array.push(id = storedPercent, value = percent) 
 
 
 if cond1
@@ -168,7 +158,7 @@ else
 lastDayState := currentDayState
 
 
-if barstate.islast
+if barstate.islastconfirmedhistory
     choseDisplayParamsOutput()
     // Draw all data on chart
     for i = 0 to (array.size(displayOpenPrice) == 0 ? na : array.size(displayOpenPrice) - 1)

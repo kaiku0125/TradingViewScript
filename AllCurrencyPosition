@@ -5,8 +5,8 @@ import kaiku0125/Debug/1 as debug
 // #                   |   Indicator  |
 // # ========================================================================= #
 indicator(
- title                = "MyAllCurrencyPosition",
- shorttitle           = "總現貨",
+ title                = "AllCurrencyPosition",
+ shorttitle           = "現貨損益",
  overlay              =  true
 //  format               =  ,
 //  precision            =  ,
@@ -22,12 +22,18 @@ indicator(
 // #                   |   Indicator  |
 // # ========================================================================= #
 
+// Define inputs settings
+var string GROUP_CURRENCY = "💲 現貨"
+var GROUN_VERSION = "💬 關於"
+var VERSION_NAME = "v1.0"
+var RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
+                     "[1] First release."
+
 //Variable initialization
 var int TOTAL_CURRENCY_CLASS = 2 //TODO : 總共有幾種貨幣
 var string REMAIN_TITLE = "殘值(U)"
 var string PROFIT_TITLE = "損益(U)"
 var string PROFIT_PERCENT_TITLE = "利潤"
-var string GROUP_CURRENCY = "💲 現貨"
 
 var string BTC_SYMBOL = "BYBIT:BTCUSDT.P"
 var float MY_BTC_POSITION = input.float(defval = 0.082221, title = "BTC總量",  step =  1, inline = "01", group = GROUP_CURRENCY) 
@@ -57,6 +63,8 @@ var float profitPercentCRO = 0.0
 // var float profitTODO = 0.0
 // var float profitPercentTODO = 0.0
 
+    
+INPUT_DISPLAY_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUN_VERSION) 
 
 var label debugLabel = na
 var table resultTabel = table.new(

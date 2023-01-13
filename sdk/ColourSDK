@@ -1,8 +1,9 @@
 //@version=5
 
-var VERSION_NAME = "v1.0"
+
 
 library(title = "Colour", overlay =  true) 
+var VERSION_NAME = "v1.0"
 var color COLOR_FIRE_BRICK = color.rgb(red = 178, green = 34, blue = 34, transp = 0)  
 var color COLOR_DARK_RED = color.rgb(red = 139, green = 0, blue = 0, transp = 0)  
 var color COLOR_FOREST_GREEN = color.rgb(red = 34, green = 139, blue = 34, transp = 0) 

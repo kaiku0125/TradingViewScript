@@ -6,7 +6,7 @@ import kaiku0125/Colour/1
 // # ========================================================================= #
 indicator(
  title                = "Cut lost Position finder",
- shorttitle           = "CLPFinder",
+ shorttitle           = "倉位止損",
  overlay              =  true
  )
 // # ========================================================================= #

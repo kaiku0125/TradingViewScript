@@ -1,8 +1,8 @@
 //@version=5
 
-var VERSION_NAME = "v1.0"
-
 library(title = "Util", overlay =  true) 
+
+var VERSION_NAME = "v1.0"
 
 //time series(Day = 1440 min, so 6hr offset = 1440 / 360)
 var string daily = "D"
@@ -65,3 +65,6 @@ export getBarPercentage(float _close, float _open) =>
 
 export daily() =>
     daily
+
+export getSDKVersion() =>
+    VERSION_NAME
