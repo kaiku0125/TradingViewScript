@@ -1,0 +1,20 @@
+//@version=5
+
+library(title = "Debug", overlay =  true) 
+
+var VERSION_NAME = "v1.0"
+
+export printLabel(string labelText) =>
+    label returnLabel = label.new(
+     x            =  bar_index + 2,
+     y            =  close,
+     text         =  labelText,
+     color        =  color.new(color = color.black, transp = 0),
+     style        =  label.style_label_left,
+     textcolor    =  color.new(color =  color.white, transp = 0)
+     )
+    
+    returnLabel
+
+export getSDKVersion() =>
+    VERSION_NAME

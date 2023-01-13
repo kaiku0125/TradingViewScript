@@ -1,0 +1,154 @@
+//@version=5
+
+import kaiku0125/Debug/1 as debug
+// # ========================================================================= #
+// #                   |   Indicator  |
+// # ========================================================================= #
+indicator(
+ title                = "AllCurrencyPosition",
+ shorttitle           = "現貨損益",
+ overlay              =  true
+//  format               =  ,
+//  precision            =  ,
+//  scale                =  ,
+//  timeframe            = " ",
+//  timeframe_gaps       =  ,
+//  explicit_plot_zorder =  ,
+//  max_lines_count      =  ,
+//  max_labels_count     =  ,
+//  max_boxes_count      =  
+ )
+// # ========================================================================= #
+// #                   |   Indicator  |
+// # ========================================================================= #
+
+// Define inputs settings
+var string GROUP_CURRENCY = "💲 現貨"
+var GROUN_VERSION = "💬 關於"
+var VERSION_NAME = "v1.0"
+var RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
+                     "[1] First release."
+
+//Variable initialization
+var int TOTAL_CURRENCY_CLASS = 2 //TODO : 總共有幾種貨幣
+var string REMAIN_TITLE = "殘值(U)"
+var string PROFIT_TITLE = "損益(U)"
+var string PROFIT_PERCENT_TITLE = "利潤"
+
+var string BTC_SYMBOL = "BYBIT:BTCUSDT.P"
+var float MY_BTC_POSITION = input.float(defval = 0.082221, title = "BTC總量",  step =  1, inline = "01", group = GROUP_CURRENCY) 
+var float MY_BTC_COST = input.float(defval = 1800.48, title = " 成本",  step =  1, inline = "01", group = GROUP_CURRENCY) 
+var float MY_BTC_AVERAGE_PRICE = input.float(defval = 21941.85, title = " 均價",  step =  1, inline = "01", group = GROUP_CURRENCY) 
+var float currentBTCPrice = 0.0
+var float remainBTC = 0.0
+var float profitBTC = 0.0
+var float profitPercentBTC = 0.0
+
+var string CRO_SYMBOL = "COINBASE:CROUSD"
+var float MY_CRO_POSITION = input.float(defval = 21849, title = "CRO總量",  step =  1, inline = "02", group = GROUP_CURRENCY) 
+var float MY_CRO_COST = input.float(defval = 3632, title = " 成本",  step =  1, inline = "02", group = GROUP_CURRENCY) 
+var float MY_CRO_AVERAGE_PRICE = input.float(defval = 0.183, title = " 均價",  step =  1, inline = "02", group = GROUP_CURRENCY) 
+var float currentCROPrice = 0.0
+var float remainCRO = 0.0
+var float profitCRO = 0.0
+var float profitPercentCRO = 0.0
+
+//TODO :　修改 TODO_SYMBOL 運用133行code debug去找圖表ID, defval也要改, inlinde = "03"表示顯示於同一行，再新增就是"04"
+// var string TODO_SYMBOL = "COINBASE:CROUSD"
+// var float MY_TODO_POSITION = input.float(defval = 21849, title = "TODO總量",  step =  1, inline = "03", group = GROUP_CURRENCY)  
+// var float MY_TODO_COST = input.float(defval = 3632, title = " 成本",  step =  1, inline = "03", group = GROUP_CURRENCY) 
+// var float MY_TODO_AVERAGE_PRICE = input.float(defval = 0.183, title = " 均價",  step =  1, inline = "04", group = GROUP_CURRENCY) 
+// var float currentTODOPrice = 0.0
+// var float remainTODO = 0.0
+// var float profitTODO = 0.0
+// var float profitPercentTODO = 0.0
+
+    
+INPUT_DISPLAY_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUN_VERSION) 
+
+var label debugLabel = na
+var table resultTabel = table.new(
+ position       =  position.bottom_right,
+ columns        =  4,
+ rows           =  TOTAL_CURRENCY_CLASS + 1,
+ bgcolor        =  color.new(color = color.gray, transp = 0),
+ frame_color    =  color.new(color =  color.black, transp = 0),
+ frame_width    =  2,
+ border_color   =  color.new(color =  color.black, transp = 0),
+ border_width   =  3
+ )
+
+
+currentBTCPrice := request.security(symbol =  BTC_SYMBOL, timeframe = "S", expression = close)
+remainBTC := currentBTCPrice * MY_BTC_POSITION
+profitBTC := remainBTC - MY_BTC_COST
+profitPercentBTC := (profitBTC / MY_BTC_COST) * 100
+
+currentCROPrice := request.security(symbol =  CRO_SYMBOL, timeframe = "S", expression = close)
+remainCRO := currentCROPrice * MY_CRO_POSITION
+profitCRO := remainCRO - MY_CRO_COST
+profitPercentCRO := (profitCRO / MY_CRO_COST) * 100
+
+// TODO : 計算變數, 修改"TODO"變數
+// currentTODOPrice := request.security(symbol =  TODO_SYMBOL, timeframe = "S", expression = close)
+// remainTODO := currentTODOPrice * MY_TODO_POSITION
+// profitTODO := remainTODO - MY_TODO_COST
+// profitPercentTODO := (profitTODO / MY_TODO_COST) * 100
+
+cell(rowID, title, remain, profit, profitPercent) =>
+    table.cell(
+     table_id       =  resultTabel, 
+     column         =  0, 
+     row            =  rowID, 
+     text           =  title, 
+     text_color     = color.new(color =  color.white, transp = 0), 
+     bgcolor        = color.new(color =  color.gray, transp = 0)
+     )
+
+    var string remainText = str.tostring(value = remain, format =  "#")
+    table.cell(
+     table_id       =  resultTabel, 
+     column         =  1, 
+     row            =  rowID, 
+     text           =  remainText, 
+     text_color     =  color.new(color =  color.white, transp = 0), 
+     bgcolor        =  color.new(color =  color.gray, transp = 0)
+     )
+
+    var string profitText = str.tostring(value = profit, format =  "#.#") 
+    table.cell(
+     table_id       =  resultTabel, 
+     column         =  2, 
+     row            =  rowID, 
+     text           =  profitText, 
+     text_color     =  color.new(color =  profit > 0 ? color.green : color.red, transp = 0), 
+     bgcolor        =  color.new(color =  color.gray, transp = 0)
+     )
+    
+    var string profitPercentText = str.tostring(value = profitPercent, format =  "#.#") + " %"
+    table.cell(
+     table_id       =  resultTabel, 
+     column         =  3, 
+     row            =  rowID, 
+     text           =  profitPercentText, 
+     text_color     =  color.new(color =  profitPercent > 0 ? color.green : color.red, transp = 0), 
+     bgcolor        =  color.new(color =  color.gray, transp = 0)
+     )
+    
+    
+
+if barstate.islast
+    // 移動到想獲取現價的圖表，然後打開下面commit，獲取圖表ID
+    // string mOutput = str.tostring(value = currentCROPrice,format =  "#.####")  // currentCROPrice替換成想加入的變數
+    // debugLabel := debug.printLabel("圖表ID : " + syminfo.tickerid + ", 價格 : " + mOutput)
+    // label.delete(id = debugLabel[1])
+
+    // Draw table
+    table.cell(resultTabel, column = 0, row = 0, text = "損益神器")
+    table.cell(resultTabel, column = 1, row = 0, text = REMAIN_TITLE)
+    table.cell(resultTabel, column = 2, row = 0, text = PROFIT_TITLE)
+    table.cell(resultTabel, column = 3, row = 0, text =  PROFIT_PERCENT_TITLE)
+    cell(1, "BTC", remainBTC, profitBTC, profitPercentBTC)
+    cell(2, "CRO", remainCRO, profitCRO, profitPercentCRO)
+    // cell(3, "TODO", remainTODO, profitTODO, profitPercentTODO) //TODO : 新增一行顯示運用cell function.
+    

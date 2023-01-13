@@ -2,19 +2,12 @@
 
 import kaiku0125/Debug/1 as debug
 import kaiku0125/Colour/1 as colour
-import kaiku0125/Util/1 as util
-//日線陰陽轉換條件
-//1.陰陽轉換
-//2.區域高低點
-//3.成交量要大
-//4.
-
 // # ========================================================================= #
 // #                   |   Indicator  |
 // # ========================================================================= #
 indicator(
- title                = "MajorDailyOpenFinder",
- shorttitle           = "重要日開",
+ title                = "TestScript2",
+ shorttitle           = "Test2",
  overlay              =  true,
 //  format               =  ,
 //  precision            =  ,
@@ -29,9 +22,22 @@ indicator(
 // # ========================================================================= #
 // #                   |   Indicator  |
 // # ========================================================================= #
+var string daily = "D"
+var int daily_offset = 0
 
+var string hour_6 = "360"
+var int hour_6_offset = 4
+var string hour_4 = "240"
+var int hour_4_offset = 6
 
-//variable
+var string hour_3 = "180"
+var int hour_3_offset = 8
+var string hour_2 = "120"
+var int hour_2_offset = 12
+
+var string hour_1 = "60"
+var int hour_1_offset = 24
+
 var bool isDEBUG = false
 var int BEAR = 0
 var int BULL = 1
@@ -56,13 +62,47 @@ var float[] displayPercent = array.new_float()
 var label displayLabel = na
 var line displayLine = na
 
-// Define inputs settings
-var GROUN_VERSION = "💬 關於"
-var VERSION_NAME = "v1.0"
-var RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
-                     "[1] First release."
-                     
-INPUT_DISPLAY_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUN_VERSION) 
+//function
+isBullBar(_close, _open) =>
+    bool isBullBar = false
+    if _close >= _open
+        isBullBar := true
+    
+    isBullBar
+
+getTimeFrameOffset() =>
+    int offset = switch timeframe.period
+        daily => daily_offset
+        hour_6 => hour_6_offset
+        hour_4 => hour_4_offset
+        hour_3 => hour_3_offset
+        hour_2 => hour_2_offset
+        hour_1 => hour_1_offset
+        => 
+            hour_4_offset
+    offset
+
+getBarPercentage(_close, _open) =>
+    float returnPercent = na
+    returnPercent := ((_close - _open) / _open) * 100
+
+    returnPercent
+
+updateArray(price, priceArray, barIndex, barIndexArray, percent, percentArray) =>
+    float[] aFloatPrice = array.copy(id = priceArray) 
+    float[] outputPrice = array.new_float() 
+    array.push(id = aFloatPrice, value = price) 
+
+    int[] aIntBarIndex = array.copy(id = barIndexArray) 
+    int[] outputBarIndex = array.new_int() 
+    array.push(id = aIntBarIndex, value = barIndex)
+
+    float[] aFloatPercent = array.copy(id = percentArray) 
+    float[] outputPercent = array.new_float()  
+    array.push(id = aFloatPercent, value = percent) 
+
+    [aFloatPrice, aIntBarIndex, aFloatPercent]
+
 
 // Get recently bar and chosen three bull bear bar.
 getLatestOpenIndexArray(arrayOpen, arrayIndex, arrayPercent, isBull) =>
@@ -87,26 +127,6 @@ getLatestOpenIndexArray(arrayOpen, arrayIndex, arrayPercent, isBull) =>
 
     returnIndexArray
 
-choseDisplayParamsOutput() =>
-    int[] mBullOutputIndex = getLatestOpenIndexArray(storedOpenPrice, storedBarIndex, storedPercent, true)
-    int[] mBearOutputIndex = getLatestOpenIndexArray(storedOpenPrice, storedBarIndex, storedPercent, false)
-    array.clear(id = displayOpenPrice) 
-    array.clear(id = displayBarIndex) 
-    array.clear(id = displayPercent)
-
-    // Get bull output
-    for i = 0 to (array.size(mBullOutputIndex) == 0 ? na : array.size(mBullOutputIndex) - 1)
-        int targetBullIndex = array.get(id = mBullOutputIndex, index = i)
-        array.push(id = displayOpenPrice, value = array.get(id = storedOpenPrice, index =  targetBullIndex) ) 
-        array.push(id = displayBarIndex, value = array.get(id = storedBarIndex, index =  targetBullIndex) ) 
-        array.push(id = displayPercent, value = array.get(id = storedPercent, index =  targetBullIndex) ) 
-
-    //Get bear output
-    for i = 0 to (array.size(mBearOutputIndex) == 0 ? na : array.size(mBearOutputIndex) - 1)
-        int targetBearIndex = array.get(id = mBearOutputIndex, index = i)
-        array.push(id = displayOpenPrice, value = array.get(id = storedOpenPrice, index =  targetBearIndex) ) 
-        array.push(id = displayBarIndex, value = array.get(id = storedBarIndex, index =  targetBearIndex) ) 
-        array.push(id = displayPercent, value = array.get(id = storedPercent, index =  targetBearIndex) ) 
 
 //Code login start
 //抓出陰陽轉換bar
@@ -118,36 +138,42 @@ dayVolume = request.security(syminfo.tickerid, 'D', volume)
 dayBarIndex = request.security(syminfo.tickerid, 'D', bar_index)
 dayTimeClose = request.security(syminfo.tickerid, 'D', time_close)
 
-
-currentDayState := util.isBullBar(dayClose, dayOpen) ? BULL : BEAR
+// string textt = str.tostring(value = dayOpen) 
+// label.new(bar_index, low, textt)
+currentDayState := isBullBar(dayClose, dayOpen) ? BULL : BEAR
 
 //日線是否陰陽轉換
 cond1 = lastDayState != currentDayState ? true : false
 
-//找出現在時框此bar是否 = 日線開盤的位置
-cond2 = if timeframe.period != util.daily()
-    dayTimeClose == time_close[1] ? true : false
-else 
-    true
-
 //日線垂直柱 > 5%漲跌幅
-percent := util.getBarPercentage(dayClose, dayOpen)
+percent := getBarPercentage(dayClose, dayOpen)
 // float seriesPercent = math.abs(getBarPercentage(dayClose, dayOpen)) // ta.sma(source = seriesPercent, length = 20) 
 
 cond3 = math.abs(number = percent)  >  5
 
 
+//找出現在時框此bar是否 = 日線開盤的位置
+// cond2 = dayTimeClose == time_close[1] ? true : false
+cond2 = if timeframe.period != daily
+    dayTimeClose == time_close[1] ? true : false
+else 
+    true
+    
+// if cond2
+//     label.new(bar_index, low, "7")
+
 // 如果此時 上一個顯示要show && 是日線開盤位置 && 漲幅5%以上
-bool finalCond = if timeframe.period != util.daily()
-    nextBarNeedShow and cond2 and cond3 and util.isCurrentTimeFrameAvailable()
+bool finalCond = if timeframe.period != daily
+    nextBarNeedShow and cond2 and cond3
 else
-    cond1 and cond2 and cond3 and util.isCurrentTimeFrameAvailable()
+    cond1 and cond2 and cond3
 
 if finalCond
-    float thisOpenPrice = open[util.getCandleOffestByTimeFrame()]    
-    array.push(id = storedOpenPrice, value = thisOpenPrice)
-    array.push(id = storedBarIndex, value = bar_index[util.getCandleOffestByTimeFrame()])  
-    array.push(id = storedPercent, value = percent) 
+    float thisOpenPrice = open[getTimeFrameOffset()]  
+    [array1, array2, array3] = updateArray(thisOpenPrice, storedOpenPrice, bar_index[getTimeFrameOffset()], storedBarIndex, percent, storedPercent)
+    storedOpenPrice := array.copy(id = array1)
+    storedBarIndex := array.copy(id = array2)
+    storedPercent := array.copy(id = array3)
 
 
 if cond1
@@ -158,8 +184,25 @@ else
 lastDayState := currentDayState
 
 
-if barstate.islastconfirmedhistory
-    choseDisplayParamsOutput()
+if barstate.islast
+    int[] mBullOutputIndex = getLatestOpenIndexArray(storedOpenPrice, storedBarIndex, storedPercent, true)
+    int[] mBearOutputIndex = getLatestOpenIndexArray(storedOpenPrice, storedBarIndex, storedPercent, false)
+    array.clear(id = displayOpenPrice) 
+    array.clear(id = displayBarIndex) 
+    array.clear(id = displayPercent)
+
+    for i = 0 to (array.size(mBullOutputIndex) == 0 ? na : array.size(mBullOutputIndex) - 1)
+        int targetBullIndex = array.get(id = mBullOutputIndex, index = i)
+        array.push(id = displayOpenPrice, value = array.get(id = storedOpenPrice, index =  targetBullIndex) ) 
+        array.push(id = displayBarIndex, value = array.get(id = storedBarIndex, index =  targetBullIndex) ) 
+        array.push(id = displayPercent, value = array.get(id = storedPercent, index =  targetBullIndex) ) 
+
+    for i = 0 to (array.size(mBearOutputIndex) == 0 ? na : array.size(mBearOutputIndex) - 1)
+        int targetBearIndex = array.get(id = mBearOutputIndex, index = i)
+        array.push(id = displayOpenPrice, value = array.get(id = storedOpenPrice, index =  targetBearIndex) ) 
+        array.push(id = displayBarIndex, value = array.get(id = storedBarIndex, index =  targetBearIndex) ) 
+        array.push(id = displayPercent, value = array.get(id = storedPercent, index =  targetBearIndex) ) 
+
     // Draw all data on chart
     for i = 0 to (array.size(displayOpenPrice) == 0 ? na : array.size(displayOpenPrice) - 1)
         float tempPrice = array.get(id = displayOpenPrice, index = i)
@@ -168,7 +211,7 @@ if barstate.islastconfirmedhistory
         float tempPercent = array.get(id = displayPercent, index = i) 
         displayLabel := label.new(
         //  x            = tempIndex,
-         x            = bar_index + (util.getCandleOffestByTimeFrame() + 1) * 5,
+         x            = bar_index + getTimeFrameOffset() * 5,
         //  y            = tempPercent > 0 ? low[bar_index - tempIndex]*0.999 : high[bar_index - tempIndex]*1.001,
          y            = tempPrice,
          text         = tempPriceText,
@@ -180,13 +223,14 @@ if barstate.islastconfirmedhistory
          )
         displayLine := line.new(x1 = tempIndex, y1 = tempPrice, x2 = tempIndex + 1, y2 = tempPrice, extend =  extend.right, color = color.new(color =  tempPercent > 0 ? colour.DARK_GREEN() : colour.DARK_RED(), transp = 0), width = 1) 
         
-    
-    if isDEBUG
-        mOutput = str.tostring(value = displayOpenPrice) + "\n"
-        mOutput += str.tostring(value = displayBarIndex) + "\n"
-        mOutput += str.tostring(value = displayPercent) 
-        debugLabel := debug.printLabel(mOutput)
-        label.delete(id = debugLabel[1])
+        
+
+        if isDEBUG
+            mOutput = str.tostring(value = displayOpenPrice) + "\n"
+            mOutput += str.tostring(value = displayBarIndex) + "\n"
+            mOutput += str.tostring(value = displayPercent) 
+            debugLabel := debug.printLabel(mOutput)
+            label.delete(id = debugLabel[1])
 
 
 

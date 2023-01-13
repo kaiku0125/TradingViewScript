@@ -1,0 +1,70 @@
+//@version=5
+
+library(title = "Util", overlay =  true) 
+
+var VERSION_NAME = "v1.0"
+
+//time series(Day = 1440 min, so 6hr offset = 1440 / 360)
+var string daily = "D"
+var int daily_offset = 0
+
+var string hour_6 = "360"
+var int hour_6_offset = 4
+var string hour_4 = "240"
+var int hour_4_offset = 6
+
+var string hour_3 = "180"
+var int hour_3_offset = 8
+var string hour_2 = "120"
+var int hour_2_offset = 12
+
+var string hour_1 = "60"
+var int hour_1_offset = 24
+
+
+export isCurrentTimeFrameAvailable() =>
+    bool isAvailable = switch timeframe.period
+        daily => true
+        hour_6 => true
+        hour_4 => true
+        hour_3 => true
+        hour_2 => true
+        hour_1 => true
+        => 
+            false
+
+    isAvailable
+
+
+export getCandleOffestByTimeFrame() =>
+    int returnOffset = switch timeframe.period
+        daily => daily_offset
+        hour_6 => hour_6_offset
+        hour_4 => hour_4_offset
+        hour_3 => hour_3_offset
+        hour_2 => hour_2_offset
+        hour_1 => hour_1_offset
+        => 
+            hour_4_offset
+
+    returnOffset
+
+export isBullBar(float _close, float _open) =>
+    bool isBullBar = false
+    if _close >= _open
+        isBullBar := true
+    
+    isBullBar
+
+export getBarPercentage(float _close, float _open) =>
+    float returnPercent = na
+    returnPercent := ((_close - _open) / _open) * 100
+
+    returnPercent
+
+
+export daily() =>
+    daily
+
+export getSDKVersion() =>
+    VERSION_NAME
