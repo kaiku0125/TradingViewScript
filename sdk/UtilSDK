@@ -3,7 +3,10 @@
 var VERSION_NAME = "v1.0"
 
 library(title = "Util", overlay =  true) 
+
+//time series(Day = 1440 min, so 6hr offset = 1440 / 360)
 var string daily = "D"
+var int daily_offset = 0
 
 var string hour_6 = "360"
 var int hour_6_offset = 4
@@ -35,6 +38,7 @@ export isCurrentTimeFrameAvailable() =>
 
 export getCandleOffestByTimeFrame() =>
     int returnOffset = switch timeframe.period
+        daily => daily_offset
         hour_6 => hour_6_offset
         hour_4 => hour_4_offset
         hour_3 => hour_3_offset
@@ -45,15 +49,19 @@ export getCandleOffestByTimeFrame() =>
 
     returnOffset
 
-export isBullBar(_close, _open) =>
+export isBullBar(float _close, float _open) =>
     bool isBullBar = false
     if _close >= _open
         isBullBar := true
     
     isBullBar
 
-export getBarPercentage(_close, _open) =>
+export getBarPercentage(float _close, float _open) =>
     float returnPercent = na
     returnPercent := ((_close - _open) / _open) * 100
 
     returnPercent
+
+
+export daily() =>
+    daily
