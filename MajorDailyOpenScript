@@ -30,9 +30,18 @@ indicator(
 // #                   |   Indicator  |
 // # ========================================================================= #
 
+// Define inputs settings
+var GROUP_SETTING = "📌 設定"
+var GROUP_VERSION = "💬 關於"
+var VERSION_NAME = "v1.0"
+var RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
+                     "[1] First release."
+                     
+INPUT_DISPLAY_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUP_VERSION) 
 
-//variable
-var bool isDEBUG = false
+
+// Variable initialization
+var bool IS_DEBUG = false
 var int BEAR = 0
 var int BULL = 1
 var bool isBarChanged = false
@@ -56,14 +65,7 @@ var float[] displayPercent = array.new_float()
 var label displayLabel = na
 var line displayLine = na
 
-// Define inputs settings
-var GROUN_VERSION = "💬 關於"
-var VERSION_NAME = "v1.0"
-var RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
-                     "[1] First release."
-                     
-INPUT_DISPLAY_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUN_VERSION) 
-
+// Define functions
 // Get recently bar and chosen three bull bear bar.
 getLatestOpenIndexArray(arrayOpen, arrayIndex, arrayPercent, isBull) =>
     float[] arrayCopyOpenPriceReverse = array.copy(id = arrayOpen)
@@ -158,7 +160,7 @@ else
 lastDayState := currentDayState
 
 
-if barstate.islastconfirmedhistory
+if barstate.islast
     choseDisplayParamsOutput()
     // Draw all data on chart
     for i = 0 to (array.size(displayOpenPrice) == 0 ? na : array.size(displayOpenPrice) - 1)
@@ -181,7 +183,7 @@ if barstate.islastconfirmedhistory
         displayLine := line.new(x1 = tempIndex, y1 = tempPrice, x2 = tempIndex + 1, y2 = tempPrice, extend =  extend.right, color = color.new(color =  tempPercent > 0 ? colour.DARK_GREEN() : colour.DARK_RED(), transp = 0), width = 1) 
         
     
-    if isDEBUG
+    if IS_DEBUG
         mOutput = str.tostring(value = displayOpenPrice) + "\n"
         mOutput += str.tostring(value = displayBarIndex) + "\n"
         mOutput += str.tostring(value = displayPercent) 
