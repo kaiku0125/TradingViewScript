@@ -29,7 +29,7 @@ var VERSION_NAME = "v1.0"
 var RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
                      "[1] First release."
 
-INPUT_DISPLAY_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUP_VERSION) 
+INPUT_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUP_VERSION) 
 
 
 //Variable initialization

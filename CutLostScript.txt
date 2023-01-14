@@ -26,7 +26,7 @@ INPUT_EACH_ORDER_LOST = input.float(defval = 5.0, title = "每單止損", minval
 INPUT_CUT_LOST_PRICE = input.price(defval = 0.0, title = "止損價格", confirm = true, group = GROUP_SETTING, inline = "01")
 INPUT_CUT_LOST_PRICE_LINE_COLOR = input.color(defval = color.purple, title = "", inline = "01", group = GROUP_SETTING) 
 INPUT_NEED_SHOW_CUT_LOST_TEXT = input.bool(defval =  true, title = "顯示止損價格", group = GROUP_SETTING) 
-INPUT_DISPLAY_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUP_VERSION) 
+INPUT_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUP_VERSION) 
 
 
 // Variable initialization

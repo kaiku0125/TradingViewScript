@@ -1,5 +1,6 @@
 //@version=5
 
+// 1. Import library
 import kaiku0125/Debug/1 as debug
 import kaiku0125/Colour/1 as colour
 import kaiku0125/Util/1 as util
@@ -22,7 +23,7 @@ indicator(
 //   timeframe            = "D",
 //  timeframe_gaps       =  true
 //  explicit_plot_zorder =  ,
- max_lines_count      =  6,
+ max_lines_count      =  20,
  max_labels_count     =  500
 //  max_boxes_count      =  
  )
@@ -30,20 +31,37 @@ indicator(
 // #                   |   Indicator  |
 // # ========================================================================= #
 
-// Define inputs settings
-var GROUP_SETTING = "📌 設定"
+// 2. Preference inputs settings
+var GROUP_SETTING = "📌 判別設定"
+var GROUP_DISPLAY = "📊 顯示"
 var GROUP_VERSION = "💬 關於"
+var BULL_GREEN = "綠漲紅跌"
+var BULL_RED = "紅漲綠跌"
 var VERSION_NAME = "v1.0"
 var RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
                      "[1] First release."
                      
-INPUT_DISPLAY_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUP_VERSION) 
+
+INPUT_PREF_BEAR_BULL_CHANGED_NEEDED = input.bool(defval = true, title = "判定 : 陰陽轉換", tooltip = "陽轉陰，陰轉陽是否為判定依據", group =   GROUP_SETTING) 
+INPUT_PREF_BAR_PERCENT_NEEDED = input.bool(defval =  true, title = "判定 : %數", inline = "01 ", group =   GROUP_SETTING) 
+INPUT_PREF_BAR_PERCENT = input.float(defval =  5.0, title = "    調整%數", minval =  1, maxval =  100, step =  0.5, tooltip = "%數是否為判定依據", inline = "01 ", group =  GROUP_SETTING) 
+INPUT_PREF_BEAR_DISPLAY = input.bool(defval = true, title = "顯示_供應點", tooltip = "於圖表上顯示垂直供應柱價格線", group =   GROUP_DISPLAY) 
+INPUT_PREF_BULL_DISPLAY = input.bool(defval = true, title = "顯示_需求點", tooltip = "於圖表上顯示垂直需求柱價格線", group = GROUP_DISPLAY) 
+INPUT_PREF_BEAR_BULL_COUNT = input.int(defval =  3, title = "各顯示數量", minval =  0, maxval =  10, step =  1, tooltip = "顯示數量", group =  GROUP_DISPLAY) 
+INPUT_PREF_DISPLAY_COLOR = input.string(defval = BULL_GREEN, title = "顯示風格", options = [BULL_GREEN, BULL_RED], tooltip = "調整顯示風格顏色", group = GROUP_DISPLAY) 
+INPUT_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUP_VERSION) 
 
 
-// Variable initialization
+// 3. Constant value initialization
 var bool IS_DEBUG = false
 var int BEAR = 0
 var int BULL = 1
+var LABEL_TEXT_COLOR_BULL = INPUT_PREF_DISPLAY_COLOR == BULL_GREEN ? color.green : color.red
+var LABEL_TEXT_COLOR_BEAR = INPUT_PREF_DISPLAY_COLOR == BULL_RED ? color.green : color.red
+var LINE_COLOR_BULL = INPUT_PREF_DISPLAY_COLOR == BULL_GREEN ? colour.DARK_GREEN() : colour.DARK_RED()
+var LINE_COLOR_BEAR = INPUT_PREF_DISPLAY_COLOR == BULL_RED ? colour.DARK_GREEN() : colour.DARK_RED()
+
+// 4. Variable declartion
 var bool isBarChanged = false
 var bool nextBarNeedShow = false
 var int lastDayState = BULL
@@ -65,8 +83,8 @@ var float[] displayPercent = array.new_float()
 var label displayLabel = na
 var line displayLine = na
 
-// Define functions
-// Get recently bar and chosen three bull bear bar.
+// 5. Define functions
+// Get recently bar and choose bull bear bar.
 getLatestOpenIndexArray(arrayOpen, arrayIndex, arrayPercent, isBull) =>
     float[] arrayCopyOpenPriceReverse = array.copy(id = arrayOpen)
     array.reverse(id = arrayCopyOpenPriceReverse)
@@ -77,14 +95,14 @@ getLatestOpenIndexArray(arrayOpen, arrayIndex, arrayPercent, isBull) =>
     int[] returnIndexArray = array.new_int(0)
 
     int barIndexSize = array.size(id = arrayCopyIndexReverse)
-    if barIndexSize >= 3
+    if barIndexSize >= INPUT_PREF_BEAR_BULL_COUNT
         for i = 0 to (barIndexSize == 0 ? na : array.size(arrayCopyPercentReverse) - 1)
             cond1 = isBull ? array.get(id = arrayCopyPercentReverse, index = i) > 0 : array.get(id = arrayCopyPercentReverse, index = i) < 0 
             cond2 = isBull ? array.get(id = arrayCopyOpenPriceReverse, index = i) - open < 0 : array.get(id = arrayCopyOpenPriceReverse, index = i) - open > 0
 
             if cond1 and cond2
                 array.push(id = returnIndexArray, value = barIndexSize - i - 1)
-                if array.size(id = returnIndexArray) == 3
+                if array.size(id = returnIndexArray) == INPUT_PREF_BEAR_BULL_COUNT
                     break 
 
     returnIndexArray
@@ -110,7 +128,7 @@ choseDisplayParamsOutput() =>
         array.push(id = displayBarIndex, value = array.get(id = storedBarIndex, index =  targetBearIndex) ) 
         array.push(id = displayPercent, value = array.get(id = storedPercent, index =  targetBearIndex) ) 
 
-//Code login start
+// 6. Code logic start
 //抓出陰陽轉換bar
 dayHigh = request.security(syminfo.tickerid, 'D', high)
 dayLow = request.security(syminfo.tickerid, 'D', low)
@@ -125,6 +143,8 @@ currentDayState := util.isBullBar(dayClose, dayOpen) ? BULL : BEAR
 
 //日線是否陰陽轉換
 cond1 = lastDayState != currentDayState ? true : false
+if not INPUT_PREF_BEAR_BULL_CHANGED_NEEDED
+    cond1 := true
 
 //找出現在時框此bar是否 = 日線開盤的位置
 cond2 = if timeframe.period != util.daily()
@@ -132,12 +152,13 @@ cond2 = if timeframe.period != util.daily()
 else 
     true
 
-//日線垂直柱 > 5%漲跌幅
+//日線垂直柱 > 設定%漲跌幅
 percent := util.getBarPercentage(dayClose, dayOpen)
 // float seriesPercent = math.abs(getBarPercentage(dayClose, dayOpen)) // ta.sma(source = seriesPercent, length = 20) 
 
-cond3 = math.abs(number = percent)  >  5
-
+cond3 = math.abs(number = percent)  >  INPUT_PREF_BAR_PERCENT
+if not INPUT_PREF_BAR_PERCENT_NEEDED
+    cond3 := true
 
 // 如果此時 上一個顯示要show && 是日線開盤位置 && 漲幅5%以上
 bool finalCond = if timeframe.period != util.daily()
@@ -168,20 +189,25 @@ if barstate.islast
         string tempPriceText = str.tostring(value = tempPrice) 
         int tempIndex = array.get(id = displayBarIndex, index = i)
         float tempPercent = array.get(id = displayPercent, index = i) 
-        displayLabel := label.new(
-        //  x            = tempIndex,
-         x            = bar_index + (util.getCandleOffestByTimeFrame() + 1) * 5,
-        //  y            = tempPercent > 0 ? low[bar_index - tempIndex]*0.999 : high[bar_index - tempIndex]*1.001,
-         y            = tempPrice,
-         text         = tempPriceText,
-        //  color        = color.new(color = tempPercent > 0 ? color.green : color.red, transp = 0),
-        //  style        = tempPercent > 0 ? label.style_label_up : label.style_label_down,
-         style        = label.style_none,
-        //  textcolor    = color.new(color =  color.white, transp = 0)
-         textcolor    = color.new(color = tempPercent > 0 ? color.green : color.red, transp = 0)
-         )
-        displayLine := line.new(x1 = tempIndex, y1 = tempPrice, x2 = tempIndex + 1, y2 = tempPrice, extend =  extend.right, color = color.new(color =  tempPercent > 0 ? colour.DARK_GREEN() : colour.DARK_RED(), transp = 0), width = 1) 
         
+        bool isShowBear = INPUT_PREF_BEAR_DISPLAY and tempPercent < 0
+        bool isShowBull = INPUT_PREF_BULL_DISPLAY and tempPercent > 0
+
+        if isShowBear or isShowBull 
+            displayLabel := label.new(
+            //  x            = tempIndex, //
+             x            = bar_index + (util.getCandleOffestByTimeFrame() + 1) * 5,
+            //  y            = tempPercent > 0 ? low[bar_index - tempIndex] * 0.999 : high[bar_index - tempIndex] * 1.001, //
+             y            = tempPrice,
+             text         = tempPriceText,
+            //  color        = color.new(color = tempPercent > 0 ? color.green : color.red, transp = 0), //
+            //  style        = tempPercent > 0 ? label.style_label_up : label.style_label_down, //
+             style        = label.style_none,
+            //  textcolor    = color.new(color =  color.white, transp = 0) //
+             textcolor    = color.new(color = tempPercent > 0 ? LABEL_TEXT_COLOR_BULL : LABEL_TEXT_COLOR_BEAR, transp = 0)
+             )
+            displayLine := line.new(x1 = tempIndex, y1 = tempPrice, x2 = tempIndex + 1, y2 = tempPrice, extend =  extend.right, color = color.new(color =  tempPercent > 0 ? LINE_COLOR_BULL : LINE_COLOR_BEAR, transp = 0), width = 1) 
+            
     
     if IS_DEBUG
         mOutput = str.tostring(value = displayOpenPrice) + "\n"
