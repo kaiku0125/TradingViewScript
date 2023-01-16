@@ -19,10 +19,10 @@ var GROUP_SETTING = "📌 設定"
 var BULL_GREEN = "綠漲紅跌"
 var BULL_RED = "紅漲綠跌"
 var GROUP_VERSION = "💬 關於"
-var VERSION_NAME = "v1.1"
+var VERSION_NAME = "v1.2"
 var RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
-                     "[1] Label switches color depends on long or short." + "\n" + 
-                     "[2] Cut lost price label shows customized." + "\n"
+                     "[1] Customize long short color style." + "\n" + 
+                     "[2] Chart show each order lost above cut lost line." + "\n"
 
 
 INPUT_EACH_ORDER_LOST = input.float(defval = 5.0, title = "每單止損", minval = 1.0, maxval =  10000.0, step =  1, tooltip = "調整每單止損金額", group = GROUP_SETTING) 
@@ -39,6 +39,7 @@ var LABEL_COLOR_BEAR = INPUT_PREF_DISPLAY_COLOR == BULL_RED ? colour.FOREST_GREE
 // 4. Variable declartion
 var float position = 0.0
 var float eachOrderLost = 5.0
+var string eachOrderLostText = na
 var float cutLostPrice = na
 var string cutLostPriceText = na
 var bool needShowCutLostText = true
@@ -49,6 +50,7 @@ var label positionLabel = na
 
 
 eachOrderLost := INPUT_EACH_ORDER_LOST
+eachOrderLostText := str.tostring(value = eachOrderLost) 
 cutLostPrice := INPUT_CUT_LOST_PRICE
 cutLostPriceText := str.tostring(value = cutLostPrice,format = "#.###") 
 cutLossLineColor := INPUT_CUT_LOST_PRICE_LINE_COLOR
@@ -100,7 +102,7 @@ if barstate.islast
         textLabel = label.new(
          x            =  bar_index + 30,
          y            =  cutLostPrice,
-         text         = "止損價格 : " + cutLostPriceText,
+         text         = "止損價格 : " + cutLostPriceText + "( -"+  eachOrderLostText + "U )",
         //  xloc         = xloc.bar_time,
         //  yloc         =  ,
          color        = color.new(color =  color.black, transp = 0),
