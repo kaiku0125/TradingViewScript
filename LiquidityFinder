@@ -1,0 +1,119 @@
+//@version=5
+
+// 1. Import library
+import kaiku0125/Debug/1 as debug
+import kaiku0125/Colour/1 as colour
+import kaiku0125/Util/1 as util
+// # ========================================================================= #
+// #                   |   Indicator  |
+// # ========================================================================= #
+indicator(
+ title                = "Liquidity finder",
+ shorttitle           = "",
+ overlay              =  true,
+ max_lines_count      = 5,
+ max_labels_count     = 10
+ )
+// # ========================================================================= #
+// #                   |   Indicator  |
+// # ========================================================================= #
+
+// 2. Preference inputs settings
+
+// 3. Constant value initialization
+var int LEFT_OFFSET = 5
+var int RIGHT_OFFSET = 2
+
+
+// 4. Variable declartion
+var float regionHigh = 0.0
+var line[] lineHighArray = array.new_line()
+var bool isHighBreak = false
+
+var float regionLow = 1000000000.0
+var line[] lineLowArray = array.new_line()
+var bool isLowBreak = false 
+
+var bool needCalAgain = true
+var bool isBreak = true
+var label debugLabel = na
+
+// 5. Define functions
+
+// 6. Code logic start
+float pHigh = ta.pivothigh(leftbars = LEFT_OFFSET, rightbars = RIGHT_OFFSET)
+plot(pHigh, style=plot.style_cross, linewidth=3, color= color.white, offset = -RIGHT_OFFSET)
+
+float pLow = ta.pivotlow(leftbars = LEFT_OFFSET, rightbars = RIGHT_OFFSET) 
+plot(pLow, style=plot.style_circles, linewidth=3, color= color.yellow, offset = -RIGHT_OFFSET)
+
+bool cond1 = not na(pHigh)
+bool cond2 = pHigh > regionHigh
+if cond1
+    line lineHigh = line.new(x1 = bar_index - RIGHT_OFFSET, y1 = pHigh, x2 = bar_index, y2 = pHigh, color = color.red)
+    array.push(id = lineHighArray, value = lineHigh)
+    if array.size(id = lineHighArray) > 1
+        line.delete(id = array.shift(id = lineHighArray) ) 
+
+bool cond3 = not na(pLow)
+bool cond4 = pLow < regionLow
+if cond3
+    line lineLow = line.new(x1 = bar_index - RIGHT_OFFSET, y1 = pLow, x2 = bar_index, y2 = pLow, color = color.green)
+    array.push(id = lineLowArray, value = lineLow)
+    if array.size(id = lineLowArray) > 1
+        line.delete(id = array.shift(id = lineLowArray) ) 
+
+// Extend the lines.
+if barstate.islast
+    bool crossUp = false
+    for lineHigh in lineHighArray
+        line.set_x2(lineHigh, bar_index)
+
+        float linePrice = line.get_y1(lineHigh)
+        // debugLabel := debug.printLabel(str.tostring(value = linePrice) )
+        
+        bool newCrossUp = close[1] < linePrice and close > linePrice
+        crossUp := newCrossUp
+
+
+        if crossUp
+            needCalAgain := true
+            debugLabel := debug.printLabel("破")
+            label.delete(id = debugLabel[1])
+            
+
+
+    
+    for lineLow in lineLowArray
+        line.set_x2(lineLow, bar_index)
+
+
+// if close[1] > regionHigh and regionHigh != 0.0
+//     debugLabel := debug.printLabel("破")
+//     isBreak  := true
+//     regionHigh := 0
+    
+    
+
+// if close[1] < regionLow and regionLow != 1000000000.0
+//     debugLabel := debug.printLabel("破")
+//     isBreak := true
+//     regionLow := 1000000000
+
+// bool crossUp = false
+// for lineHigh in lineHighArray
+//     float linePrice = line.get_y1(lineHigh)
+//     bool newCrossUp = close[1] < linePrice and close > linePrice
+//     // bool newCrossDn = close[1] > linePrice and close < linePrice
+//     crossUp := newCrossUp
+
+// if crossUp
+//     needCalAgain := true
+//     debugLabel := debug.printLabel("破")
+
+
+// // Alert.
+// if cross
+//     alert("A cross has occurred")
+
+// plotchar(cross, "Cross", "X", color = color.white)
