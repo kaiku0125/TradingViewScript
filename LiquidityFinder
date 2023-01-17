@@ -21,26 +21,31 @@ indicator(
 // 2. Preference inputs settings
 
 // 3. Constant value initialization
-var int LEFT_OFFSET = 7
+var int LEFT_OFFSET = 10
 var int RIGHT_OFFSET = 2
 
 
 // 4. Variable declartion
 var float regionHigh = 0.0
 var line[] lineHighArray = array.new_line()
-var bool isHighBreak = false
+var bool isHighCal = false
 
 var float regionLow = 1000000000.0
 var line[] lineLowArray = array.new_line()
-var bool isLowBreak = false 
+var bool isLowCal = false 
 
 var bool needCalAgain = true
 var bool isBreak = true
 
 var label breakLabel = na
+var label touchLabel = na
 var label debugLabel = na
 
 // 5. Define functions
+
+
+    
+
 
 // 6. Code logic start
 float pHigh = ta.pivothigh(leftbars = LEFT_OFFSET, rightbars = RIGHT_OFFSET)
@@ -54,7 +59,7 @@ plot(pLow, style=plot.style_circles, linewidth=3, color= color.yellow, offset = 
 bool cond1 = not na(pHigh)
 bool cond2 = pHigh > regionHigh
 if cond1 and needCalAgain
-    line lineHigh = line.new(x1 = bar_index - RIGHT_OFFSET, y1 = pHigh, x2 = bar_index, y2 = pHigh, color = color.red)
+    line lineHigh = line.new(x1 = bar_index - RIGHT_OFFSET, y1 = pHigh, x2 = bar_index, y2 = pHigh, color = color.red, extend = extend.right)
     array.push(id = lineHighArray, value = lineHigh)
     if array.size(id = lineHighArray) > 1
         line.delete(id = array.shift(id = lineHighArray) ) 
@@ -67,7 +72,7 @@ if cond1 and cond2
 bool cond3 = not na(pLow)
 bool cond4 = pLow < regionLow
 if cond3 and needCalAgain
-    line lineLow = line.new(x1 = bar_index - RIGHT_OFFSET, y1 = pLow, x2 = bar_index, y2 = pLow, color = color.green)
+    line lineLow = line.new(x1 = bar_index - RIGHT_OFFSET, y1 = pLow, x2 = bar_index, y2 = pLow, color = color.green, extend = extend.right)
     array.push(id = lineLowArray, value = lineLow)
     if array.size(id = lineLowArray) > 1
         line.delete(id = array.shift(id = lineLowArray) ) 
@@ -79,12 +84,10 @@ if cond3 and cond4
 if needCalAgain and regionHigh != 0 and regionLow != 1000000000.0
     needCalAgain := false
 
-// Extend the lines.
-// if barstate.islast
+//是否觸碰最高最低
 bool crossUp = false
+bool touchUp = false
 for lineHigh in lineHighArray
-    line.set_x2(lineHigh, bar_index)
-
     float linePriceHigh = line.get_y1(lineHigh)
     // debugLabel := debug.printLabel(str.tostring(value = linePrice) )
     
@@ -92,35 +95,41 @@ for lineHigh in lineHighArray
     crossUp := newCrossUp
 
 
+    bool newTouchUp = high > linePriceHigh
+    touchUp := newTouchUp
+
     if crossUp
         needCalAgain := true
         regionHigh := 0.0
         regionLow := 1000000000.0
-        breakLabel := label.new(bar_index, low * 0.99, "破高", color = color.black, textcolor = color.orange)
+        breakLabel := label.new(bar_index, high * 1.01, "破高", color = color.black, textcolor = color.orange, style = label.style_label_down)
         // label.delete(id = breakLabel[1])
         
-
-
+    if touchUp and not crossUp and regionHigh != 0
+        touchLabel := label.new(bar_index, high * 1.01, "觸高", color = color.black, textcolor = color.green, style = label.style_label_down)
+        label.delete(id = touchLabel[2])
+        
 
 bool crossDown = false
+bool touchDown = false
 for lineLow in lineLowArray
-    line.set_x2(lineLow, bar_index)
-
     float linePriceLow = line.get_y1(lineLow)
 
     bool newCrossDown = close[1] > linePriceLow and close < linePriceLow
     crossDown := newCrossDown
 
+    bool newTouchDown = low < linePriceLow
+    touchDown := newTouchDown
 
     if crossDown
         needCalAgain := true
         regionHigh := 0.0
         regionLow := 1000000000.0
-        breakLabel := label.new(bar_index, low * 0.99, "破低", color = color.black, textcolor = color.orange)
+        breakLabel := label.new(bar_index, low * 0.99, "破低", color = color.black, textcolor = color.orange, style = label.style_label_up)
 
-
-
-
+    if touchDown and not crossDown and regionLow != 1000000000.0
+        touchLabel := label.new(bar_index, low * 0.99, "觸低", color = color.black, textcolor = color.red, style = label.style_label_up)
+        label.delete(id = touchLabel[2])
 
 string outputText = "高 : " +  str.tostring(value = regionHigh) + "\n" + "低 : " +  str.tostring(value = regionLow)
 debugLabel := debug.printLabel(outputText)
