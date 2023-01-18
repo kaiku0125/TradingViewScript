@@ -1,5 +1,13 @@
 //@version=5
 
+
+// 流程:
+// 定義高低點
+// bar觸碰高低點行為
+// 
+
+
+
 // 1. Import library
 import kaiku0125/Debug/1 as debug
 import kaiku0125/Colour/1 as colour
@@ -21,6 +29,12 @@ indicator(
 // 2. Preference inputs settings
 
 // 3. Constant value initialization
+var int STATE_NONE = 0
+var int STATE_HAS_HIGH_LOW = 1
+var int STATE_HAS_TOUCHED = 2
+var int STATE_HAS_STAND = 3
+
+
 var float ERROR_HIGH = 0.0
 var float ERROR_LOW = 1000000000.0
 var int LEFT_OFFSET = 10
@@ -28,6 +42,22 @@ var int RIGHT_OFFSET = 2
 
 
 // 4. Variable declartion
+type LiquidBar
+    float barIndex
+    bool isHigh
+    bool isTouched
+    bool isBroke
+    bool isStand
+
+// type DetectMachine
+//     int state
+
+
+
+var state = 0
+
+var LiquidBar[] liquidBarArray = array.new<LiquidBar>()
+
 var float regionHigh = ERROR_HIGH
 var line[] lineHighArray = array.new_line()
 var bool isHighCal = false
@@ -41,15 +71,31 @@ var bool isBreak = true
 
 var label breakLabel = na
 var label touchLabel = na
+var label standLabel = na
 var label debugLabel = na
 
 // 5. Define functions
 
-
+setState(int _state) =>
+    string msg = switch _state
+        STATE_NONE => "等待訊號..."
+        STATE_HAS_HIGH_LOW => "高低計算完成"
+        STATE_HAS_TOUCHED => "觸摸"
+        STATE_HAS_STAND => "跌回|收回"
+        =>
+            runtime.error(message = "No available state!!")
+            "Run time error!"
+    
+    alert(msg)
+    _state
+    
+ 
     
 
 
 // 6. Code logic start
+LiquidBar mLiquidBar = LiquidBar.new()
+
 float pHigh = ta.pivothigh(leftbars = LEFT_OFFSET, rightbars = RIGHT_OFFSET)
 plot(pHigh, style=plot.style_cross, linewidth=3, color= color.white, offset = -RIGHT_OFFSET)
 
@@ -86,9 +132,10 @@ if cond3 and cond4
 if needCalAgain and regionHigh != ERROR_HIGH and regionLow != ERROR_LOW
     needCalAgain := false
 
-//是否觸碰最高最低
+//是否觸碰最高
 bool crossUp = false
 bool touchUp = false
+bool standUp = false
 for lineHigh in lineHighArray
     float linePriceHigh = line.get_y1(lineHigh)
     
@@ -100,6 +147,9 @@ for lineHigh in lineHighArray
     bool newTouchUp = high > linePriceHigh
     touchUp := newTouchUp
 
+    bool newStandUp = high[1] > linePriceHigh and close < linePriceHigh
+    standUp := newStandUp
+
     if crossUp
         needCalAgain := true
         regionHigh := ERROR_HIGH
@@ -110,10 +160,17 @@ for lineHigh in lineHighArray
     if touchUp and not crossUp and regionHigh != ERROR_HIGH
         touchLabel := label.new(bar_index, high * 1.01, "觸高", color = color.black, textcolor = color.green, style = label.style_label_down)
         label.delete(id = touchLabel[2])
-        
 
+    if standUp
+        standLabel := label.new(bar_index, high * 1.05, "跌回", color = color.teal, textcolor = color.white, style = label.style_label_down)
+        label.delete(id = standLabel[1])
+        
+    
+
+//是否觸碰最低
 bool crossDown = false
 bool touchDown = false
+bool standDown = false
 for lineLow in lineLowArray
     float linePriceLow = line.get_y1(lineLow)
 
@@ -122,6 +179,9 @@ for lineLow in lineLowArray
 
     bool newTouchDown = low < linePriceLow
     touchDown := newTouchDown
+
+    bool newStandDown = low[1] < linePriceLow and close > linePriceLow
+    standDown := newStandDown
 
     if crossDown
         needCalAgain := true
@@ -135,10 +195,18 @@ for lineLow in lineLowArray
         label.delete(id = touchLabel[2])
         alert("觸低啦")
 
+    
+    if standDown
+        standLabel := label.new(bar_index, low * 0.95, "收回", color = color.teal, textcolor = color.white, style = label.style_label_up)
+        label.delete(id = standLabel[1])
+        
+
 string outputText = "高 : " +  str.tostring(value = regionHigh) + "\n" + "低 : " +  str.tostring(value = regionLow)
 debugLabel := debug.printLabel(outputText)
 label.delete(id = debugLabel[1])
 
+
+// if barstate.islast
 
 
 // if close[1] > regionHigh and regionHigh != 0.0
