@@ -57,13 +57,12 @@ type LiquidBar
 type DetectMachine
     int state
     float regionHigh
-    line lineHigh
-    // line[] lineHighArray
+    // line lineHigh
+    line[] lineHighArray
     float regionLow
-    line lineLow
-    // line[] lineLowArray
+    // line lineLow
+    line[] lineLowArray
     LiquidBar[] liquidBarArray
-    int breakCount
     bool isJudgeHigh
     float cutLostPrice
 
@@ -72,13 +71,12 @@ type DetectMachine
 var DetectMachine dm = DetectMachine.new(
      state = STATE_NONE, 
      regionHigh = ERROR_HIGH, 
-     lineHigh = na,
-    //  lineHighArray = array.new_line(), 
+    //  lineHigh = na,
+     lineHighArray = array.new_line(), 
      regionLow = ERROR_LOW, 
-     lineLow = na,
-    //  lineLowArray = array.new_line(), 
+    //  lineLow = na,
+     lineLowArray = array.new_line(), 
      liquidBarArray = array.new<LiquidBar>(),
-     breakCount = 0,
      isJudgeHigh = false,
      cutLostPrice = 0.0
      )
@@ -130,6 +128,8 @@ getStateDiscription(int _state) =>
 
 // 6. Code logic start
 string errorText = " -- "
+float taHigh = ta.highest(source = high, length = 3)
+float taLow = ta.lowest(source = low, length = 3)  
 
 float pHigh = ta.pivothigh(leftbars = LEFT_OFFSET, rightbars = RIGHT_OFFSET)
 plot(pHigh, style=plot.style_cross, linewidth=3, color= color.white, offset = -RIGHT_OFFSET)
@@ -141,33 +141,37 @@ plot(pLow, style=plot.style_circles, linewidth=3, color= color.yellow, offset = 
 //計算高點
 bool cond1 = not na(pHigh)
 bool cond2 = pHigh > dm.regionHigh
-if cond1 and dm.state == STATE_NONE
-    // line lineHigh = line.new(x1 = bar_index - RIGHT_OFFSET, y1 = pHigh, x2 = bar_index, y2 = pHigh, color = color.red, extend = extend.right)
-    // array.push(id = dm.lineHighArray, value = lineHigh)
-    // if array.size(id = dm.lineHighArray) > 1
-    //     line.delete(id = array.shift(id = dm.lineHighArray) ) 
-
-    dm.lineHigh := line.new(x1 = bar_index - RIGHT_OFFSET, y1 = pHigh, x2 = bar_index, y2 = pHigh, color = color.red, extend = extend.right)
-    line.delete(id = dm.lineHigh[1]) 
-
-if cond1 and cond2
+if cond1 and cond2 and dm.state == STATE_NONE
+    line lineHigh = line.new(x1 = bar_index - RIGHT_OFFSET, y1 = pHigh, x2 = bar_index, y2 = pHigh, color = color.red, extend = extend.right)
+    array.push(id = dm.lineHighArray, value = lineHigh)
+    if array.size(id = dm.lineHighArray) > 1
+        line.delete(id = array.shift(id = dm.lineHighArray) ) 
     dm.regionHigh := pHigh
+    // dm.lineHigh := line.new(x1 = bar_index - RIGHT_OFFSET, y1 = pHigh, x2 = bar_index, y2 = pHigh, color = color.red, extend = extend.right)
+    // line.delete(id = dm.lineHigh[1]) 
+
+// if cond1 and cond2 and dm.state == STATE_NONE
+//     dm.regionHigh := pHigh
+//     dm.lineHigh := line.new(x1 = bar_index - RIGHT_OFFSET, y1 = pHigh, x2 = bar_index, y2 = pHigh, color = color.red, extend = extend.right)
+//     line.delete(id = dm.lineHigh[1]) 
 
 
 //計算低點
 bool cond3 = not na(pLow)
 bool cond4 = pLow < dm.regionLow
-if cond3 and dm.state == STATE_NONE
-    // line lineLow = line.new(x1 = bar_index - RIGHT_OFFSET, y1 = pLow, x2 = bar_index, y2 = pLow, color = color.green, extend = extend.right)
-    // array.push(id = dm.lineLowArray, value = lineLow)
-    // if array.size(id = dm.lineLowArray) > 1
-    //     line.delete(id = array.shift(id = dm.lineLowArray) ) 
-    
-    dm.lineLow := line.new(x1 = bar_index - RIGHT_OFFSET, y1 = pLow, x2 = bar_index, y2 = pLow, color = color.green, extend = extend.right)
-    line.delete(id = dm.lineLow[1]) 
-
-if cond3 and cond4
+if cond3 and cond4 and dm.state == STATE_NONE
+    line lineLow = line.new(x1 = bar_index - RIGHT_OFFSET, y1 = pLow, x2 = bar_index, y2 = pLow, color = color.green, extend = extend.right)
+    array.push(id = dm.lineLowArray, value = lineLow)
+    if array.size(id = dm.lineLowArray) > 1
+        line.delete(id = array.shift(id = dm.lineLowArray) ) 
     dm.regionLow := pLow
+    // dm.lineLow := line.new(x1 = bar_index - RIGHT_OFFSET, y1 = pLow, x2 = bar_index, y2 = pLow, color = color.green, extend = extend.right)
+    // line.delete(id = dm.lineLow[1]) 
+
+// if cond3 and cond4 and dm.state == STATE_NONE
+//     dm.regionLow := pLow
+//     dm.lineLow := line.new(x1 = bar_index - RIGHT_OFFSET, y1 = pLow, x2 = bar_index, y2 = pLow, color = color.green, extend = extend.right)
+//     line.delete(id = dm.lineLow[1]) 
 
 //如果都計算完畢
 if dm.state == STATE_NONE and dm.regionHigh != ERROR_HIGH and dm.regionLow != ERROR_LOW
@@ -177,7 +181,8 @@ if dm.state == STATE_NONE and dm.regionHigh != ERROR_HIGH and dm.regionLow != ER
 bool breakUp = false
 bool liquidUp = false
 bool standUp = false
-float linePriceHigh = line.get_y1(dm.lineHigh)
+// float linePriceHigh = line.get_y1(dm.lineHigh)
+float linePriceHigh = array.size(id = dm.lineHighArray) == 0 ? ERROR_HIGH : line.get_y1(array.get(id = dm.lineHighArray, index = 0) ) 
 
 bool break_up_cond1 = close[3] < linePriceHigh and close[2] > linePriceHigh // 前三根收在裡面, 前二跟收在外面
 
@@ -189,65 +194,55 @@ bool break_up_cond4 = open[3] > linePriceHigh and close[3] > linePriceHigh // �
 bool bku1 = break_up_cond1 and break_up_cond2
 bool bku2 = break_up_cond3 and break_up_cond2
 
-breakUp := bku1 or bku2
+
+// breakUp := bku1 or bku2
+breakUp := bku2
     
 
 liquidUp := high > linePriceHigh
 
 
 bool stand_up_cond1 = high[1] > linePriceHigh and close < linePriceHigh // 前一根高在外面, 這一根收在裡面
-bool stand_up_cond2 = high[2] > linePriceHigh and stand_up_cond1 // 前一二根開在外面, 這一根收在裡面
+bool stand_up_cond2 = high[2] > linePriceHigh and stand_up_cond1 // 前二根開在外面, 這一根收在裡面
 standUp := stand_up_cond1 or stand_up_cond2
 
 
 
 if breakUp
-    breakLabel := label.new(bar_index, high * 1.01, "破", color = color.black, textcolor = color.orange, style = label.style_label_down)
-    label.delete(id = breakLabel[2])
-    if dm.state == STATE_HAS_HIGH_LOW
+    if dm.state != STATE_NONE
         dm.state := setState(dm.state, STATE_NONE)
-
-    if dm.state == STATE_HAS_LIQUID
-        dm.state := setState(dm.state, STATE_NONE)
-
-    if dm.state == STATE_HAS_STAND
-        dm.state := setState(dm.state, STATE_NONE)
+        dm.regionHigh := ERROR_HIGH
+        dm.regionLow := ERROR_LOW
+        dm.cutLostPrice := 0.0
+        breakLabel := label.new(bar_index, high * 1.01, "破", color = color.black, textcolor = color.orange, style = label.style_label_down)
+        label.delete(id = breakLabel[2])
 
     
 if liquidUp and not breakUp and dm.regionHigh != ERROR_HIGH
-    touchLabel := label.new(bar_index, high * 1.01, "戳!", color = color.black, textcolor = color.green, style = label.style_label_down)
-    label.delete(id = touchLabel[2])
-
+    
     if dm.state == STATE_HAS_HIGH_LOW // 如果此時
         dm.state := setState(dm.state, STATE_HAS_LIQUID)
         dm.isJudgeHigh := true // 判斷為高點行為
+        touchLabel := label.new(bar_index, high * 1.01, "戳!", color = color.black, textcolor = color.green, style = label.style_label_down)
+        label.delete(id = touchLabel[2])
     
 
 
 if standUp and not breakUp
-    standLabel := label.new(bar_index, high * 1.05, "回", color = color.teal, textcolor = color.white, style = label.style_label_down)
-    label.delete(id = standLabel[2])
-    dm.breakCount := 0
+    
     if dm.state == STATE_HAS_LIQUID
         dm.state := setState(dm.state, STATE_HAS_STAND)
-        dm.cutLostPrice := high[1]
+        standLabel := label.new(bar_index, high * 1.05, "回", color = color.teal, textcolor = color.white, style = label.style_label_down)
+        label.delete(id = standLabel[2])
+        dm.cutLostPrice := taHigh
     else
         errorText := "LIQUID -> STAND error! state : " + str.tostring(dm.state) 
+    
 
-if breakUp
-    finishLabel := label.new(bar_index, low * 0.93, "B_E", color = color.red, textcolor = color.white, style = label.style_label_up)
+if dm.isJudgeHigh and dm.cutLostPrice != 0 and high > dm.cutLostPrice
+    finishLabel := label.new(bar_index, high * 1.07, "C_E", color = color.red, textcolor = color.white, style = label.style_label_down)
     label.delete(id = finishLabel[2])
     dm.state := setState(dm.state, STATE_NONE)
-    dm.breakCount := 0
-    dm.regionHigh := ERROR_HIGH
-    dm.regionLow := ERROR_LOW
-    dm.cutLostPrice := 0.0
-
-if dm.isJudgeHigh and dm.cutLostPrice != 0 and close > dm.cutLostPrice
-    finishLabel := label.new(bar_index, low * 0.93, "C_E", color = color.red, textcolor = color.white, style = label.style_label_up)
-    label.delete(id = finishLabel[2])
-    dm.state := setState(dm.state, STATE_NONE)
-    dm.breakCount := 0
     dm.regionHigh := ERROR_HIGH
     dm.regionLow := ERROR_LOW
     dm.cutLostPrice := 0.0
@@ -257,7 +252,8 @@ if dm.isJudgeHigh and dm.cutLostPrice != 0 and close > dm.cutLostPrice
 bool breakDown = false
 bool liquidDown = false
 bool standDown = false
-float linePriceLow = line.get_y1(dm.lineLow)
+// float linePriceLow = line.get_y1(id = dm.lineLow) 
+float linePriceLow = array.size(id = dm.lineLowArray) == 0 ? ERROR_LOW :  line.get_y1(array.get(id = dm.lineLowArray, index = 0) )
 
 bool break_down_cond1 = close[3] > linePriceLow and close[2] < linePriceLow
 bool break_down_cond2 = open[1] < linePriceLow and close[1] < linePriceLow
@@ -265,9 +261,10 @@ bool break_down_cond2 = open[1] < linePriceLow and close[1] < linePriceLow
 bool break_down_cond3 = open[2] < linePriceLow and close[2] < linePriceLow
 
 bool bkd1 = break_down_cond1 and break_down_cond2
-bool bud2 = break_down_cond2 and break_down_cond3
+bool bkd2 = break_down_cond2 and break_down_cond3
 
-breakDown := bkd1 or bud2
+// breakDown := bkd1 or bkd2
+breakDown := bkd2
 
 
 liquidDown := low < linePriceLow
@@ -277,60 +274,49 @@ bool stand_donw_cond2 = low[2] < linePriceLow and stand_down_cond1
 standDown := stand_down_cond1 or stand_donw_cond2
 
 if breakDown
-    breakLabel := label.new(bar_index, low * 0.99, "破", color = color.black, textcolor = color.orange, style = label.style_label_up)
-    label.delete(id = breakLabel[2])
-    if dm.state == STATE_HAS_HIGH_LOW
+    if dm.state != STATE_NONE
         dm.state := setState(dm.state, STATE_NONE)
-
-    if dm.state == STATE_HAS_LIQUID
-        dm.state := setState(dm.state, STATE_NONE)
-
-    if dm.state == STATE_HAS_STAND
-        dm.state := setState(dm.state, STATE_NONE)
+        dm.regionHigh := ERROR_HIGH
+        dm.regionLow := ERROR_LOW
+        dm.cutLostPrice := 0.0
+        breakLabel := label.new(bar_index, low * 0.99, "破", color = color.black, textcolor = color.orange, style = label.style_label_up)
+        label.delete(id = breakLabel[2])
 
 
 if liquidDown and not breakDown and dm.regionLow != ERROR_LOW
-    touchLabel := label.new(bar_index, low * 0.99, "戳!", color = color.black, textcolor = color.red, style = label.style_label_up)
-    label.delete(id = touchLabel[2])
 
-    if dm.state == STATE_HAS_HIGH_LOW // 如果此時狀態回高低
+    if dm.state == STATE_HAS_HIGH_LOW // 如果此時狀態是高低
         dm.state := setState(dm.state, STATE_HAS_LIQUID)
         dm.isJudgeHigh := false // 判斷為高點行為
+        touchLabel := label.new(bar_index, low * 0.99, "戳!", color = color.black, textcolor = color.red, style = label.style_label_up)
+        label.delete(id = touchLabel[2])
     
 
 if standDown and not breakDown
-    standLabel := label.new(bar_index, low * 0.95, "回", color = color.teal, textcolor = color.white, style = label.style_label_up)
-    label.delete(id = standLabel[2])
-    dm.breakCount := 0
+    
     if dm.state == STATE_HAS_LIQUID
         dm.state := setState(dm.state, STATE_HAS_STAND)
-        dm.cutLostPrice := low[1]
+        standLabel := label.new(bar_index, low * 0.95, "回", color = color.teal, textcolor = color.white, style = label.style_label_up)
+        label.delete(id = standLabel[2])
+        dm.cutLostPrice := taLow
     else
         errorText := "LIQUID -> STAND error! state : " + str.tostring(dm.state) 
-
-if breakDown
-    finishLabel := label.new(bar_index, low * 0.93, "B_E", color = color.red, textcolor = color.white, style = label.style_label_up)
-    label.delete(id = finishLabel[2])
-    dm.state := setState(dm.state, STATE_NONE)
-    dm.breakCount := 0
-    dm.regionHigh := ERROR_HIGH
-    dm.regionLow := ERROR_LOW
-    dm.cutLostPrice := 0.0
+    
         
-if not dm.isJudgeHigh and dm.cutLostPrice != 0 and close < dm.cutLostPrice
+if not dm.isJudgeHigh and dm.cutLostPrice != 0 and low < dm.cutLostPrice
     finishLabel := label.new(bar_index, low * 0.93, "C_E", color = color.red, textcolor = color.white, style = label.style_label_up)
     label.delete(id = finishLabel[2])
     dm.state := setState(dm.state, STATE_NONE)
-    dm.breakCount := 0
     dm.regionHigh := ERROR_HIGH
     dm.regionLow := ERROR_LOW
     dm.cutLostPrice := 0.0
-        
+
 
 string outputText = "高 : " +  str.tostring(value = dm.regionHigh) + "\n"
 outputText += "低 : " +  str.tostring(value = dm.regionLow) + "\n" 
 outputText += "state : " + getStateDiscription(dm.state) + "\n"
 outputText += "cutLost : " + str.tostring(dm.cutLostPrice) + "\n"
+outputText += "isJudgeHigh : " + str.tostring(value = dm.isJudgeHigh)  + "\n"
 outputText += "error : " + errorText 
 
 debugLabel := debug.printLabel(outputText)
