@@ -33,18 +33,16 @@ var RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" +
 
 
 // 3. Constant value initialization
-var int TOTAL_TITLE_DISPLAY = 4
+var int TOTAL_TITLE_DISPLAY = 3
 var int TOTAL_CURRENCY_CLASS = 2 //TODO : 總共有幾種貨幣
 var string REMAIN_TITLE = "價值(U)"
 var string PROFIT_TITLE = "損益(U)"
-var string PROFIT_PERCENT_TITLE = "利潤"
 
 
 // 4. Variable declartion
 var string BTC_SYMBOL = "BYBIT:BTCUSDT.P"
 var float MY_BTC_POSITION = input.float(defval = 0.082021, title = "BTC總量",  step =  1, inline = "01", group = GROUP_CURRENCY) 
 var float MY_BTC_COST = input.float(defval = 1800.48, title = " 成本",  step =  1, inline = "01", group = GROUP_CURRENCY) 
-var float MY_BTC_AVERAGE_PRICE = input.float(defval = 21941.85, title = " 均價",  step =  1, inline = "01", group = GROUP_CURRENCY) 
 var float currentBTCPrice = 0.0
 var float remainBTC = 0.0
 var float profitBTC = 0.0
@@ -53,7 +51,6 @@ var float profitPercentBTC = 0.0
 var string CRO_SYMBOL = "COINBASE:CROUSD"
 var float MY_CRO_POSITION = input.float(defval = 21869, title = "CRO總量",  step =  1, inline = "02", group = GROUP_CURRENCY) 
 var float MY_CRO_COST = input.float(defval = 3632, title = " 成本",  step =  1, inline = "02", group = GROUP_CURRENCY) 
-var float MY_CRO_AVERAGE_PRICE = input.float(defval = 0.183, title = " 均價",  step =  1, inline = "02", group = GROUP_CURRENCY) 
 var float currentCROPrice = 0.0
 var float remainCRO = 0.0
 var float profitCRO = 0.0
@@ -65,7 +62,6 @@ INPUT_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", optio
 // var string TODO_SYMBOL = "COINBASE:CROUSD"
 // var float MY_TODO_POSITION = input.float(defval = 21849, title = "TODO總量",  step =  1, inline = "03", group = GROUP_CURRENCY)  
 // var float MY_TODO_COST = input.float(defval = 3632, title = " 成本",  step =  1, inline = "03", group = GROUP_CURRENCY) 
-// var float MY_TODO_AVERAGE_PRICE = input.float(defval = 0.183, title = " 均價",  step =  1, inline = "04", group = GROUP_CURRENCY) 
 // var float currentTODOPrice = 0.0
 // var float remainTODO = 0.0
 // var float profitTODO = 0.0
@@ -121,25 +117,17 @@ cell(rowID, title, remain, profit, profitPercent) =>
      bgcolor        =  color.new(color =  color.gray, transp = 0)
      )
 
-    var string profitText = str.tostring(value = profit, format =  "#.#") 
+    var string profitText = str.tostring(value = profit, format =  "#") 
+    var string profitPercentText = str.tostring(value = profitPercent, format =  "#.#") + " %"
     table.cell(
      table_id       =  resultTabel, 
      column         =  2, 
      row            =  rowID, 
-     text           =  profitText, 
+     text           =  profitText + " (" + profitPercentText + ")", 
      text_color     =  color.new(color =  profit > 0 ? color.green : color.red, transp = 0), 
      bgcolor        =  color.new(color =  color.gray, transp = 0)
      )
-    
-    var string profitPercentText = str.tostring(value = profitPercent, format =  "#.#") + " %"
-    table.cell(
-     table_id       =  resultTabel, 
-     column         =  3, 
-     row            =  rowID, 
-     text           =  profitPercentText, 
-     text_color     =  color.new(color =  profitPercent > 0 ? color.green : color.red, transp = 0), 
-     bgcolor        =  color.new(color =  color.gray, transp = 0)
-     )
+
     
     
 // 6. Code logic start
@@ -153,7 +141,6 @@ if barstate.islast
     table.cell(resultTabel, column = 0, row = 0, text = "損益神器")
     table.cell(resultTabel, column = 1, row = 0, text = REMAIN_TITLE)
     table.cell(resultTabel, column = 2, row = 0, text = PROFIT_TITLE)
-    table.cell(resultTabel, column = 3, row = 0, text =  PROFIT_PERCENT_TITLE)
     cell(1, "BTC", remainBTC, profitBTC, profitPercentBTC)
     cell(2, "CRO", remainCRO, profitCRO, profitPercentCRO)
     // cell(3, "TODO", remainTODO, profitTODO, profitPercentTODO) //TODO : 新增一行顯示運用cell function.
