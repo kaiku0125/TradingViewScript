@@ -144,4 +144,4 @@ if barstate.islast
     cell(3, "CRO", remainCRO, profitCRO, profitPercentCRO)
     cell(4, "MATIC", remainMATIC, profitMATIC, profitPercentMATIC)
     
-    // getCurrentSymbol()
+    getCurrentSymbol()
