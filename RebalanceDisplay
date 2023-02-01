@@ -33,24 +33,24 @@ var string VERSION_NAME = "v1.0"
 var string RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
                      "[1] First release."
 
-INPUT_CASH_RATIO = input.float(defval = 25, title = "現金", inline = "01", group = GROUP_RATIO) 
-INPUT_SPECULATION_RATIO = input.float(defval = 75, title = "資產", inline = "01", group = GROUP_RATIO) 
-INPUT_CRYPTO_RATIO = input.float(defval = 80, title = "幣圈", inline = "02", group = GROUP_ASSETS_RATIO)
-INPUT_TW_STOCKS_RATIO = input.float(defval = 20, title = "台股", inline = "02", group = GROUP_ASSETS_RATIO)
+INPUT_CASH_RATIO = input.float(defval = 25, title = "現金(%)", inline = "01", group = GROUP_RATIO) 
+INPUT_SPECULATION_RATIO = input.float(defval = 75, title = "資產(%)", inline = "01", group = GROUP_RATIO) 
+INPUT_CRYPTO_RATIO = input.float(defval = 80, title = "幣圈(%)", inline = "02", group = GROUP_ASSETS_RATIO)
+INPUT_TW_STOCKS_RATIO = input.float(defval = 20, title = "台股(%)", inline = "02", group = GROUP_ASSETS_RATIO)
 
-INPUT_BANK1 = input.float(defval = 65758, title = "台新", group = GROUP_CASH) 
-INPUT_BANK2 = input.float(defval = 30726, title = "兆豐", group = GROUP_CASH) 
-INPUT_BANK3 = input.float(defval = 30000, title = "元大", group = GROUP_CASH) 
+INPUT_BANK1 = input.float(defval = 65758, title = "台新(TWD)", group = GROUP_CASH) 
+INPUT_BANK2 = input.float(defval = 30726, title = "兆豐(TWD)", group = GROUP_CASH) 
+INPUT_BANK3 = input.float(defval = 30000, title = "元大(TWD)", group = GROUP_CASH) 
 
-INPUT_TW_STOCKS = input.float(defval = 0, title = "投資先生", group = GROUP_ASSETS)
+INPUT_TW_STOCKS = input.float(defval = 0, title = "投資先生(TWD)", group = GROUP_ASSETS)
 
-INPUT_BINANCE = input.float(defval = 721, title = "Binance", group = GROUP_ASSETS)
-INPUT_BYBIT = input.float(defval = 933, title = "Bybit", group = GROUP_ASSETS)
-INPUT_COOL_WALLET = input.float(defval = 1932, title = "冷錢包", group = GROUP_ASSETS)
-INPUT_PIONEX = input.float(defval = 436, title = "Pionex", group = GROUP_ASSETS)
-INPUT_CRYPTO_COM = input.float(defval = 1822, title = "Crypto.com", group = GROUP_ASSETS)
-INPUT_CRYPTO_COM_VISA = input.float(defval = 1600, title = "幣圈Visa", group = GROUP_ASSETS)
-INPUT_MAX = input.float(defval = 0, title = "MAX", group = GROUP_ASSETS)
+INPUT_BINANCE = input.float(defval = 721, title = "Binance(U)", group = GROUP_ASSETS)
+INPUT_BYBIT = input.float(defval = 933, title = "Bybit(U)", group = GROUP_ASSETS)
+INPUT_COOL_WALLET = input.float(defval = 1932, title = "冷錢包(U)", group = GROUP_ASSETS)
+INPUT_PIONEX = input.float(defval = 436, title = "Pionex(U)", group = GROUP_ASSETS)
+INPUT_CRYPTO_COM = input.float(defval = 1822, title = "Crypto.com(U)", group = GROUP_ASSETS)
+INPUT_CRYPTO_COM_VISA = input.float(defval = 1600, title = "幣圈Visa(U)", group = GROUP_ASSETS)
+INPUT_MAX = input.float(defval = 0, title = "MAX(U)", group = GROUP_ASSETS)
 
 
 // 3. Constant value initialization
@@ -74,9 +74,8 @@ var float cashRebalance = na
 var float stockRebalance = na
 var float cryptoRebalance = na
 
-var label debugLabel = na
 var table resultTabel = table.new(
- position       =  position.bottom_right,
+ position       =  position.bottom_center,
  columns        =  10,
  rows           =  10,
  bgcolor        =  color.new(color = color.gray, transp = 0),
@@ -85,7 +84,13 @@ var table resultTabel = table.new(
  border_color   =  color.new(color =  color.black, transp = 0),
  border_width   =  3
  )
+
 // 5. Define functions
+getCurrentSymbol(float value) =>
+    string mOutput = str.tostring(value = value, format =  "#.####")  // currentCROPrice替換成想加入的變數
+    label debugLabel = debug.printLabel("圖表ID : " + syminfo.tickerid + ", 價格 : " + mOutput)
+    // label.delete(id = debugLabel[1])
+
 
 // 6. Code logic start
 if INPUT_CASH_RATIO + INPUT_SPECULATION_RATIO != 100
@@ -111,11 +116,6 @@ stockRebalance := totalAssets * twStocksRatio - totalStocksAssets
 cryptoRebalance := totalAssets * cryptoRatio - totalCryptoAssets
 
 if barstate.islast
-    // string mOutput = ""
-    // string mOutput = str.tostring(value = cashRebalance, format =  "#.#")
-    // debugLabel := debug.printLabel("圖表ID : " + syminfo.tickerid + ", 價格 : " + mOutput)
-    // label.delete(id = debugLabel[1])
-
     // Draw table
     table.cell(resultTabel, column = 0, row = 0, text = str.tostring(totalAssets, "#"), text_color = color.yellow, text_size = size.normal)
     table.cell(resultTabel, column = 1, row = 0, text = "價值")
@@ -132,3 +132,5 @@ if barstate.islast
     table.cell(resultTabel, column = 0, row = 3, text = "幣圈")
     table.cell(resultTabel, column = 1, row = 3, text = str.tostring(totalCryptoAssets, "#"))
     table.cell(resultTabel, column = 2, row = 3, text = str.tostring(cryptoRebalance, "#"))
+
+    // getCurrentSymbol(totalCash)
