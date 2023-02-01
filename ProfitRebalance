@@ -2,6 +2,7 @@
 
 // 1. Import library
 import kaiku0125/Debug/1 as debug
+import kaiku0125/Colour/1 as colour
 // # ========================================================================= #
 // #                   |   Indicator  |
 // # ========================================================================= #
@@ -107,7 +108,7 @@ var float cashRebalance = na
 var float stockRebalance = na
 var float cryptoRebalance = na
 
-var table resultTabel = table.new(
+var table displayTabel = table.new(
  position       =  position.middle_center,
  columns        =  12,
  rows           =  12,
@@ -128,7 +129,7 @@ getOutput(currentPrice, position, cost) =>
 cell(rowID, remain, profit, profitPercent) =>
     var string remainText = str.tostring(value = remain, format =  "#")
     table.cell(
-     table_id       =  resultTabel, 
+     table_id       =  displayTabel, 
      column         =  3, 
      row            =  rowID, 
      text           =  remainText, 
@@ -139,11 +140,11 @@ cell(rowID, remain, profit, profitPercent) =>
     var string profitText = str.tostring(value = profit, format =  "#") 
     var string profitPercentText = str.tostring(value = profitPercent, format =  "#.#") + " %"
     table.cell(
-     table_id       =  resultTabel, 
+     table_id       =  displayTabel, 
      column         =  4, 
      row            =  rowID, 
      text           =  profitText + " (" + profitPercentText + ")", 
-     text_color     =  color.new(color =  profit > 0 ? color.green : color.red, transp = 0), 
+     text_color     =  color.new(color =  profit > 0 ? color.green : colour.FIRE_BRICK(), transp = 0), 
      bgcolor        =  color.new(color =  color.gray, transp = 0)
      )
 
@@ -152,8 +153,9 @@ getCurrentSymbol(float value) =>
     label debugLabel = debug.printLabel("圖表ID : " + syminfo.tickerid + ", 價格 : " + mOutput)
     // label.delete(id = debugLabel[1])
 
-
-
+getRebalanceDiff(float nowRatio, supposeRatio) =>
+    float output = (nowRatio - supposeRatio) * 100
+    output
 
 
 // 6. Code logic start
@@ -203,66 +205,66 @@ nowMATICRatio := remainMATIC / totalAssets
 
 if barstate.islast
     // Draw table
-    table.cell(resultTabel, column = 0, row = 0, text = str.tostring(totalAssets, "#"), text_color = color.yellow, text_size = size.normal)
-    table.cell(resultTabel, column = 1, row = 0, text = "占比")
-    table.cell(resultTabel, column = 2, row = 0, text = "再平衡")
-    table.cell(resultTabel, column = 3, row = 0, text = "價值")
-    table.cell(resultTabel, column = 4, row = 0, text = "損益")
+    table.cell(displayTabel, column = 0, row = 0, text = str.tostring(totalAssets, "#"), text_color = color.yellow, text_size = size.normal)
+    table.cell(displayTabel, column = 1, row = 0, text = "占比")
+    table.cell(displayTabel, column = 2, row = 0, text = "再平衡")
+    table.cell(displayTabel, column = 3, row = 0, text = "價值")
+    table.cell(displayTabel, column = 4, row = 0, text = "損益")
 
-    table.cell(resultTabel, column = 0, row = 1, text = "現金")
-    table.cell(resultTabel, column = 1, row = 1, text = str.tostring(cashRatioNow * 100, "#.#") + "%")
-    table.cell(resultTabel, column = 2, row = 1, text = str.tostring(cashRebalance, "#"))
-    table.cell(resultTabel, column = 3, row = 1, text = str.tostring(totalCash, "#"))
-    table.cell(resultTabel, column = 4, row = 1, text = "--")
+    table.cell(displayTabel, column = 0, row = 1, text = "現金")
+    table.cell(displayTabel, column = 1, row = 1, text = cashRatioNow + getRebalanceDiff() > 0 "" : "" + )
+    table.cell(displayTabel, column = 2, row = 1, text = str.tostring(cashRebalance, "#"))
+    table.cell(displayTabel, column = 3, row = 1, text = str.tostring(totalCash, "#"))
+    table.cell(displayTabel, column = 4, row = 1, text = "--")
 
-    table.cell(resultTabel, column = 0, row = 2, text = "")
-    table.cell(resultTabel, column = 1, row = 2, text = "")
-    table.cell(resultTabel, column = 2, row = 2, text = "")
-    table.cell(resultTabel, column = 3, row = 2, text = "")
-    table.cell(resultTabel, column = 4, row = 2, text = "")
+    table.cell(displayTabel, column = 0, row = 2, text = "")
+    table.cell(displayTabel, column = 1, row = 2, text = "")
+    table.cell(displayTabel, column = 2, row = 2, text = "")
+    table.cell(displayTabel, column = 3, row = 2, text = "")
+    table.cell(displayTabel, column = 4, row = 2, text = "")
 
 
-    table.cell(resultTabel, column = 0, row = 3, text = "台股")
-    table.cell(resultTabel, column = 1, row = 3, text = str.tostring(twStocksRatioNow, "#.#"))
-    table.cell(resultTabel, column = 2, row = 3, text = str.tostring(stockRebalance, "#"))
-    table.cell(resultTabel, column = 3, row = 3, text = str.tostring(totalStocksAssets, "#"))
-    table.cell(resultTabel, column = 4, row = 3, text = "--")
+    table.cell(displayTabel, column = 0, row = 3, text = "台股")
+    table.cell(displayTabel, column = 1, row = 3, text = str.tostring(twStocksRatioNow * 100, "#.#"))
+    table.cell(displayTabel, column = 2, row = 3, text = str.tostring(stockRebalance, "#"))
+    table.cell(displayTabel, column = 3, row = 3, text = str.tostring(totalStocksAssets, "#"))
+    table.cell(displayTabel, column = 4, row = 3, text = "--")
     
-    table.cell(resultTabel, column = 0, row = 4, text = "006208")
-    table.cell(resultTabel, column = 1, row = 4, text = str.tostring(now002608Ratio * 100, "#.#") + "%")
-    table.cell(resultTabel, column = 2, row = 4, text = "--")
+    table.cell(displayTabel, column = 0, row = 4, text = "富邦50")
+    table.cell(displayTabel, column = 1, row = 4, text = str.tostring(now002608Ratio * 100, "#.#") + "%")
+    table.cell(displayTabel, column = 2, row = 4, text = "--")
     cell(4, remain006208, profit006208, profitPercent006208)
 
-    table.cell(resultTabel, column = 0, row = 5, text = "")
-    table.cell(resultTabel, column = 1, row = 5, text = "")
-    table.cell(resultTabel, column = 2, row = 5, text = "")
-    table.cell(resultTabel, column = 3, row = 5, text = "")
-    table.cell(resultTabel, column = 4, row = 5, text = "")
+    table.cell(displayTabel, column = 0, row = 5, text = "")
+    table.cell(displayTabel, column = 1, row = 5, text = "")
+    table.cell(displayTabel, column = 2, row = 5, text = "")
+    table.cell(displayTabel, column = 3, row = 5, text = "")
+    table.cell(displayTabel, column = 4, row = 5, text = "")
 
-    table.cell(resultTabel, column = 0, row = 6, text = "幣圈")
-    table.cell(resultTabel, column = 1, row = 6, text = str.tostring(cryptoRatioNow * 100, "#.#") + "%")
-    table.cell(resultTabel, column = 2, row = 6, text = str.tostring(cryptoRebalance, "#"))
-    table.cell(resultTabel, column = 3, row = 6, text = str.tostring(totalCryptoAssets, "#"))
-    table.cell(resultTabel, column = 4, row = 6, text = "--")
+    table.cell(displayTabel, column = 0, row = 6, text = "幣圈")
+    table.cell(displayTabel, column = 1, row = 6, text = str.tostring(cryptoRatioNow * 100, "#.#") + "%")
+    table.cell(displayTabel, column = 2, row = 6, text = str.tostring(cryptoRebalance, "#"))
+    table.cell(displayTabel, column = 3, row = 6, text = str.tostring(totalCryptoAssets, "#"))
+    table.cell(displayTabel, column = 4, row = 6, text = "--")
 
-    table.cell(resultTabel, column = 0, row = 7, text = "BTC")
-    table.cell(resultTabel, column = 1, row = 7, text = str.tostring(nowBTCRatio * 100, "#.#") + "%")
-    table.cell(resultTabel, column = 2, row = 7, text = "--")
+    table.cell(displayTabel, column = 0, row = 7, text = "BTC")
+    table.cell(displayTabel, column = 1, row = 7, text = str.tostring(nowBTCRatio * 100, "#.#") + "%")
+    table.cell(displayTabel, column = 2, row = 7, text = "--")
     cell(7, remainBTC, profitBTC, profitPercentBTC)
 
-    table.cell(resultTabel, column = 0, row = 8, text = "ETH")
-    table.cell(resultTabel, column = 1, row = 8, text = str.tostring(nowETHRatio * 100, "#.#") + "%")
-    table.cell(resultTabel, column = 2, row = 8, text = "--")
+    table.cell(displayTabel, column = 0, row = 8, text = "ETH")
+    table.cell(displayTabel, column = 1, row = 8, text = str.tostring(nowETHRatio * 100, "#.#") + "%")
+    table.cell(displayTabel, column = 2, row = 8, text = "--")
     cell(8, remainETH, profitETH, profitPercentETH)
 
-    table.cell(resultTabel, column = 0, row = 9, text = "CRO")
-    table.cell(resultTabel, column = 1, row = 9, text = str.tostring(nowCRORatio * 100, "#.#") + "%")
-    table.cell(resultTabel, column = 2, row = 9, text = "--")
+    table.cell(displayTabel, column = 0, row = 9, text = "CRO")
+    table.cell(displayTabel, column = 1, row = 9, text = str.tostring(nowCRORatio * 100, "#.#") + "%")
+    table.cell(displayTabel, column = 2, row = 9, text = "--")
     cell(9, remainCRO, profitCRO, profitPercentCRO)
 
-    table.cell(resultTabel, column = 0, row = 10, text = "MATIC")
-    table.cell(resultTabel, column = 1, row = 10, text = str.tostring(nowMATICRatio * 100, "#.#") + "%")
-    table.cell(resultTabel, column = 2, row = 10, text = "--")
+    table.cell(displayTabel, column = 0, row = 10, text = "MATIC")
+    table.cell(displayTabel, column = 1, row = 10, text = str.tostring(nowMATICRatio * 100, "#.#") + "%")
+    table.cell(displayTabel, column = 2, row = 10, text = "--")
     cell(10, remainMATIC, profitMATIC, profitPercentMATIC)
 
 
