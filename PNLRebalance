@@ -2,7 +2,7 @@
 
 // 1. Import library
 import kaiku0125/Debug/1 as debug
-import kaiku0125/Colour/1 as colour
+import kaiku0125/Colour/4 as colour
 // # ========================================================================= #
 // #                   |   Indicator  |
 // # ========================================================================= #
@@ -119,7 +119,7 @@ var table displayTabel = table.new(
  position       =  position.middle_center,
  columns        =  12,
  rows           =  12,
- bgcolor        =  color.new(color = color.gray, transp = 0),
+ bgcolor        =  color.new(color = colour.DIM_GRAY(), transp = 0),
  frame_color    =  color.new(color =  color.black, transp = 0),
  frame_width    =  2,
  border_color   =  color.new(color =  color.black, transp = 0),
@@ -150,7 +150,7 @@ cell(rowID, remain, profit, profitPercent) =>
      row            =  rowID, 
      text           =  remainText, 
      text_color     =  color.new(color =  color.white, transp = 0), 
-     bgcolor        =  color.new(color =  color.gray, transp = 0)
+     bgcolor        =  color.new(color =  colour.DIM_GRAY(), transp = 0)
      )
 
     var string profitText = str.tostring(value = profit, format =  "#") 
@@ -161,7 +161,7 @@ cell(rowID, remain, profit, profitPercent) =>
      row            =  rowID, 
      text           =  profitText + " (" + profitPercentText + ")", 
      text_color     =  color.new(color =  profit > 0 ? color.green : colour.FIRE_BRICK(), transp = 0), 
-     bgcolor        =  color.new(color =  color.gray, transp = 0)
+     bgcolor        =  color.new(color =  colour.DIM_GRAY(), transp = 0)
      )
 
 getCurrentSymbol(float value) =>
@@ -231,7 +231,7 @@ nowMATICRatio := remainMATIC / totalAssets
 
 if barstate.islast
     // Draw table
-    table.cell(displayTabel, column = 0, row = 0, text = str.tostring(totalAssets, "#"), text_color = color.yellow, text_size = size.normal)
+    table.cell(displayTabel, column = 0, row = 0, text = str.tostring(totalAssets, "#"), text_color = colour.GOLD(), text_size = size.normal)
     table.cell(displayTabel, column = 1, row = 0, text = "占比")
     table.cell(displayTabel, column = 2, row = 0, text = "再平衡" + "(" + INPUT_DISPLAY_CURRENCY + ")")
     table.cell(displayTabel, column = 3, row = 0, text = "價值" + "(" + INPUT_DISPLAY_CURRENCY + ")")

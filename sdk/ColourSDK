@@ -3,26 +3,135 @@
 
 
 library(title = "Colour", overlay =  true) 
-var VERSION_NAME = "v1.0"
-var color COLOR_FIRE_BRICK = color.rgb(red = 178, green = 34, blue = 34, transp = 0)  
+var VERSION_NAME = "v4"
+
+
+var color COLOR_MAROON = color.rgb(red = 128, green = 0, blue = 0, transp = 0)
+export MAROON() =>
+    COLOR_MAROON
+
 var color COLOR_DARK_RED = color.rgb(red = 139, green = 0, blue = 0, transp = 0)  
-var color COLOR_FOREST_GREEN = color.rgb(red = 34, green = 139, blue = 34, transp = 0) 
-var color COLOR_DARK_GREEN = color.rgb(red = 0, green = 100, blue = 0, transp = 0) 
-
-
-export FIRE_BRICK() =>
-    COLOR_FIRE_BRICK
-
 export DARK_RED() =>
     COLOR_DARK_RED
 
+var color COLOR_BROWN = color.rgb(red = 165, green = 42, blue = 42, transp = 0)  
+export BROWN() =>
+    COLOR_BROWN
+
+var color COLOR_FIRE_BRICK = color.rgb(red = 178, green = 34, blue = 34, transp = 0) 
+export FIRE_BRICK() =>
+    COLOR_FIRE_BRICK 
+
+var color COLOR_CRIMSON = color.rgb(red = 220, green = 20, blue = 60, transp = 0)
+export CRIMSON() =>
+    COLOR_CRIMSON 
+
+var color COLOR_TOMATO = color.rgb(red = 255, green = 99, blue = 71, transp = 0)  
+export TOMATO() =>
+    COLOR_TOMATO 
+
+var color COLOR_CORAL = color.rgb(red = 255, green = 127, blue = 80, transp = 0)
+export CORAL() =>
+    COLOR_CORAL 
+
+var color COLOR_DARK_SALMON = color.rgb(233, 150, 122, 0)
+export DARK_SALMON() =>
+    COLOR_DARK_SALMON 
+
+var color COLOR_SALMON = color.rgb(250, 128, 114, 0)
+export SALMON() =>
+    COLOR_SALMON 
+
+var color COLOR_LIGHT_SALMON = color.rgb(255, 160, 122, 0)
+export LIGHT_SALMON () =>
+    COLOR_LIGHT_SALMON 
+
+var color COLOR_ORANGE_RED = color.rgb(255, 69, 0, 0)
+export ORANGE_RED() =>
+    COLOR_ORANGE_RED 
+
+var color COLOR_DARK_ORANGE = color.rgb(255, 140, 0, 0)
+export DARK_ORANGE() =>
+    COLOR_DARK_ORANGE 
+
+var color COLOR_GOLD = color.rgb(255, 215, 0, 0)
+export GOLD() =>
+    COLOR_GOLD
+
+var color COLOR_DARK_GOLDEN_ROD = color.rgb(184, 134, 11, 0)
+export DARK_GOLDEN_ROD() =>
+    COLOR_DARK_GOLDEN_ROD
+
+var color COLOR_GOLDEN_ROD = color.rgb(218, 165, 32, 0)
+export GOLDER_ROD() =>
+    COLOR_GOLDEN_ROD
+
+var color COLOR_PALE_GOLDEN_ROD = color.rgb(238, 232, 170, 0)
+export PALE_GOLDEN_ROD() =>
+    COLOR_PALE_GOLDEN_ROD
+
+var color COLOR_DARK_KHAKI = color.rgb(189, 183, 107, 0)
+export DARK_KHAKI() =>
+    COLOR_DARK_KHAKI
+
+var color COLOR_KHAKI = color.rgb(240, 230, 140, 0)
+export KHAKI() =>
+    COLOR_KHAKI
+
+var color COLOR_OLIVE = color.rgb(128, 128, 0, 0)
+export OLIVE() =>
+    COLOR_OLIVE
+
+var color COLOR_YELLOW_GREEN = color.rgb(154, 205, 50, 0)
+export YELLOW_GREEN() =>
+    COLOR_YELLOW_GREEN
+
+var color COLOR_DARK_OLIVE_GREEN = color.rgb(85, 107, 47, 0)
+export DARK_OLIVE_GREEN() =>
+    COLOR_DARK_OLIVE_GREEN
+
+var color COLOR_OLIVE_DRAB = color.rgb(107, 142, 35, 0)
+export OLIVE_DRAB() =>
+    COLOR_OLIVE_DRAB
+
+var color COLOR_LAWN_GREEN = color.rgb(124, 252, 0, 0)
+export LAWN_GREEN() =>
+    COLOR_LAWN_GREEN
+
+var color COLOR_CHARTREUSE = color.rgb(127, 255, 0, 0)
+export CHARTREUSE() =>
+    COLOR_CHARTREUSE
+
+var color COLOR_LIME = color.rgb(0, 255, 0, 0)
+export LIME() =>
+    COLOR_LIME
+
+var color COLOR_LIME_GREEN = color.rgb(50, 205, 50, 0)
+export LIME_GREEN() =>
+    COLOR_LIME_GREEN
+
+var color COLOR_LIGHT_GREEN = color.rgb(144, 238, 144, 0)
+export LIGHT_GREEN() =>
+    COLOR_LIGHT_GREEN
+
+var color COLOR_PALE_GREEN = color.rgb(152, 251, 152, 0)
+export PALE_GREEN() =>
+    COLOR_PALE_GREEN
+
+// dark sea green
+
+
+var color COLOR_FOREST_GREEN = color.rgb(red = 34, green = 139, blue = 34, transp = 0) 
 export FOREST_GREEN() =>
     COLOR_FOREST_GREEN
 
+var color COLOR_DARK_GREEN = color.rgb(red = 0, green = 100, blue = 0, transp = 0) 
 export DARK_GREEN() =>
     COLOR_DARK_GREEN
 
-
+var color COLOR_DIM_GRAY = color.rgb(105, 105, 105, 0)
+export DIM_GRAY() =>
+    COLOR_DIM_GRAY
 
 export getSDKVersion() =>
     VERSION_NAME
