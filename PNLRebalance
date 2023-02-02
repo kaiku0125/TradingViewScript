@@ -26,6 +26,9 @@ indicator(
 // # ========================================================================= #
 
 // 2. Preference inputs settings
+var string GROUP_SETTING = "📌 設定"
+var string USD = "美金"
+var string TWD = "台幣"
 var string GROUP_RATIO = "總配比"
 var string GROUP_ASSETS_RATIO = "資產配比"
 var string GROUP_CASH = "💲 現金"
@@ -36,6 +39,8 @@ var string GROUP_VERSION = "💬 關於"
 var string VERSION_NAME = "v1.0"
 var string RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
                      "[1] First release."
+
+INPUT_DISPLAY_CURRENCY = input.string(defval = TWD, title = "貨幣顯示", options = [TWD, USD], group = GROUP_SETTING)
 
 INPUT_CASH_RATIO = input.float(defval = 25, title = "現金(%)", inline = "01", group = GROUP_RATIO) 
 INPUT_SPECULATION_RATIO = input.float(defval = 75, title = "資產(%)", inline = "01", group = GROUP_RATIO) 
@@ -58,14 +63,14 @@ INPUT_MAX = input.float(defval = 0, title = "MAX(U)", group = GROUP_ASSETS)
 
 MY_006208_POSITION = input.float(defval = 100, title = "006208(股)", inline = "03", group = GROUP_PNL)
 MY_006208_COST = input.float(defval = 6990, title = " 成本", inline = "03", group = GROUP_PNL)
-MY_BTC_POSITION = input.float(defval = 0.082021, title = "BTC(顆)",  step =  1, inline = "04", group = GROUP_PNL) 
-MY_BTC_COST = input.float(defval = 1800.48, title = " 成本",  step =  1, inline = "04", group = GROUP_PNL) 
-MY_ETH_POSITION = input.float(defval = 0.134574, title = "ETH(顆)",  step =  1, inline = "05", group = GROUP_PNL) 
-MY_ETH_COST = input.float(defval = 214.2, title = " 成本",  step =  1, inline = "05", group = GROUP_PNL) 
-MY_CRO_POSITION = input.float(defval = 21915, title = "CRO(顆)",  step =  1, inline = "06", group = GROUP_PNL) 
-MY_CRO_COST = input.float(defval = 3632, title = " 成本",  step =  1, inline = "06", group = GROUP_PNL) 
-MY_MATIC_POSITION = input.float(defval = 88.9, title = "MATIC(顆)",  step =  1, inline = "07", group = GROUP_PNL) 
-MY_MATIC_COST = input.float(defval = 91.8, title = " 成本",  step =  1, inline = "07", group = GROUP_PNL) 
+MY_BTC_POSITION = input.float(defval = 0.082021, title = "BTC(顆)", inline = "04", group = GROUP_PNL) 
+MY_BTC_COST = input.float(defval = 1800.48, title = " 成本", inline = "04", group = GROUP_PNL) 
+MY_ETH_POSITION = input.float(defval = 0.134574, title = "ETH(顆)", inline = "05", group = GROUP_PNL) 
+MY_ETH_COST = input.float(defval = 214.2, title = " 成本", inline = "05", group = GROUP_PNL) 
+MY_CRO_POSITION = input.float(defval = 21915, title = "CRO(顆)", inline = "06", group = GROUP_PNL) 
+MY_CRO_COST = input.float(defval = 3632, title = " 成本", inline = "06", group = GROUP_PNL) 
+MY_MATIC_POSITION = input.float(defval = 88.9, title = "MATIC(顆)", inline = "07", group = GROUP_PNL) 
+MY_MATIC_COST = input.float(defval = 91.8, title = " 成本", inline = "07", group = GROUP_PNL) 
 
 INPUT_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUP_VERSION) 
 
@@ -78,6 +83,8 @@ var string CRO_SYMBOL = "COINBASE:CROUSD"
 var string MATIC_SYMBOL = "COINBASE:MATICUSD"
 // 4. Variable declartion
 var float usd_twd = na
+var float usdExChange = na
+var float twdExChange = na
 
 var float cashRatio = na
 var float cashRatioNow = na
@@ -179,15 +186,17 @@ currentETHPrice := request.security(symbol =  ETH_SYMBOL, timeframe = "S", expre
 currentCROPrice := request.security(symbol =  CRO_SYMBOL, timeframe = "S", expression = close)
 currentMATICPrice := request.security(symbol =  MATIC_SYMBOL, timeframe = "S", expression = close)
 
+usdExChange := INPUT_DISPLAY_CURRENCY == TWD ? 1 * usd_twd : 1
+twdExChange := INPUT_DISPLAY_CURRENCY == TWD ? 1 : 1 / usd_twd
 
 cashRatio := INPUT_CASH_RATIO / 100
 specultaionRatio := INPUT_SPECULATION_RATIO / 100
 cryptoRatio := INPUT_CRYPTO_RATIO / 100 * specultaionRatio
 twStocksRatio := INPUT_TW_STOCKS_RATIO / 100 * specultaionRatio
 
-totalCash := INPUT_BANK1 + INPUT_BANK2 + INPUT_BANK3
-totalStocksAssets := current006208Price * MY_006208_POSITION
-totalCryptoAssets := (INPUT_BINANCE + INPUT_BYBIT + INPUT_COOL_WALLET + INPUT_PIONEX + INPUT_CRYPTO_COM + INPUT_MAX) * usd_twd
+totalCash := (INPUT_BANK1 + INPUT_BANK2 + INPUT_BANK3) * twdExChange
+totalStocksAssets := (current006208Price * MY_006208_POSITION) * twdExChange
+totalCryptoAssets := (INPUT_BINANCE + INPUT_BYBIT + INPUT_COOL_WALLET + INPUT_PIONEX + INPUT_CRYPTO_COM + INPUT_MAX) * usdExChange
 totalSpecultaionAssets := totalStocksAssets + totalCryptoAssets
 totalAssets := totalCash + totalSpecultaionAssets
 
@@ -199,11 +208,11 @@ cashRebalance := totalAssets * cashRatio - totalCash
 stockRebalance := totalAssets * twStocksRatio - totalStocksAssets
 cryptoRebalance := totalAssets * cryptoRatio - totalCryptoAssets
 
-[remain006208, profit006208, profitPercent006208] = getOutput(current006208Price, MY_006208_POSITION, MY_006208_COST)
-[remainBTC, profitBTC, profitPercentBTC] = getOutput(currentBTCPrice * usd_twd, MY_BTC_POSITION, MY_BTC_COST * usd_twd)
-[remainETH, profitETH, profitPercentETH] = getOutput(currentETHPrice * usd_twd, MY_ETH_POSITION, MY_ETH_COST * usd_twd)
-[remainCRO, profitCRO, profitPercentCRO] = getOutput(currentCROPrice * usd_twd, MY_CRO_POSITION, MY_CRO_COST * usd_twd)
-[remainMATIC, profitMATIC, profitPercentMATIC] = getOutput(currentMATICPrice * usd_twd, MY_MATIC_POSITION, MY_MATIC_COST * usd_twd)
+[remain006208, profit006208, profitPercent006208] = getOutput(current006208Price * twdExChange, MY_006208_POSITION, MY_006208_COST * twdExChange)
+[remainBTC, profitBTC, profitPercentBTC] = getOutput(currentBTCPrice * usdExChange, MY_BTC_POSITION, MY_BTC_COST * usdExChange)
+[remainETH, profitETH, profitPercentETH] = getOutput(currentETHPrice * usdExChange, MY_ETH_POSITION, MY_ETH_COST * usdExChange)
+[remainCRO, profitCRO, profitPercentCRO] = getOutput(currentCROPrice * usdExChange, MY_CRO_POSITION, MY_CRO_COST * usdExChange)
+[remainMATIC, profitMATIC, profitPercentMATIC] = getOutput(currentMATICPrice * usdExChange, MY_MATIC_POSITION, MY_MATIC_COST * usdExChange)
 
 now002608Ratio := remain006208 / totalAssets
 nowBTCRatio := remainBTC / totalAssets
