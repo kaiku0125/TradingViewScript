@@ -7,8 +7,8 @@ import kaiku0125/Colour/1 as colour
 // #                   |   Indicator  |
 // # ========================================================================= #
 indicator(
- title                = "ProfitRebalance",
- shorttitle           = "損益無情再平衡",
+ title                = "PNLRebalance",
+ shorttitle           = "損益再平衡",
  overlay              =  true,
  max_bars_back        =  2
 //  format               =  ,
@@ -46,7 +46,7 @@ INPUT_BANK1 = input.float(defval = 65758, title = "台新(TWD)", group = GROUP_C
 INPUT_BANK2 = input.float(defval = 30726, title = "兆豐(TWD)", group = GROUP_CASH) 
 INPUT_BANK3 = input.float(defval = 30000, title = "元大(TWD)", group = GROUP_CASH) 
 
-INPUT_TW_STOCKS = input.float(defval = 0, title = "投資先生(TWD)", group = GROUP_ASSETS)
+// INPUT_TW_STOCKS = input.float(defval = 6980, title = "投資先生(TWD)", group = GROUP_ASSETS)
 
 INPUT_BINANCE = input.float(defval = 721, title = "Binance(U)", group = GROUP_ASSETS)
 INPUT_BYBIT = input.float(defval = 933, title = "Bybit(U)", group = GROUP_ASSETS)
@@ -56,16 +56,16 @@ INPUT_CRYPTO_COM = input.float(defval = 1822, title = "Crypto.com(U)", group = G
 INPUT_CRYPTO_COM_VISA = input.float(defval = 1600, title = "幣圈Visa(U)", group = GROUP_ASSETS)
 INPUT_MAX = input.float(defval = 0, title = "MAX(U)", group = GROUP_ASSETS)
 
-MY_006208_POSITION = input.float(defval = 1, title = "006208(股)", inline = "03", group = GROUP_PNL)
-MY_006208_COST = input.float(defval = 60, title = " 成本", inline = "03", group = GROUP_PNL)
-MY_BTC_POSITION = input.float(defval = 0.082021, title = "BTC總量",  step =  1, inline = "01", group = GROUP_PNL) 
-MY_BTC_COST = input.float(defval = 1800.48, title = " 成本",  step =  1, inline = "01", group = GROUP_PNL) 
-MY_ETH_POSITION = input.float(defval = 0.134574, title = "ETH總量",  step =  1, inline = "02", group = GROUP_PNL) 
-MY_ETH_COST = input.float(defval = 214.2, title = " 成本",  step =  1, inline = "02", group = GROUP_PNL) 
-MY_CRO_POSITION = input.float(defval = 21915, title = "CRO總量",  step =  1, inline = "03", group = GROUP_PNL) 
-MY_CRO_COST = input.float(defval = 3632, title = " 成本",  step =  1, inline = "03", group = GROUP_PNL) 
-MY_MATIC_POSITION = input.float(defval = 88.9, title = "MATIC總量",  step =  1, inline = "04", group = GROUP_PNL) 
-MY_MATIC_COST = input.float(defval = 91.8, title = " 成本",  step =  1, inline = "04", group = GROUP_PNL) 
+MY_006208_POSITION = input.float(defval = 100, title = "006208(股)", inline = "03", group = GROUP_PNL)
+MY_006208_COST = input.float(defval = 6990, title = " 成本", inline = "03", group = GROUP_PNL)
+MY_BTC_POSITION = input.float(defval = 0.082021, title = "BTC(顆)",  step =  1, inline = "04", group = GROUP_PNL) 
+MY_BTC_COST = input.float(defval = 1800.48, title = " 成本",  step =  1, inline = "04", group = GROUP_PNL) 
+MY_ETH_POSITION = input.float(defval = 0.134574, title = "ETH(顆)",  step =  1, inline = "05", group = GROUP_PNL) 
+MY_ETH_COST = input.float(defval = 214.2, title = " 成本",  step =  1, inline = "05", group = GROUP_PNL) 
+MY_CRO_POSITION = input.float(defval = 21915, title = "CRO(顆)",  step =  1, inline = "06", group = GROUP_PNL) 
+MY_CRO_COST = input.float(defval = 3632, title = " 成本",  step =  1, inline = "06", group = GROUP_PNL) 
+MY_MATIC_POSITION = input.float(defval = 88.9, title = "MATIC(顆)",  step =  1, inline = "07", group = GROUP_PNL) 
+MY_MATIC_COST = input.float(defval = 91.8, title = " 成本",  step =  1, inline = "07", group = GROUP_PNL) 
 
 INPUT_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUP_VERSION) 
 
@@ -153,8 +153,16 @@ getCurrentSymbol(float value) =>
     label debugLabel = debug.printLabel("圖表ID : " + syminfo.tickerid + ", 價格 : " + mOutput)
     // label.delete(id = debugLabel[1])
 
-getRebalanceDiff(float nowRatio, supposeRatio) =>
+getRatioDiff(float nowRatio, supposeRatio) =>
     float output = (nowRatio - supposeRatio) * 100
+    output
+
+cellBlank(int rowID) => 
+    for i = 0 to 4
+        table.cell(displayTabel, column = i, row = rowID, text = "")
+
+ratioString(float ratio) =>
+    string output = str.tostring(ratio * 100, "#.#") + "%"
     output
 
 
@@ -178,7 +186,7 @@ cryptoRatio := INPUT_CRYPTO_RATIO / 100 * specultaionRatio
 twStocksRatio := INPUT_TW_STOCKS_RATIO / 100 * specultaionRatio
 
 totalCash := INPUT_BANK1 + INPUT_BANK2 + INPUT_BANK3
-totalStocksAssets := INPUT_TW_STOCKS
+totalStocksAssets := current006208Price * MY_006208_POSITION
 totalCryptoAssets := (INPUT_BINANCE + INPUT_BYBIT + INPUT_COOL_WALLET + INPUT_PIONEX + INPUT_CRYPTO_COM + INPUT_MAX) * usd_twd
 totalSpecultaionAssets := totalStocksAssets + totalCryptoAssets
 totalAssets := totalCash + totalSpecultaionAssets
@@ -211,38 +219,32 @@ if barstate.islast
     table.cell(displayTabel, column = 3, row = 0, text = "價值")
     table.cell(displayTabel, column = 4, row = 0, text = "損益")
 
+    float cashDiffRatio = getRatioDiff(cashRatioNow, cashRatio)
+    string cashDiffText = str.tostring(cashRebalance, "#") + " ( " + str.tostring(cashDiffRatio, "#.#") + "% )"  
+    color reColor = cashDiffRatio > 10 ? color.red : color.black
     table.cell(displayTabel, column = 0, row = 1, text = "現金")
-    table.cell(displayTabel, column = 1, row = 1, text = cashRatioNow + getRebalanceDiff() > 0 "" : "" + )
-    table.cell(displayTabel, column = 2, row = 1, text = str.tostring(cashRebalance, "#"))
+    table.cell(displayTabel, column = 1, row = 1, text = ratioString(cashRatioNow))
+    table.cell(displayTabel, column = 2, row = 1, text = cashDiffText, text_color = reColor)
     table.cell(displayTabel, column = 3, row = 1, text = str.tostring(totalCash, "#"))
     table.cell(displayTabel, column = 4, row = 1, text = "--")
 
-    table.cell(displayTabel, column = 0, row = 2, text = "")
-    table.cell(displayTabel, column = 1, row = 2, text = "")
-    table.cell(displayTabel, column = 2, row = 2, text = "")
-    table.cell(displayTabel, column = 3, row = 2, text = "")
-    table.cell(displayTabel, column = 4, row = 2, text = "")
-
+    cellBlank(2)
 
     table.cell(displayTabel, column = 0, row = 3, text = "台股")
-    table.cell(displayTabel, column = 1, row = 3, text = str.tostring(twStocksRatioNow * 100, "#.#"))
+    table.cell(displayTabel, column = 1, row = 3, text = ratioString(twStocksRatioNow))
     table.cell(displayTabel, column = 2, row = 3, text = str.tostring(stockRebalance, "#"))
     table.cell(displayTabel, column = 3, row = 3, text = str.tostring(totalStocksAssets, "#"))
     table.cell(displayTabel, column = 4, row = 3, text = "--")
     
     table.cell(displayTabel, column = 0, row = 4, text = "富邦50")
-    table.cell(displayTabel, column = 1, row = 4, text = str.tostring(now002608Ratio * 100, "#.#") + "%")
+    table.cell(displayTabel, column = 1, row = 4, text = ratioString(now002608Ratio))
     table.cell(displayTabel, column = 2, row = 4, text = "--")
     cell(4, remain006208, profit006208, profitPercent006208)
 
-    table.cell(displayTabel, column = 0, row = 5, text = "")
-    table.cell(displayTabel, column = 1, row = 5, text = "")
-    table.cell(displayTabel, column = 2, row = 5, text = "")
-    table.cell(displayTabel, column = 3, row = 5, text = "")
-    table.cell(displayTabel, column = 4, row = 5, text = "")
+    cellBlank(5)
 
     table.cell(displayTabel, column = 0, row = 6, text = "幣圈")
-    table.cell(displayTabel, column = 1, row = 6, text = str.tostring(cryptoRatioNow * 100, "#.#") + "%")
+    table.cell(displayTabel, column = 1, row = 6, text = ratioString(cryptoRatioNow))
     table.cell(displayTabel, column = 2, row = 6, text = str.tostring(cryptoRebalance, "#"))
     table.cell(displayTabel, column = 3, row = 6, text = str.tostring(totalCryptoAssets, "#"))
     table.cell(displayTabel, column = 4, row = 6, text = "--")
