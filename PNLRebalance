@@ -48,8 +48,8 @@ INPUT_CRYPTO_RATIO = input.float(defval = 80, title = "幣圈(%)", inline = "02"
 INPUT_TW_STOCKS_RATIO = input.float(defval = 20, title = "台股(%)", inline = "02", group = GROUP_ASSETS_RATIO)
 
 INPUT_BANK1 = input.float(defval = 65758, title = "台新(TWD)", group = GROUP_CASH) 
-INPUT_BANK2 = input.float(defval = 30726, title = "兆豐(TWD)", group = GROUP_CASH) 
-INPUT_BANK3 = input.float(defval = 30000, title = "元大(TWD)", group = GROUP_CASH) 
+INPUT_BANK2 = input.float(defval = 20726, title = "兆豐(TWD)", group = GROUP_CASH) 
+INPUT_BANK3 = input.float(defval = 33000, title = "元大(TWD)", group = GROUP_CASH) 
 
 // INPUT_TW_STOCKS = input.float(defval = 6980, title = "投資先生(TWD)", group = GROUP_ASSETS)
 
@@ -127,6 +127,15 @@ var table displayTabel = table.new(
  )
 
 // 5. Define functions
+dString(float value, int point) =>
+    string pattern = switch point
+        0 => "#"
+        1 => "#.#"
+        2 => "#.##"
+        3 => "#.###"
+    string output = str.tostring(value, pattern)
+    output
+    
 getOutput(currentPrice, position, cost) =>
     remain = currentPrice * position
     profit = remain - cost
@@ -161,7 +170,7 @@ getCurrentSymbol(float value) =>
     // label.delete(id = debugLabel[1])
 
 getRatioDiff(float nowRatio, supposeRatio) =>
-    float output = (nowRatio - supposeRatio) * 100
+    float output = nowRatio - supposeRatio
     output
 
 cellBlank(int rowID) => 
@@ -169,7 +178,7 @@ cellBlank(int rowID) =>
         table.cell(displayTabel, column = i, row = rowID, text = "")
 
 ratioString(float ratio) =>
-    string output = str.tostring(ratio * 100, "#.#") + "%"
+    string output = dString(ratio * 100, 1) + "%"
     output
 
 
@@ -224,28 +233,28 @@ if barstate.islast
     // Draw table
     table.cell(displayTabel, column = 0, row = 0, text = str.tostring(totalAssets, "#"), text_color = color.yellow, text_size = size.normal)
     table.cell(displayTabel, column = 1, row = 0, text = "占比")
-    table.cell(displayTabel, column = 2, row = 0, text = "再平衡")
-    table.cell(displayTabel, column = 3, row = 0, text = "價值")
-    table.cell(displayTabel, column = 4, row = 0, text = "損益")
+    table.cell(displayTabel, column = 2, row = 0, text = "再平衡" + "(" + INPUT_DISPLAY_CURRENCY + ")")
+    table.cell(displayTabel, column = 3, row = 0, text = "價值" + "(" + INPUT_DISPLAY_CURRENCY + ")")
+    table.cell(displayTabel, column = 4, row = 0, text = "損益" + "(" + INPUT_DISPLAY_CURRENCY + ")")
 
     float cashDiffRatio = getRatioDiff(cashRatioNow, cashRatio)
-    string cashDiffText = str.tostring(cashRebalance, "#") + " ( " + str.tostring(cashDiffRatio, "#.#") + "% )"  
-    color reColor = cashDiffRatio > 10 ? color.red : color.black
+    string cashDiffText = dString(cashRebalance, 0) + " (" + ratioString(cashDiffRatio) + ")"  
+    color reColor = cashDiffRatio > 0.1 ? color.red : color.black
     table.cell(displayTabel, column = 0, row = 1, text = "現金")
     table.cell(displayTabel, column = 1, row = 1, text = ratioString(cashRatioNow))
     table.cell(displayTabel, column = 2, row = 1, text = cashDiffText, text_color = reColor)
-    table.cell(displayTabel, column = 3, row = 1, text = str.tostring(totalCash, "#"))
+    table.cell(displayTabel, column = 3, row = 1, text = dString(totalCash, 0))
     table.cell(displayTabel, column = 4, row = 1, text = "--")
 
     cellBlank(2)
 
     table.cell(displayTabel, column = 0, row = 3, text = "台股")
     table.cell(displayTabel, column = 1, row = 3, text = ratioString(twStocksRatioNow))
-    table.cell(displayTabel, column = 2, row = 3, text = str.tostring(stockRebalance, "#"))
-    table.cell(displayTabel, column = 3, row = 3, text = str.tostring(totalStocksAssets, "#"))
+    table.cell(displayTabel, column = 2, row = 3, text = dString(stockRebalance, 0))
+    table.cell(displayTabel, column = 3, row = 3, text = dString(totalStocksAssets, 0))
     table.cell(displayTabel, column = 4, row = 3, text = "--")
     
-    table.cell(displayTabel, column = 0, row = 4, text = "富邦50")
+    table.cell(displayTabel, column = 0, row = 4, text = "富邦50", text_color = color.white)
     table.cell(displayTabel, column = 1, row = 4, text = ratioString(now002608Ratio))
     table.cell(displayTabel, column = 2, row = 4, text = "--")
     cell(4, remain006208, profit006208, profitPercent006208)
@@ -254,27 +263,27 @@ if barstate.islast
 
     table.cell(displayTabel, column = 0, row = 6, text = "幣圈")
     table.cell(displayTabel, column = 1, row = 6, text = ratioString(cryptoRatioNow))
-    table.cell(displayTabel, column = 2, row = 6, text = str.tostring(cryptoRebalance, "#"))
-    table.cell(displayTabel, column = 3, row = 6, text = str.tostring(totalCryptoAssets, "#"))
+    table.cell(displayTabel, column = 2, row = 6, text = dString(cryptoRebalance, 0))
+    table.cell(displayTabel, column = 3, row = 6, text = dString(totalCryptoAssets, 0))
     table.cell(displayTabel, column = 4, row = 6, text = "--")
 
-    table.cell(displayTabel, column = 0, row = 7, text = "BTC")
-    table.cell(displayTabel, column = 1, row = 7, text = str.tostring(nowBTCRatio * 100, "#.#") + "%")
+    table.cell(displayTabel, column = 0, row = 7, text = "BTC", text_color = color.white)
+    table.cell(displayTabel, column = 1, row = 7, text = ratioString(nowBTCRatio))
     table.cell(displayTabel, column = 2, row = 7, text = "--")
     cell(7, remainBTC, profitBTC, profitPercentBTC)
 
-    table.cell(displayTabel, column = 0, row = 8, text = "ETH")
-    table.cell(displayTabel, column = 1, row = 8, text = str.tostring(nowETHRatio * 100, "#.#") + "%")
+    table.cell(displayTabel, column = 0, row = 8, text = "ETH", text_color = color.white)
+    table.cell(displayTabel, column = 1, row = 8, text = ratioString(nowETHRatio))
     table.cell(displayTabel, column = 2, row = 8, text = "--")
     cell(8, remainETH, profitETH, profitPercentETH)
 
-    table.cell(displayTabel, column = 0, row = 9, text = "CRO")
-    table.cell(displayTabel, column = 1, row = 9, text = str.tostring(nowCRORatio * 100, "#.#") + "%")
+    table.cell(displayTabel, column = 0, row = 9, text = "CRO", text_color = color.white)
+    table.cell(displayTabel, column = 1, row = 9, text = ratioString(nowCRORatio))
     table.cell(displayTabel, column = 2, row = 9, text = "--")
     cell(9, remainCRO, profitCRO, profitPercentCRO)
 
-    table.cell(displayTabel, column = 0, row = 10, text = "MATIC")
-    table.cell(displayTabel, column = 1, row = 10, text = str.tostring(nowMATICRatio * 100, "#.#") + "%")
+    table.cell(displayTabel, column = 0, row = 10, text = "MATIC", text_color = color.white)
+    table.cell(displayTabel, column = 1, row = 10, text = ratioString(nowMATICRatio))
     table.cell(displayTabel, column = 2, row = 10, text = "--")
     cell(10, remainMATIC, profitMATIC, profitPercentMATIC)
 
