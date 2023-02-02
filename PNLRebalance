@@ -82,7 +82,7 @@ var string ETH_SYMBOL = "COINBASE:ETHUSD"
 var string CRO_SYMBOL = "COINBASE:CROUSD"
 var string MATIC_SYMBOL = "COINBASE:MATICUSD"
 // 4. Variable declartion
-var float usd_twd = na
+var float pUsd_Twd = na
 var float usdExChange = na
 var float twdExChange = na
 
@@ -100,15 +100,15 @@ var float totalCryptoAssets = na
 var float totalSpecultaionAssets = na
 var float totalAssets = na
 
-var float current006208Price = na
+var float p006208 = na
 var float now002608Ratio = na
-var float currentBTCPrice = na
+var float pBTC = na
 var float nowBTCRatio = na
-var float currentETHPrice = na
+var float pETH = na
 var float nowETHRatio = na
-var float currentCROPrice = na
+var float pCRO = na
 var float nowCRORatio = na
-var float currentMATICPrice = na
+var float pMATIC = na
 var float nowMATICRatio = na
 
 var float cashRebalance = na
@@ -188,15 +188,15 @@ if INPUT_CASH_RATIO + INPUT_SPECULATION_RATIO != 100
 if INPUT_CRYPTO_RATIO + INPUT_TW_STOCKS_RATIO != 100
     runtime.error(message = "GGG") 
 
-usd_twd := request.security(symbol = USD_TWD_SYMBOL, timeframe = "S", expression = close)
-current006208Price := request.security(symbol =  STOCK_006208_SYMBOL, timeframe = "S", expression = close)
-currentBTCPrice := request.security(symbol =  BTC_SYMBOL, timeframe = "S", expression = close)
-currentETHPrice := request.security(symbol =  ETH_SYMBOL, timeframe = "S", expression = close)
-currentCROPrice := request.security(symbol =  CRO_SYMBOL, timeframe = "S", expression = close)
-currentMATICPrice := request.security(symbol =  MATIC_SYMBOL, timeframe = "S", expression = close)
+pUsd_Twd := request.security(symbol = USD_TWD_SYMBOL, timeframe = "S", expression = close)
+p006208 := request.security(symbol =  STOCK_006208_SYMBOL, timeframe = "S", expression = close)
+pBTC := request.security(symbol =  BTC_SYMBOL, timeframe = "S", expression = close)
+pETH := request.security(symbol =  ETH_SYMBOL, timeframe = "S", expression = close)
+pCRO := request.security(symbol =  CRO_SYMBOL, timeframe = "S", expression = close)
+pMATIC := request.security(symbol =  MATIC_SYMBOL, timeframe = "S", expression = close)
 
-usdExChange := INPUT_DISPLAY_CURRENCY == TWD ? 1 * usd_twd : 1
-twdExChange := INPUT_DISPLAY_CURRENCY == TWD ? 1 : 1 / usd_twd
+usdExChange := INPUT_DISPLAY_CURRENCY == TWD ? 1 * pUsd_Twd : 1
+twdExChange := INPUT_DISPLAY_CURRENCY == TWD ? 1 : 1 / pUsd_Twd
 
 cashRatio := INPUT_CASH_RATIO / 100
 specultaionRatio := INPUT_SPECULATION_RATIO / 100
@@ -204,7 +204,7 @@ cryptoRatio := INPUT_CRYPTO_RATIO / 100 * specultaionRatio
 twStocksRatio := INPUT_TW_STOCKS_RATIO / 100 * specultaionRatio
 
 totalCash := (INPUT_BANK1 + INPUT_BANK2 + INPUT_BANK3) * twdExChange
-totalStocksAssets := (current006208Price * MY_006208_POSITION) * twdExChange
+totalStocksAssets := (p006208 * MY_006208_POSITION) * twdExChange
 totalCryptoAssets := (INPUT_BINANCE + INPUT_BYBIT + INPUT_COOL_WALLET + INPUT_PIONEX + INPUT_CRYPTO_COM + INPUT_MAX) * usdExChange
 totalSpecultaionAssets := totalStocksAssets + totalCryptoAssets
 totalAssets := totalCash + totalSpecultaionAssets
@@ -217,11 +217,11 @@ cashRebalance := totalAssets * cashRatio - totalCash
 stockRebalance := totalAssets * twStocksRatio - totalStocksAssets
 cryptoRebalance := totalAssets * cryptoRatio - totalCryptoAssets
 
-[remain006208, profit006208, profitPercent006208] = getOutput(current006208Price * twdExChange, MY_006208_POSITION, MY_006208_COST * twdExChange)
-[remainBTC, profitBTC, profitPercentBTC] = getOutput(currentBTCPrice * usdExChange, MY_BTC_POSITION, MY_BTC_COST * usdExChange)
-[remainETH, profitETH, profitPercentETH] = getOutput(currentETHPrice * usdExChange, MY_ETH_POSITION, MY_ETH_COST * usdExChange)
-[remainCRO, profitCRO, profitPercentCRO] = getOutput(currentCROPrice * usdExChange, MY_CRO_POSITION, MY_CRO_COST * usdExChange)
-[remainMATIC, profitMATIC, profitPercentMATIC] = getOutput(currentMATICPrice * usdExChange, MY_MATIC_POSITION, MY_MATIC_COST * usdExChange)
+[remain006208, profit006208, profitPercent006208] = getOutput(p006208 * twdExChange, MY_006208_POSITION, MY_006208_COST * twdExChange)
+[remainBTC, profitBTC, profitPercentBTC] = getOutput(pBTC * usdExChange, MY_BTC_POSITION, MY_BTC_COST * usdExChange)
+[remainETH, profitETH, profitPercentETH] = getOutput(pETH * usdExChange, MY_ETH_POSITION, MY_ETH_COST * usdExChange)
+[remainCRO, profitCRO, profitPercentCRO] = getOutput(pCRO * usdExChange, MY_CRO_POSITION, MY_CRO_COST * usdExChange)
+[remainMATIC, profitMATIC, profitPercentMATIC] = getOutput(pMATIC * usdExChange, MY_MATIC_POSITION, MY_MATIC_COST * usdExChange)
 
 now002608Ratio := remain006208 / totalAssets
 nowBTCRatio := remainBTC / totalAssets
@@ -239,18 +239,21 @@ if barstate.islast
 
     float cashDiffRatio = getRatioDiff(cashRatioNow, cashRatio)
     string cashDiffText = dString(cashRebalance, 0) + " (" + ratioString(cashDiffRatio) + ")"  
-    color reColor = cashDiffRatio > 0.1 ? color.red : color.black
+    color cashColor = cashDiffRatio > 0.1 ? color.red : color.black
     table.cell(displayTabel, column = 0, row = 1, text = "現金")
     table.cell(displayTabel, column = 1, row = 1, text = ratioString(cashRatioNow))
-    table.cell(displayTabel, column = 2, row = 1, text = cashDiffText, text_color = reColor)
+    table.cell(displayTabel, column = 2, row = 1, text = cashDiffText, text_color = cashColor)
     table.cell(displayTabel, column = 3, row = 1, text = dString(totalCash, 0))
     table.cell(displayTabel, column = 4, row = 1, text = "--")
 
     cellBlank(2)
 
+    float twStockDiffRatio = getRatioDiff(twStocksRatioNow, twStocksRatio)
+    string twStockDiffText = dString(stockRebalance, 0) + "(" + ratioString(twStockDiffRatio) + ")"
+    color stockColor = twStockDiffRatio > 0.1 ? color.red : color.black
     table.cell(displayTabel, column = 0, row = 3, text = "台股")
     table.cell(displayTabel, column = 1, row = 3, text = ratioString(twStocksRatioNow))
-    table.cell(displayTabel, column = 2, row = 3, text = dString(stockRebalance, 0))
+    table.cell(displayTabel, column = 2, row = 3, text = twStockDiffText, text_color = stockColor)
     table.cell(displayTabel, column = 3, row = 3, text = dString(totalStocksAssets, 0))
     table.cell(displayTabel, column = 4, row = 3, text = "--")
     
@@ -261,9 +264,12 @@ if barstate.islast
 
     cellBlank(5)
 
+    float cryptoDiffRatio = getRatioDiff(cryptoRatioNow, cryptoRatio)
+    string cryptoDiffText = dString(cryptoRebalance, 0) + "(" + ratioString(cryptoDiffRatio) + ")"
+    color cryptoColor = cryptoDiffRatio > 0.1 ? color.red : color.black
     table.cell(displayTabel, column = 0, row = 6, text = "幣圈")
     table.cell(displayTabel, column = 1, row = 6, text = ratioString(cryptoRatioNow))
-    table.cell(displayTabel, column = 2, row = 6, text = dString(cryptoRebalance, 0))
+    table.cell(displayTabel, column = 2, row = 6, text = cryptoDiffText, text_color = cryptoColor)
     table.cell(displayTabel, column = 3, row = 6, text = dString(totalCryptoAssets, 0))
     table.cell(displayTabel, column = 4, row = 6, text = "--")
 
@@ -288,4 +294,4 @@ if barstate.islast
     cell(10, remainMATIC, profitMATIC, profitPercentMATIC)
 
 
-    // getCurrentSymbol(current006208Price)
+    // getCurrentSymbol(p006208)
