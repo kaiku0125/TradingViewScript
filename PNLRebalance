@@ -26,6 +26,29 @@ indicator(
 // # ========================================================================= #
 
 // 2. Preference inputs settings
+var float BANK1_AVAL = 62762        // 台新 (TWD)
+var float BANK2_AVAL = 10726        // 兆豐 (TWD)  
+var float BANK3_AVAL = 33010        // 元大 (TWD)
+var float MAX_AVAL = 0              // MAX (USD)
+
+var float BINANCE_AVAL = 721        // 幣安 (USD)
+var float BYBIT_AVAL = 933          // bybit (USD)
+var float COOL_WALLET_AVAL = 1932   // 冷錢包 (USD)
+var float PIONEX_AVAL = 436         // 派網 (USD)
+var float CRYPTO_COM_AVAL = 1822    // crypto.com (USD)
+var float VISA_AVAL = 1600          // Visa (USD)
+
+var float _006208_POSITION = 100                // 006208 (股)
+var float _006208_COST = 6990                   // 006208總投入 (TWD)
+var float BTC_POSITION = 0.0991 + 0.005       // btc (顆)
+var float BTC_COST = 2180 + 150              // btc總投入 (USD)
+var float ETH_POSITION = 0.134574 + 0.06539     // eth (顆)
+var float ETH_COST = 214.2 + 150                // eth總投入 (USD)
+var float CRO_POSITION = 21915                  // cro (顆)
+var float CRO_COST = 3632                       // cro總投入 (USD)
+var float MATIC_POSITION = 88.9                 // matic (顆)
+var float MATIC_COST = 91.8                     // matic總投入 (USD)
+
 var string GROUP_SETTING = "📌 設定"
 var string USD = "美金"
 var string TWD = "台幣"
@@ -47,32 +70,32 @@ INPUT_SPECULATION_RATIO = input.float(defval = 75, title = "資產(%)", inline =
 INPUT_CRYPTO_RATIO = input.float(defval = 80, title = "幣圈(%)", inline = "02", group = GROUP_ASSETS_RATIO)
 INPUT_TW_STOCKS_RATIO = input.float(defval = 20, title = "台股(%)", inline = "02", group = GROUP_ASSETS_RATIO)
 
-INPUT_BANK1 = input.float(defval = 65758, title = "台新(TWD)", group = GROUP_CASH) 
-INPUT_BANK2 = input.float(defval = 20726, title = "兆豐(TWD)", group = GROUP_CASH) 
-INPUT_BANK3 = input.float(defval = 33000, title = "元大(TWD)", group = GROUP_CASH) 
+INPUT_BANK1 = input.float(defval = BANK1_AVAL, title = "台新(TWD)", group = GROUP_CASH) 
+INPUT_BANK2 = input.float(defval = BANK2_AVAL, title = "兆豐(TWD)", group = GROUP_CASH) 
+INPUT_BANK3 = input.float(defval = BANK3_AVAL, title = "元大(TWD)", group = GROUP_CASH) 
+INPUT_MAX = input.float(defval = MAX_AVAL, title = "MAX(U)", group = GROUP_CASH)
 
 // INPUT_TW_STOCKS = input.float(defval = 6980, title = "投資先生(TWD)", group = GROUP_ASSETS)
 
-INPUT_BINANCE = input.float(defval = 721, title = "Binance(U)", group = GROUP_ASSETS)
-INPUT_BYBIT = input.float(defval = 933, title = "Bybit(U)", group = GROUP_ASSETS)
-INPUT_COOL_WALLET = input.float(defval = 1932, title = "冷錢包(U)", group = GROUP_ASSETS)
-INPUT_PIONEX = input.float(defval = 436, title = "Pionex(U)", group = GROUP_ASSETS)
-INPUT_CRYPTO_COM = input.float(defval = 1822, title = "Crypto.com(U)", group = GROUP_ASSETS)
-INPUT_CRYPTO_COM_VISA = input.float(defval = 1600, title = "幣圈Visa(U)", group = GROUP_ASSETS)
-INPUT_MAX = input.float(defval = 0, title = "MAX(U)", group = GROUP_ASSETS)
+INPUT_BINANCE = input.float(defval = BINANCE_AVAL, title = "Binance(U)", group = GROUP_ASSETS)
+INPUT_BYBIT = input.float(defval = BYBIT_AVAL, title = "Bybit(U)", group = GROUP_ASSETS)
+INPUT_COOL_WALLET = input.float(defval = COOL_WALLET_AVAL, title = "冷錢包(U)", group = GROUP_ASSETS)
+INPUT_PIONEX = input.float(defval = PIONEX_AVAL, title = "Pionex(U)", group = GROUP_ASSETS)
+INPUT_CRYPTO_COM = input.float(defval = CRYPTO_COM_AVAL, title = "Crypto.com(U)", group = GROUP_ASSETS)
+INPUT_CRYPTO_COM_VISA = input.float(defval = VISA_AVAL, title = "幣圈Visa(U)", group = GROUP_ASSETS)
 
-MY_006208_POSITION = input.float(defval = 100, title = "006208(股)", inline = "03", group = GROUP_PNL)
-MY_006208_COST = input.float(defval = 6990, title = " 成本", inline = "03", group = GROUP_PNL)
-MY_BTC_POSITION = input.float(defval = 0.082021, title = "BTC(顆)", inline = "04", group = GROUP_PNL) 
-MY_BTC_COST = input.float(defval = 1800.48, title = " 成本", inline = "04", group = GROUP_PNL) 
-MY_ETH_POSITION = input.float(defval = 0.134574, title = "ETH(顆)", inline = "05", group = GROUP_PNL) 
-MY_ETH_COST = input.float(defval = 214.2, title = " 成本", inline = "05", group = GROUP_PNL) 
-MY_CRO_POSITION = input.float(defval = 21915, title = "CRO(顆)", inline = "06", group = GROUP_PNL) 
-MY_CRO_COST = input.float(defval = 3632, title = " 成本", inline = "06", group = GROUP_PNL) 
-MY_MATIC_POSITION = input.float(defval = 88.9, title = "MATIC(顆)", inline = "07", group = GROUP_PNL) 
-MY_MATIC_COST = input.float(defval = 91.8, title = " 成本", inline = "07", group = GROUP_PNL) 
-MY_CHZ_POSITION = 443
-MY_CHZ_COST = 100
+MY_006208_POSITION = input.float(defval = _006208_POSITION, title = "006208(股)", inline = "03", group = GROUP_PNL)
+MY_006208_COST = input.float(defval = _006208_COST, title = " 成本", inline = "03", group = GROUP_PNL)
+MY_BTC_POSITION = input.float(defval = BTC_POSITION, title = "BTC(顆)", inline = "04", group = GROUP_PNL) 
+MY_BTC_COST = input.float(defval = BTC_COST, title = " 成本", inline = "04", group = GROUP_PNL) 
+MY_ETH_POSITION = input.float(defval = ETH_POSITION, title = "ETH(顆)", inline = "05", group = GROUP_PNL) 
+MY_ETH_COST = input.float(defval = ETH_COST, title = " 成本", inline = "05", group = GROUP_PNL) 
+MY_CRO_POSITION = input.float(defval = CRO_POSITION, title = "CRO(顆)", inline = "06", group = GROUP_PNL) 
+MY_CRO_COST = input.float(defval = CRO_COST, title = " 成本", inline = "06", group = GROUP_PNL) 
+MY_MATIC_POSITION = input.float(defval = MATIC_POSITION, title = "MATIC(顆)", inline = "07", group = GROUP_PNL) 
+MY_MATIC_COST = input.float(defval = MATIC_COST, title = " 成本", inline = "07", group = GROUP_PNL) 
+MY_CHZ_POSITION = 443 + 699
+MY_CHZ_COST = 100 + 126
 MY_GMT_POSITION = 201.8
 MY_GMT_COST = 100
 MY_AXS_POSITION = 2.27 
@@ -245,7 +268,7 @@ specultaionRatio := INPUT_SPECULATION_RATIO / 100
 cryptoRatio := INPUT_CRYPTO_RATIO / 100 * specultaionRatio
 twStocksRatio := INPUT_TW_STOCKS_RATIO / 100 * specultaionRatio
 
-totalCash := (INPUT_BANK1 + INPUT_BANK2 + INPUT_BANK3) * twdExChange
+totalCash := (INPUT_BANK1 + INPUT_BANK2 + INPUT_BANK3) * twdExChange + INPUT_MAX * usdExChange
 totalStocksAssets := (p006208 * MY_006208_POSITION) * twdExChange
 // totalCryptoAssets := (INPUT_BINANCE + INPUT_BYBIT + INPUT_COOL_WALLET + INPUT_PIONEX + INPUT_CRYPTO_COM + INPUT_MAX) * usdExChange
 totalCryptoAssets := pBTC * MY_BTC_POSITION + pETH * MY_ETH_POSITION + pCRO * MY_CRO_POSITION + pMATIC * MY_MATIC_POSITION
