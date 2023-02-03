@@ -87,6 +87,10 @@ MY_OTHER_CRYPTO_COST = MY_CHZ_COST + MY_GMT_COST + MY_AXS_COST + MY_ALICE_COST +
 INPUT_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUP_VERSION) 
 
 // 3. Constant value initialization
+var string CASH_TITLE = "現金"
+var string TW_STOCKS_TITLE = "台股"
+var string CRYPTO_TITLE = "幣圈"
+
 var string USD_TWD_SYMBOL = "FX_IDC:USDTWD"
 var string STOCK_006208_SYMBOL = "TWSE_DLY:006208"
 var string BTC_SYMBOL = "COINBASE:BTCUSD"
@@ -243,11 +247,13 @@ twStocksRatio := INPUT_TW_STOCKS_RATIO / 100 * specultaionRatio
 
 totalCash := (INPUT_BANK1 + INPUT_BANK2 + INPUT_BANK3) * twdExChange
 totalStocksAssets := (p006208 * MY_006208_POSITION) * twdExChange
-totalCryptoAssets := (INPUT_BINANCE + INPUT_BYBIT + INPUT_COOL_WALLET + INPUT_PIONEX + INPUT_CRYPTO_COM + INPUT_MAX) * usdExChange
+// totalCryptoAssets := (INPUT_BINANCE + INPUT_BYBIT + INPUT_COOL_WALLET + INPUT_PIONEX + INPUT_CRYPTO_COM + INPUT_MAX) * usdExChange
+totalCryptoAssets := pBTC * MY_BTC_POSITION + pETH * MY_ETH_POSITION + pCRO * MY_CRO_POSITION + pMATIC * MY_MATIC_POSITION
+remainOthers := pCHZ * MY_CHZ_POSITION + pGMT * MY_GMT_POSITION + pAXS * MY_AXS_POSITION + pALICE * MY_ALICE_POSITION + pSAND * MY_SAND_POSITION
+totalCryptoAssets := (totalCryptoAssets + remainOthers) * usdExChange
 totalSpecultaionAssets := totalStocksAssets + totalCryptoAssets
 totalAssets := totalCash + totalSpecultaionAssets
 
-remainOthers := pCHZ * MY_CHZ_POSITION + pGMT * MY_GMT_POSITION + pAXS * MY_AXS_POSITION + pALICE * MY_ALICE_POSITION + pSAND * MY_SAND_POSITION
 
 cashRatioNow := totalCash / totalAssets
 twStocksRatioNow := totalStocksAssets / totalAssets
@@ -284,7 +290,7 @@ if barstate.islast
     float cashDiffRatio = getRatioDiff(cashRatioNow, cashRatio)
     string cashDiffText = dString(cashRebalance, 0) + " (" + ratioString(cashDiffRatio) + ")"  
     color cashColor = cashDiffRatio > 0.1 ? color.red : color.black
-    table.cell(displayTabel, column = 0, row = 1, text = "現金")
+    table.cell(displayTabel, column = 0, row = 1, text = CASH_TITLE)
     table.cell(displayTabel, column = 1, row = 1, text = ratioString(cashRatioNow))
     table.cell(displayTabel, column = 2, row = 1, text = cashDiffText, text_color = cashColor)
     table.cell(displayTabel, column = 3, row = 1, text = dString(totalCash, 0))
@@ -295,7 +301,7 @@ if barstate.islast
     float twStockDiffRatio = getRatioDiff(twStocksRatioNow, twStocksRatio)
     string twStockDiffText = dString(stockRebalance, 0) + " (" + ratioString(twStockDiffRatio) + ")"
     color stockColor = twStockDiffRatio > 0.1 ? color.red : color.black
-    table.cell(displayTabel, column = 0, row = 3, text = "台股")
+    table.cell(displayTabel, column = 0, row = 3, text = TW_STOCKS_TITLE)
     table.cell(displayTabel, column = 1, row = 3, text = ratioString(twStocksRatioNow))
     table.cell(displayTabel, column = 2, row = 3, text = twStockDiffText, text_color = stockColor)
     table.cell(displayTabel, column = 3, row = 3, text = dString(totalStocksAssets, 0))
@@ -311,7 +317,7 @@ if barstate.islast
     float cryptoDiffRatio = getRatioDiff(cryptoRatioNow, cryptoRatio)
     string cryptoDiffText = dString(cryptoRebalance, 0) + " (" + ratioString(cryptoDiffRatio) + ")"
     color cryptoColor = cryptoDiffRatio > 0.1 ? color.red : color.black
-    table.cell(displayTabel, column = 0, row = 6, text = "幣圈")
+    table.cell(displayTabel, column = 0, row = 6, text = CRYPTO_TITLE)
     table.cell(displayTabel, column = 1, row = 6, text = ratioString(cryptoRatioNow))
     table.cell(displayTabel, column = 2, row = 6, text = cryptoDiffText, text_color = cryptoColor)
     table.cell(displayTabel, column = 3, row = 6, text = dString(totalCryptoAssets, 0))
