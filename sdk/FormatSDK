@@ -1,0 +1,23 @@
+//@version=5
+
+library(title = "FormatSDK", overlay =  true) 
+
+var VERSION_NAME = "v1.0"
+
+
+export fString(float value, int point) =>
+    string pattern = switch point
+        0 => "#"
+        1 => "#.#"
+        2 => "#.##"
+        3 => "#.###"
+        4 => "#.####"
+        => 
+            "#.#"
+    string output = str.tostring(value, pattern)
+    output
+
+
+export ratioString(float ratio) =>
+    string output = fString(ratio * 100, 1) + "%"
+    output
