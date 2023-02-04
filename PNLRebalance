@@ -2,7 +2,7 @@
 
 // 1. Import library
 import kaiku0125/Debug/1 as debug
-import kaiku0125/Colour/4 as colour
+import kaiku0125/Colour/5 as colour
 import kaiku0125/FormatSDK/1 as fm
 
 // # ========================================================================= #
@@ -12,7 +12,7 @@ indicator(
  title                = "PNLRebalance",
  shorttitle           = "損益再平衡",
  overlay              =  true,
- max_bars_back        =  2
+ max_bars_back        =  1
 //  format               =  ,
 //  precision            =  ,
 //  scale                =  ,
@@ -42,16 +42,20 @@ var float VISA_AVAL = 1600          // Visa (USD)
 
 var float _006208_POSITION = 100                // 006208 (股)
 var float _006208_COST = 6990                   // 006208總投入 (TWD)
-var float BTC_POSITION = 0.0991 + 0.005       // btc (顆)
-var float BTC_COST = 2180 + 150              // btc總投入 (USD)
+var float BTC_POSITION = 0.0991 + 0.005         // btc (顆)
+var float BTC_COST = 2180 + 150                 // btc總投入 (USD)
 var float ETH_POSITION = 0.134574 + 0.06539     // eth (顆)
 var float ETH_COST = 214.2 + 150                // eth總投入 (USD)
 var float CRO_POSITION = 21915                  // cro (顆)
 var float CRO_COST = 3632                       // cro總投入 (USD)
 var float MATIC_POSITION = 88.9                 // matic (顆)
 var float MATIC_COST = 91.8                     // matic總投入 (USD)
-var float ILV_POSITION = 1.058                 // matic (顆)
-var float ILV_COST = 99.89                     // matic總投入 (USD)
+var float ILV_POSITION = 1.058                  // ILV (顆)
+var float ILV_COST = 99.89                      // ILV總投入 (USD)
+var float RNDR_POSITION = 29.51                 // RNDR (顆)
+var float RNDR_COST = 49.98                     // RNDR總投入 (USD)
+var float ALI_POSITION = 231.1                 // ALI (顆)
+var float ALI_COST = 10                     // ALI總投入 (USD)
 
 var string GROUP_SETTING = "📌 設定"
 var string USD = "美金"
@@ -100,6 +104,10 @@ MY_MATIC_POSITION = input.float(defval = MATIC_POSITION, title = "MATIC(顆)", i
 MY_MATIC_COST = input.float(defval = MATIC_COST, title = " 成本", inline = "07", group = GROUP_PNL) 
 MY_ILV_POSITION = input.float(defval = ILV_POSITION, title = "ILV(顆)", inline = "08", group = GROUP_PNL) 
 MY_ILV_COST = input.float(defval = ILV_COST, title = " 成本", inline = "08", group = GROUP_PNL) 
+MY_RNDR_POSITION = input.float(defval = RNDR_POSITION, title = "RNDR(顆)", inline = "09", group = GROUP_PNL) 
+MY_RNDR_COST = input.float(defval = RNDR_COST, title = " 成本", inline = "09", group = GROUP_PNL) 
+MY_ALI_POSITION = input.float(defval = ALI_POSITION, title = "ALI(顆)", inline = "10", group = GROUP_PNL) 
+MY_ALI_COST = input.float(defval = ALI_COST, title = " 成本", inline = "10", group = GROUP_PNL) 
 MY_CHZ_POSITION = 443 + 699
 MY_CHZ_COST = 100 + 126
 MY_GMT_POSITION = 201.8
@@ -117,8 +125,8 @@ INPUT_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", optio
 
 // 3. Constant value initialization
 var string CASH_TITLE = "❶ 現金"
-var string TW_STOCKS_TITLE = "• 台股"
-var string CRYPTO_TITLE = "３ 幣圈"
+var string TW_STOCKS_TITLE = "➋ 台股"
+var string CRYPTO_TITLE = "➌ 幣圈"
 var string DISPLAY_NONE = "--"
 var string ICON_MONEY = "💰 "
 var string ICON_ROCKET = "🚀 "
@@ -137,11 +145,13 @@ var string ETH_SYMBOL = "COINBASE:ETHUSD"
 var string CRO_SYMBOL = "COINBASE:CROUSD"
 var string MATIC_SYMBOL = "COINBASE:MATICUSD"
 var string ILV_SYMBOL = "BINANCE:ILVUSDT"
+var string RNDR_SYMBOL = "BINANCE:RNDRUSDT"
 var string CHZ_SYMBOL = "BYBIT:CHZUSDT.P"
 var string GMT_SYMBOL = "BINANCE:GMTUSDT"
 var string AXS_SYMBOL = "BINANCE:AXSUSDT"
 var string ALICE_SYMBOL = "BINANCE:ALICEUSDT"
 var string SAND_SYMBOL = "BINANCE:SANDUSDT"
+var string ALI_SYMBOL = "GEMINI:ALIUSD"
 
 var color DF_TEXT_COLOR = color.black
 var color DF_CELL_COLOR = colour.DIM_GRAY()
@@ -181,6 +191,10 @@ var float pMATIC = na
 var float nowMATICRatio = na
 var float pILV = na
 var float nowILVRatio = na
+var float pRNDR = na
+var float nowRNDRRatio = na
+var float pALI = na
+var float nowALIRatio = na
 var float pCHZ = na
 var float pGMT = na
 var float pAXS = na
@@ -195,7 +209,8 @@ var float cryptoRebalance = na
 var int rowCount = 0
 
 var table displayTabel = table.new(
- position       =  position.bottom_center,
+//  position       =  position.bottom_center,
+ position       =  position.middle_center,
  columns        =  8,
  rows           =  15,
 //  bgcolor        =  color.new(color = colour.DIM_GRAY(), transp = 0),
@@ -213,6 +228,9 @@ cell(int columnID, int rowID, string displayText, color textColor, color backgro
      row            =  rowID, 
      text           =  displayText, 
      text_color     =  textColor,
+    //  text_size      =  size.small,
+     text_size      =  size.large,
+    //  text_size      =  size.huge,
      bgcolor        =  background
      )
 
@@ -266,7 +284,7 @@ cellPNL(rowID, remain, profit, profitPercent) =>
     nextRow
 
 getCurrentSymbol(float value) =>
-    string mOutput = str.tostring(value = value, format =  "#.####")  // currentCROPrice替換成想加入的變數
+    string mOutput = str.tostring(value = value, format =  "#.####")
     label debugLabel = debug.printLabel("圖表ID : " + syminfo.tickerid + ", 價格 : " + mOutput)
     // label.delete(id = debugLabel[1])
 
@@ -283,7 +301,8 @@ cellBlank(int rowID) =>
 
 
 cellRebalance(int rowID, string targetSymbol, nowRatio) =>
-    cell(0, rowID, targetSymbol, color.white, DF_CELL_COLOR)
+    // cell(0, rowID, targetSymbol, color.white, DF_CELL_COLOR)
+    cell(0, rowID, targetSymbol, colour.MINT_CREAM(), DF_CELL_COLOR)
     cell(1, rowID, fm.ratioString(nowRatio), DF_TEXT_COLOR, DF_CELL_COLOR)
     cell(2, rowID, DISPLAY_NONE, DF_TEXT_COLOR, DF_CELL_COLOR)
 
@@ -302,6 +321,8 @@ pETH := request.security(symbol =  ETH_SYMBOL, timeframe = "S", expression = clo
 pCRO := request.security(symbol =  CRO_SYMBOL, timeframe = "S", expression = close)
 pMATIC := request.security(symbol =  MATIC_SYMBOL, timeframe = "S", expression = close)
 pILV := request.security(symbol =  ILV_SYMBOL, timeframe = "S", expression = close)
+pRNDR := request.security(symbol = RNDR_SYMBOL, timeframe = "S", expression = close)
+pALI := request.security(symbol = ALI_SYMBOL, timeframe = "S", expression = close)
 pCHZ := request.security(symbol = CHZ_SYMBOL, timeframe = "S", expression = close)
 pGMT := request.security(symbol = GMT_SYMBOL, timeframe = "S", expression = close)
 pAXS := request.security(symbol = AXS_SYMBOL, timeframe = "S", expression = close)
@@ -319,7 +340,7 @@ twStocksRatio := INPUT_TW_STOCKS_RATIO / 100 * specultaionRatio
 totalCash := (INPUT_BANK1 + INPUT_BANK2 + INPUT_BANK3) * twdExChange + INPUT_MAX * usdExChange
 totalStocksAssets := (p006208 * MY_006208_POSITION) * twdExChange
 // totalCryptoAssets := (INPUT_BINANCE + INPUT_BYBIT + INPUT_COOL_WALLET + INPUT_PIONEX + INPUT_CRYPTO_COM + INPUT_MAX) * usdExChange
-totalCryptoAssets := pBTC * MY_BTC_POSITION + pETH * MY_ETH_POSITION + pCRO * MY_CRO_POSITION + pMATIC * MY_MATIC_POSITION + pILV * MY_ILV_POSITION
+totalCryptoAssets := pBTC * MY_BTC_POSITION + pETH * MY_ETH_POSITION + pCRO * MY_CRO_POSITION + pMATIC * MY_MATIC_POSITION + pILV * MY_ILV_POSITION + pRNDR * MY_RNDR_POSITION
 remainOthers := pCHZ * MY_CHZ_POSITION + pGMT * MY_GMT_POSITION + pAXS * MY_AXS_POSITION + pALICE * MY_ALICE_POSITION + pSAND * MY_SAND_POSITION
 totalCryptoAssets := (totalCryptoAssets + remainOthers) * usdExChange
 totalSpecultaionAssets := totalStocksAssets + totalCryptoAssets
@@ -340,6 +361,8 @@ cryptoRebalance := totalAssets * cryptoRatio - totalCryptoAssets
 [remainCRO, profitCRO, profitPercentCRO] = getOutput(pCRO * usdExChange, MY_CRO_POSITION, MY_CRO_COST * usdExChange)
 [remainMATIC, profitMATIC, profitPercentMATIC] = getOutput(pMATIC * usdExChange, MY_MATIC_POSITION, MY_MATIC_COST * usdExChange)
 [remainILV, profitILV, profitPercentILV] = getOutput(pILV * usdExChange, MY_ILV_POSITION, MY_ILV_COST * usdExChange)
+[remainRNDR, profitRNDR, profitPercentRNDR] = getOutput(pRNDR * usdExChange, MY_RNDR_POSITION, MY_RNDR_COST * usdExChange)
+[remainALI, profitALI, profitPercentALI] = getOutput(pALI * usdExChange, MY_ALI_POSITION, MY_ALI_COST * usdExChange)
 [remainOther, profitOther, profitPercentOther] = getOutPut(remainOthers * usdExChange, MY_OTHER_CRYPTO_COST * usdExChange)
 
 
@@ -349,6 +372,8 @@ nowETHRatio := remainETH / totalAssets
 nowCRORatio := remainCRO / totalAssets
 nowMATICRatio := remainMATIC / totalAssets
 nowILVRatio := remainILV / totalAssets
+nowRNDRRatio := remainRNDR / totalAssets
+nowALIRatio := remainALI / totalAssets
 nowOthersRatio := remainOther / totalAssets
 
 //Calcultion and judgement variable before display
@@ -420,6 +445,12 @@ if barstate.islast
 
     cellRebalance(nextRow, "ILV", nowMATICRatio)
     nextRow := cellPNL(nextRow, remainILV, profitILV, profitPercentILV)
+
+    cellRebalance(nextRow, "RNDR", nowRNDRRatio)
+    nextRow := cellPNL(nextRow, remainRNDR, profitRNDR, profitPercentRNDR)
+
+    cellRebalance(nextRow, "ALI", nowALIRatio)
+    nextRow := cellPNL(nextRow, remainALI, profitALI, profitPercentALI)
 
     cellRebalance(nextRow, "垃圾幣", nowOthersRatio)
     nextRow := cellPNL(nextRow, remainOther, profitOther, profitPercentOther)

@@ -3,7 +3,7 @@
 
 
 library(title = "Colour", overlay =  true) 
-var VERSION_NAME = "v4"
+var VERSION_NAME = "v5"
 
 
 var color COLOR_MAROON = color.rgb(red = 128, green = 0, blue = 0, transp = 0)
@@ -118,8 +118,314 @@ var color COLOR_PALE_GREEN = color.rgb(152, 251, 152, 0)
 export PALE_GREEN() =>
     COLOR_PALE_GREEN
 
-// dark sea green
+var color COLOR_DARK_SEA_GREEN = color.rgb(143, 188, 143, 0)
+export DARK_SEA_GREEN() =>
+    COLOR_DARK_SEA_GREEN
 
+var color COLOR_MEDIUM_SPRING_GREEN = color.rgb(0, 250, 154, 0)
+export MEDIUM_SPRING_GREEN() =>
+    COLOR_MEDIUM_SPRING_GREEN
+
+var color COLOR_SPRING_GREEN = color.rgb(0, 255, 127, 0)
+export SPRING_GREEN() =>
+    COLOR_SPRING_GREEN
+
+var color COLOR_SEA_GREEN = color.rgb(46, 139, 87)
+export SEA_GREEN() =>
+    COLOR_SEA_GREEN
+
+
+
+var color COLOR_MEDIUM_APUA_MARINE = color.rgb(102, 205, 170)
+export MEDIUM_APUA_MARINE() =>
+    COLOR_MEDIUM_APUA_MARINE
+
+var color COLOR_MEDIUM_SEA_GREEN = color.rgb(60, 179, 113)
+export MEDIUM_SEA_GREEN() =>
+    COLOR_MEDIUM_SEA_GREEN
+
+var color COLOR_LIGHT_SEA_GREEN = color.rgb(32, 178, 170)
+export LIGHT_SEA_GREEN() =>
+    COLOR_LIGHT_SEA_GREEN
+
+var color COLOR_DARK_SLATE_GRAY = color.rgb(47, 79, 79)
+export DARK_SLATE_GRAY() =>
+    COLOR_DARK_SLATE_GRAY
+
+var color COLOR_CYAN = color.rgb(0, 139, 139)
+export CYAN() =>
+    COLOR_CYAN
+
+var color COLOR_AQUA = color.rgb(0, 255, 255)
+export AQUA() =>
+    COLOR_AQUA
+
+
+// light cyan	#E0FFFF	(224,255,255)
+// dark turquoise	#00CED1	(0,206,209)
+// turquoise	#40E0D0	(64,224,208)
+// medium turquoise	#48D1CC	(72,209,204)
+// pale turquoise	#AFEEEE	(175,238,238)
+// aqua marine	#7FFFD4	(127,255,212)
+// powder blue	#B0E0E6	(176,224,230)
+// cadet blue	#5F9EA0	(95,158,160)
+// steel blue	#4682B4	(70,130,180)
+// corn flower blue	#6495ED	(100,149,237)
+// deep sky blue	#00BFFF	(0,191,255)
+// dodger blue	#1E90FF	(30,144,255)
+// light blue	#ADD8E6	(173,216,230)
+// sky blue	#87CEEB	(135,206,235)
+// light sky blue	#87CEFA	(135,206,250)
+// midnight blue	#191970	(25,25,112)
+// navy	#000080	(0,0,128)
+// dark blue	#00008B	(0,0,139)
+// medium blue	#0000CD	(0,0,205)
+
+
+var color COLOR_ROYAL_BLUE = color.rgb(red = 65, green = 105, blue = 225, transp = 0) 
+export ROYAL_BLUE() =>
+    COLOR_ROYAL_BLUE
+
+var color COLOR_BLUE_VIOLET = color.rgb(red = 138, green = 43, blue = 226, transp = 0) 
+export BLUE_VIOLET() =>
+    COLOR_BLUE_VIOLET
+
+var color COLOR_INDIGO = color.rgb(red = 75, green = 0, blue = 130, transp = 0) 
+export INDIGO() =>
+    COLOR_INDIGO
+
+var color COLOR_SLATE_BLUE = color.rgb(red = 106, green = 90, blue = 205, transp = 0) 
+export SLATE_BLUE() =>
+    COLOR_SLATE_BLUE
+
+var color COLOR_MIDIUM_SLATE_BLUE = color.rgb(red = 123, green = 104, blue = 238, transp = 0) 
+export MIDIUM_SLATE_BLUE() =>
+    COLOR_MIDIUM_SLATE_BLUE
+
+var color COLOR_MIDIUM_PURPLE = color.rgb(red = 147, green = 112, blue = 219, transp = 0) 
+export MIDIUM_PURPLE() =>
+    COLOR_MIDIUM_PURPLE
+
+var color COLOR_DARK_MAGENTA = color.rgb(red = 139, green = 0, blue = 139, transp = 0) 
+export DARK_MAGENTA() =>
+    COLOR_DARK_MAGENTA
+
+var color COLOR_DARK_VIOLET = color.rgb(red = 148, green = 0, blue = 211, transp = 0) 
+export DARK_VIOLET() =>
+    COLOR_DARK_VIOLET
+
+var color COLOR_DARK_ORCHID = color.rgb(red = 153, green = 50, blue = 204, transp = 0) 
+export DARK_ORCHID() =>
+    COLOR_DARK_ORCHID
+
+var color COLOR_MEDIUM_ORCHID = color.rgb(red = 186, green = 85, blue = 211, transp = 0) 
+export MEDIUM_ORCHID() =>
+    COLOR_MEDIUM_ORCHID
+
+var color COLOR_THISTLE = color.rgb(red = 216, green = 191, blue = 216, transp = 0) 
+export THISTLE() =>
+    COLOR_THISTLE
+
+var color COLOR_PLUM = color.rgb(red = 221, green = 160, blue = 221, transp = 0) 
+export PLUM() =>
+    COLOR_PLUM
+
+var color COLOR_VIOLET = color.rgb(red = 238, green = 130, blue = 238, transp = 0) 
+export VIOLET() =>
+    COLOR_VIOLET
+
+var color COLOR_ORCHID = color.rgb(red = 218, green = 112, blue = 214, transp = 0) 
+export ORCHID() =>
+    COLOR_ORCHID
+
+var color COLOR_MEDIUM_VIOLET_RED = color.rgb(red = 199, green = 21, blue = 133, transp = 0) 
+export MEDIUM_VIOLET_RED() =>
+    COLOR_MEDIUM_VIOLET_RED
+
+var color COLOR_PALE_VIOLET_RED = color.rgb(red = 219, green = 112, blue = 147, transp = 0) 
+export PALE_VIOLET_RED() =>
+    COLOR_PALE_VIOLET_RED
+
+var color COLOR_DEEP_PINK = color.rgb(red = 255, green = 20, blue = 147, transp = 0) 
+export DEEP_PINK() =>
+    COLOR_DEEP_PINK
+
+var color COLOR_HOT_PINK = color.rgb(red = 255, green = 105, blue = 180, transp = 0) 
+export HOT_PINK() =>
+    COLOR_HOT_PINK
+
+var color COLOR_LIGHT_PINK = color.rgb(red = 250, green = 182, blue = 193, transp = 0) 
+export LIGHT_PINK() =>
+    COLOR_LIGHT_PINK
+
+var color COLOR_PINK = color.rgb(red = 250, green = 192, blue = 203, transp = 0) 
+export PINK() =>
+    COLOR_PINK
+
+var color COLOR_ANTIQUE_WHITE = color.rgb(red = 250, green = 235, blue = 215, transp = 0) 
+export ANTIQUE_WHITE() =>
+    COLOR_ANTIQUE_WHITE
+
+var color COLOR_BEIGE = color.rgb(red = 245, green = 245, blue = 220, transp = 0) 
+export BEIGE() =>
+    COLOR_BEIGE
+
+var color COLOR_BISQUE = color.rgb(red = 255, green = 228, blue = 196, transp = 0) 
+export BISQUE() =>
+    COLOR_BISQUE
+
+var color COLOR_BLANCHED_ALMOND = color.rgb(red = 255, green = 235, blue = 205, transp = 0) 
+export BLANCHED_ALMOND() =>
+    COLOR_BLANCHED_ALMOND
+
+var color COLOR_WHEAT = color.rgb(red = 245, green = 222, blue = 179, transp = 0) 
+export WHEAT() =>
+    COLOR_WHEAT
+
+var color COLOR_CORN_SILK = color.rgb(red = 255, green = 248, blue = 220, transp = 0) 
+export CORN_SILK() =>
+    COLOR_CORN_SILK
+
+var color COLOR_LEMON_CHIFFON = color.rgb(red = 255, green = 250, blue = 205, transp = 0) 
+export LEMON_CHIFFON() =>
+    COLOR_LEMON_CHIFFON
+
+var color COLOR_LIGHT_GOLDEN_ROD_YELLOW = color.rgb(red = 250, green = 250, blue = 210, transp = 0) 
+export LIGHT_GOLDEN_ROD_YELLOW() =>
+    COLOR_LIGHT_GOLDEN_ROD_YELLOW
+
+var color COLOR_LIGHT_YELLOW = color.rgb(red = 255, green = 255, blue = 224, transp = 0) 
+export LIGHT_YELLOW() =>
+    COLOR_LIGHT_YELLOW
+
+var color COLOR_SADDLE_BROWN = color.rgb(red = 139, green = 69, blue = 19, transp = 0) 
+export SADDLE_BROWN() =>
+    COLOR_SADDLE_BROWN
+
+var color COLOR_SIENNA = color.rgb(red = 160, green = 82, blue = 45, transp = 0) 
+export SIENNA() =>
+    COLOR_SIENNA
+
+
+var color COLOR_CHOCOLATE = color.rgb(red = 210, green = 105, blue = 30, transp = 0) 
+export CHOCOLATE() =>
+    COLOR_CHOCOLATE
+
+var color COLOR_PERU = color.rgb(red = 205, green = 133, blue = 63, transp = 0) 
+export PERU() =>
+    COLOR_PERU
+
+var color COLOR_SANDY_BROWN = color.rgb(red = 244, green = 164, blue = 96, transp = 0) 
+export SANDY_BROWN() =>
+    COLOR_SANDY_BROWN
+
+var color COLOR_BURLY_WOOD = color.rgb(red = 222, green = 184, blue = 135, transp = 0) 
+export BURLY_WOOD() =>
+    COLOR_BURLY_WOOD
+
+var color COLOR_TAN = color.rgb(red = 210, green = 180, blue = 140, transp = 0) 
+export TAN() =>
+    COLOR_TAN
+
+var color COLOR_ROSY_BROWN = color.rgb(red = 188, green = 143, blue = 143, transp = 0) 
+export ROSY_BROWN() =>
+    COLOR_ROSY_BROWN
+
+var color COLOR_MOCCASIN = color.rgb(red = 255, green = 228, blue = 181, transp = 0) 
+export MOCCASIN() =>
+    COLOR_MOCCASIN
+
+var color COLOR_NAVAJO_WHITE = color.rgb(red = 255, green = 222, blue = 173, transp = 0) 
+export NAVAJO_WHITE() =>
+    COLOR_NAVAJO_WHITE
+
+var color COLOR_PEACH_PUFF = color.rgb(red = 255, green = 218, blue = 185, transp = 0) 
+export PEACH_PUFF() =>
+    COLOR_PEACH_PUFF
+
+var color COLOR_MISTY_ROSE = color.rgb(red = 255, green = 228, blue = 225, transp = 0) 
+export MISTY_ROSE() =>
+    COLOR_MISTY_ROSE
+
+var color COLOR_LAVENDER_BLUSH = color.rgb(red = 255, green = 240, blue = 245, transp = 0) 
+export LAVENDER_BLUSH() =>
+    COLOR_LAVENDER_BLUSH
+
+var color COLOR_LINEN = color.rgb(red = 250, green = 240, blue = 230, transp = 0) 
+export OLD_LINEN() =>
+    COLOR_LINEN
+
+var color COLOR_OLD_LACE = color.rgb(red = 253, green = 245, blue = 230, transp = 0) 
+export OLD_LACE() =>
+    COLOR_OLD_LACE
+
+var color COLOR_PAPAYA_WHIP = color.rgb(red = 255, green = 239, blue = 213, transp = 0) 
+export PAPAYA_WHIP() =>
+    COLOR_PAPAYA_WHIP
+
+var color COLOR_SEA_SHELL = color.rgb(red = 255, green = 245, blue = 238, transp = 0) 
+export SEA_SHELL() =>
+    COLOR_SEA_SHELL
+
+var color COLOR_MINT_CREAM = color.rgb(red = 245, green = 255, blue = 250, transp = 0) 
+export MINT_CREAM() =>
+    COLOR_MINT_CREAM
+
+var color COLOR_STATE_GRAY = color.rgb(red = 112, green = 128, blue = 144, transp = 0) 
+export STATE_GRAY() =>
+    COLOR_STATE_GRAY
+
+var color COLOR_LIGHT_STATE_GRAY = color.rgb(red = 119, green = 136, blue = 153, transp = 0) 
+export LIGHT_STATE_GRAY() =>
+    COLOR_LIGHT_STATE_GRAY
+
+var color COLOR_LIGHT_STEEL_BLUE = color.rgb(red = 176, green = 196, blue = 222, transp = 0) 
+export LIGHT_STEEL_BLUE() =>
+    COLOR_LIGHT_STEEL_BLUE
+
+var color COLOR_LAVENDER = color.rgb(red = 230, green = 230, blue = 250, transp = 0) 
+export LAVENDER() =>
+    COLOR_LAVENDER
+
+var color COLOR_FLORAL_WHITE = color.rgb(red = 255, green = 250, blue = 240, transp = 0) 
+export FLORAL_WHITE() =>
+    COLOR_FLORAL_WHITE
+
+var color COLOR_ALICE_BLUE = color.rgb(red = 240, green = 248, blue = 255, transp = 0) 
+export ALICE_BLUE() =>
+    COLOR_ALICE_BLUE
+
+var color COLOR_GHOST_WHITE = color.rgb(red = 248, green = 248, blue = 255, transp = 0) 
+export GHOST_WHITE() =>
+    COLOR_GHOST_WHITE
+
+var color COLOR_HONEYDEW = color.rgb(red = 240, green = 255, blue = 240, transp = 0) 
+export HONEYDEW() =>
+    COLOR_HONEYDEW
+
+var color COLOR_IVORY = color.rgb(red = 255, green = 255, blue = 240, transp = 0) 
+export IVORY() =>
+    COLOR_IVORY
+
+var color COLOR_AZURE = color.rgb(red = 240, green = 255, blue = 255, transp = 0) 
+export AZURE() =>
+    COLOR_AZURE
+
+var color COLOR_SNOW = color.rgb(red = 255, green = 250, blue = 250, transp = 0) 
+export SNOW() =>
+    COLOR_SNOW
+
+var color COLOR_LIGHT_GRAY = color.rgb(red = 211, green = 211, blue = 211, transp = 0) 
+export LIGHT_GRAY() =>
+    COLOR_LIGHT_GRAY
+
+var color COLOR_GAINSBORO = color.rgb(red = 220, green = 220, blue = 220, transp = 0) 
+export GAINSBORO() =>
+    COLOR_GAINSBORO
+
+var color COLOR_SMOKE = color.rgb(red = 245, green = 245, blue = 245, transp = 0) 
+export SMOKE() =>
+    COLOR_SMOKE
 
 var color COLOR_FOREST_GREEN = color.rgb(red = 34, green = 139, blue = 34, transp = 0) 
 export FOREST_GREEN() =>
