@@ -12,13 +12,13 @@ indicator(
  title                = "PNLRebalance",
  shorttitle           = "損益再平衡",
  overlay              =  true,
- max_bars_back        =  1
+ max_bars_back        =  1,
 //  format               =  ,
 //  precision            =  ,
 //  scale                =  ,
 //  timeframe            = " ",
 //  timeframe_gaps       =  ,
-//  explicit_plot_zorder =  ,
+ explicit_plot_zorder =  true
 //  max_lines_count      =  ,
 //  max_labels_count     =  ,
 //  max_boxes_count      =  
@@ -29,21 +29,21 @@ indicator(
 
 // 2. Preference inputs settings
 var float BANK1_AVAL = 62762        // 台新 (TWD)
-var float BANK2_AVAL = 10726        // 兆豐 (TWD)  
+var float BANK2_AVAL = 5726         // 兆豐 (TWD)  
 var float BANK3_AVAL = 33010        // 元大 (TWD)
-var float MAX_AVAL = 0              // MAX (USD)
+var float MAX_AVAL = 166.81         // MAX (USD)
 
-var float BINANCE_AVAL = 721        // 幣安 (USD)
-var float BYBIT_AVAL = 933          // bybit (USD)
-var float COOL_WALLET_AVAL = 1932   // 冷錢包 (USD)
-var float PIONEX_AVAL = 436         // 派網 (USD)
-var float CRYPTO_COM_AVAL = 1822    // crypto.com (USD)
+var float BINANCE_AVAL = 1088       // 幣安 (USD)
+var float BYBIT_AVAL = 105          // bybit (USD)
+var float COOL_WALLET_AVAL = 2335   // 冷錢包 (USD)
+var float PIONEX_AVAL = 436          // 派網 (USD)
+var float CRYPTO_COM_AVAL = 1819    // crypto.com (USD)
 var float VISA_AVAL = 1600          // Visa (USD)
 
 var float _006208_POSITION = 100                // 006208 (股)
 var float _006208_COST = 6990                   // 006208總投入 (TWD)
-var float BTC_POSITION = 0.0991 + 0.005         // btc (顆)
-var float BTC_COST = 2180 + 150                 // btc總投入 (USD)
+var float BTC_POSITION = 0.1004 + 0.005         // btc (顆)
+var float BTC_COST = 2219 + 150                 // btc總投入 (USD)
 var float ETH_POSITION = 0.134574 + 0.06539     // eth (顆)
 var float ETH_COST = 214.2 + 150                // eth總投入 (USD)
 var float CRO_POSITION = 21915                  // cro (顆)
@@ -54,8 +54,8 @@ var float ILV_POSITION = 1.058                  // ILV (顆)
 var float ILV_COST = 99.89                      // ILV總投入 (USD)
 var float RNDR_POSITION = 29.51                 // RNDR (顆)
 var float RNDR_COST = 49.98                     // RNDR總投入 (USD)
-var float ALI_POSITION = 231.1                 // ALI (顆)
-var float ALI_COST = 10                     // ALI總投入 (USD)
+var float ALI_POSITION = 231.1                  // ALI (顆)
+var float ALI_COST = 10                         // ALI總投入 (USD)
 
 var string GROUP_SETTING = "📌 設定"
 var string USD = "美金"
@@ -205,8 +205,6 @@ var float nowOthersRatio = na
 var float cashRebalance = na
 var float stockRebalance = na
 var float cryptoRebalance = na
-
-var int rowCount = 0
 
 var table displayTabel = table.new(
 //  position       =  position.bottom_center,
