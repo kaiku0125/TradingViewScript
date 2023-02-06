@@ -54,8 +54,10 @@ var float ILV_POSITION = 1.058                  // ILV (顆)
 var float ILV_COST = 99.89                      // ILV總投入 (USD)
 var float RNDR_POSITION = 29.51                 // RNDR (顆)
 var float RNDR_COST = 49.98                     // RNDR總投入 (USD)
-var float ALI_POSITION = 231.1                  // ALI (顆)
-var float ALI_COST = 10                         // ALI總投入 (USD)
+var float ALI_POSITION = 397.9                  // ALI (顆)
+var float ALI_COST = 20                         // ALI總投入 (USD)
+var float AGIX_POSITION = 22                    // AGIX (顆)
+var float AGIX_COST = 9.78                      // AGIX總投入 (USD)
 
 var string GROUP_SETTING = "📌 設定"
 var string USD = "美金"
@@ -119,6 +121,8 @@ MY_RNDR_POSITION = input.float(defval = RNDR_POSITION, title = "RNDR(顆)", inli
 MY_RNDR_COST = input.float(defval = RNDR_COST, title = " 成本", inline = "09", group = GROUP_PNL) 
 MY_ALI_POSITION = input.float(defval = ALI_POSITION, title = "ALI(顆)", inline = "10", group = GROUP_PNL) 
 MY_ALI_COST = input.float(defval = ALI_COST, title = " 成本", inline = "10", group = GROUP_PNL) 
+MY_AGIX_POSITION = input.float(defval = AGIX_POSITION, title = "AGIX(顆)", inline = "11", group = GROUP_PNL) 
+MY_AGIX_COST = input.float(defval = AGIX_COST, title = " 成本", inline = "11", group = GROUP_PNL) 
 MY_CHZ_POSITION = 443 + 699
 MY_CHZ_COST = 100 + 126
 MY_GMT_POSITION = 201.8
@@ -148,18 +152,6 @@ var string ICON_DOWN_20 = "😨 "
 var string ICON_DOWN_50 = "😱 "
 var string ICON_GG = "🈹 "
 
-var color COLOR_ROCKET = colour.CHARTREUSE()
-var color COLOR_UP_50 = colour.LIME_GREEN()
-var color COLOR_UP_20 = colour.FOREST_GREEN()
-var color COLOR_UP = colour.DARK_GREEN()
-var color COLOR_DOWN = colour.DARK_RED()
-var color COLOR_DOWN_20 = colour.FIRE_BRICK()
-var color COLOR_DOWN_50 = colour.CRIMSON()
-var color COLOR_GG = color.red
-
-var color COLOR_MY_WHITE = color.rgb(255, 255, 204) 
-var color COLOR_BG = color.rgb(77, 77, 77)
-
 var string USD_TWD_SYMBOL = "FX_IDC:USDTWD"
 var string STOCK_006208_SYMBOL = "TWSE_DLY:006208"
 var string BTC_SYMBOL = "COINBASE:BTCUSD"
@@ -174,7 +166,10 @@ var string AXS_SYMBOL = "BINANCE:AXSUSDT"
 var string ALICE_SYMBOL = "BINANCE:ALICEUSDT"
 var string SAND_SYMBOL = "BINANCE:SANDUSDT"
 var string ALI_SYMBOL = "GEMINI:ALIUSD"
+var string AGIX_SYMBOL = "BINANCE:AGIXBUSD"
 
+var color COLOR_MY_WHITE = color.rgb(255, 255, 204) 
+var color COLOR_BG = color.rgb(77, 77, 77)
 // var color DF_TEXT_COLOR = colour.MISTY_ROSE()
 var color DF_TEXT_COLOR = COLOR_MY_WHITE
 // var color DF_TEXT_COLOR = color.rgb(255, 255, 204) 
@@ -221,6 +216,8 @@ var float pRNDR = na
 var float nowRNDRRatio = na
 var float pALI = na
 var float nowALIRatio = na
+var float pAGIX = na
+var float nowAGIXRatio = na
 var float pCHZ = na
 var float pGMT = na
 var float pAXS = na
@@ -367,6 +364,7 @@ pMATIC := request.security(symbol =  MATIC_SYMBOL, timeframe = "S", expression =
 pILV := request.security(symbol =  ILV_SYMBOL, timeframe = "S", expression = close)
 pRNDR := request.security(symbol = RNDR_SYMBOL, timeframe = "S", expression = close)
 pALI := request.security(symbol = ALI_SYMBOL, timeframe = "S", expression = close)
+pAGIX := request.security(symbol = AGIX_SYMBOL, timeframe = "S", expression = close)
 pCHZ := request.security(symbol = CHZ_SYMBOL, timeframe = "S", expression = close)
 pGMT := request.security(symbol = GMT_SYMBOL, timeframe = "S", expression = close)
 pAXS := request.security(symbol = AXS_SYMBOL, timeframe = "S", expression = close)
@@ -384,7 +382,7 @@ twStocksRatio := INPUT_TW_STOCKS_RATIO / 100 * specultaionRatio
 totalCash := (INPUT_BANK1 + INPUT_BANK2 + INPUT_BANK3) * twdExChange + INPUT_MAX * usdExChange
 totalStocksAssets := (p006208 * MY_006208_POSITION) * twdExChange
 // totalCryptoAssets := (INPUT_BINANCE + INPUT_BYBIT + INPUT_COOL_WALLET + INPUT_PIONEX + INPUT_CRYPTO_COM + INPUT_MAX) * usdExChange
-totalCryptoAssets := pBTC * MY_BTC_POSITION + pETH * MY_ETH_POSITION + pCRO * MY_CRO_POSITION + pMATIC * MY_MATIC_POSITION + pILV * MY_ILV_POSITION + pRNDR * MY_RNDR_POSITION
+totalCryptoAssets := pBTC * MY_BTC_POSITION + pETH * MY_ETH_POSITION + pCRO * MY_CRO_POSITION + pMATIC * MY_MATIC_POSITION + pILV * MY_ILV_POSITION + pRNDR * MY_RNDR_POSITION + pALI * MY_ALI_POSITION + pAGIX * MY_AGIX_POSITION
 remainOthers := pCHZ * MY_CHZ_POSITION + pGMT * MY_GMT_POSITION + pAXS * MY_AXS_POSITION + pALICE * MY_ALICE_POSITION + pSAND * MY_SAND_POSITION
 totalCryptoAssets := (totalCryptoAssets + remainOthers) * usdExChange
 totalSpecultaionAssets := totalStocksAssets + totalCryptoAssets
@@ -407,6 +405,7 @@ cryptoRebalance := totalAssets * cryptoRatio - totalCryptoAssets
 [remainILV, profitILV, profitPercentILV] = getOutput(pILV * usdExChange, MY_ILV_POSITION, MY_ILV_COST * usdExChange)
 [remainRNDR, profitRNDR, profitPercentRNDR] = getOutput(pRNDR * usdExChange, MY_RNDR_POSITION, MY_RNDR_COST * usdExChange)
 [remainALI, profitALI, profitPercentALI] = getOutput(pALI * usdExChange, MY_ALI_POSITION, MY_ALI_COST * usdExChange)
+[remainAGIX, profitAGIX, profitPercentAGIX] = getOutput(pAGIX * usdExChange, MY_AGIX_POSITION, MY_AGIX_COST * usdExChange)
 [remainOther, profitOther, profitPercentOther] = getOutPut(remainOthers * usdExChange, MY_OTHER_CRYPTO_COST * usdExChange)
 
 
@@ -418,6 +417,7 @@ nowMATICRatio := remainMATIC / totalAssets
 nowILVRatio := remainILV / totalAssets
 nowRNDRRatio := remainRNDR / totalAssets
 nowALIRatio := remainALI / totalAssets
+nowAGIXRatio := remainAGIX / totalAssets
 nowOthersRatio := remainOther / totalAssets
 
 //Calcultion and judgement variable before display
@@ -512,6 +512,9 @@ if barstate.islast
 
         cellRebalance(nextRow, "ALI", nowALIRatio)
         nextRow := cellPNL(nextRow, remainALI, profitALI, profitPercentALI)
+
+        cellRebalance(nextRow, "AGIX", nowAGIXRatio)
+        nextRow := cellPNL(nextRow, remainAGIX, profitAGIX, profitPercentAGIX)
 
         cellRebalance(nextRow, "垃圾幣", nowOthersRatio)
         nextRow := cellPNL(nextRow, remainOther, profitOther, profitPercentOther)
