@@ -60,12 +60,17 @@ var float ALI_COST = 10                         // ALI總投入 (USD)
 var string GROUP_SETTING = "📌 設定"
 var string USD = "美金"
 var string TWD = "台幣"
+var string SIZE_SMALL = "小"
+var string SIZE_NORMAL = "中"
+var string SIZE_LARGE = "大"
+var string BOTTOM_CENTER = "中間靠下"
+var string MIDDLE_CENTER = "正中央"
 var string GROUP_RATIO = "總配比"
 var string GROUP_ASSETS_RATIO = "資產配比"
 var string GROUP_CASH = "💲 現金"
 var string GROUP_ASSETS = "💲 資產"
 var string GROUP_PNL = "損益"
-
+ 
 var string GROUP_VERSION = "💬 關於   ©️"
 var string VERSION_NAME = "v1.0"
 var string RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
@@ -76,6 +81,8 @@ INPUT_DISPLAY_CASH = input.bool(defval = true, title = "現金", inline = "00", 
 INPUT_DISPLAY_TWSTOCK = input.bool(defval = true, title = "台股", inline = "00", group = GROUP_SETTING)
 INPUT_DISPLAY_CRYPTO = input.bool(defval = true, title = "幣圈", inline = "00", group = GROUP_SETTING)
 INPUT_DISPLAY_CURRENCY = input.string(defval = TWD, title = "貨幣顯示", options = [TWD, USD], group = GROUP_SETTING)
+INPUT_DISPLAY_SIZE = input.string(defval = SIZE_LARGE, title = "表格大小", options = [SIZE_SMALL, SIZE_NORMAL, SIZE_LARGE], group = GROUP_SETTING)
+INPUT_DISPLAY_POSITION = input.string(defval = MIDDLE_CENTER, title = "表格位置", options = [MIDDLE_CENTER, BOTTOM_CENTER], group = GROUP_SETTING)
 
 INPUT_CASH_RATIO = input.float(defval = 25, title = "現金(%)", inline = "01", group = GROUP_RATIO) 
 INPUT_SPECULATION_RATIO = input.float(defval = 75, title = "資產(%)", inline = "01", group = GROUP_RATIO) 
@@ -123,7 +130,6 @@ MY_ALICE_COST = 100
 MY_SAND_POSITION = 20.79
 MY_SAND_COST = 100
 MY_OTHER_CRYPTO_COST = MY_CHZ_COST + MY_GMT_COST + MY_AXS_COST + MY_ALICE_COST + MY_SAND_COST
-
 
 INPUT_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUP_VERSION) 
 
@@ -226,19 +232,25 @@ var float cashRebalance = na
 var float stockRebalance = na
 var float cryptoRebalance = na
 
-var table displayTabel = table.new(
- position       =  position.bottom_center,
-//  position       =  position.middle_center,
- columns        =  8,
- rows           =  20,
-//  bgcolor        =  color.new(color = colour.DIM_GRAY(), transp = 0),
-//  frame_color    =  color.new(color =  color.black, transp = 0),
- frame_width    =  5,
-//  border_color   =  color.new(color =  color.black, transp = 0),
- border_width   =  3
- )
+var table displayTabel = na
 
 // 5. Define functions
+getTableSize() =>
+    string output = if INPUT_DISPLAY_SIZE == SIZE_SMALL
+        size.small
+    else if INPUT_DISPLAY_SIZE == SIZE_NORMAL
+        size.normal
+    else 
+        size.large
+    output
+    
+getTablePosition() =>
+    string output = if INPUT_DISPLAY_POSITION == MIDDLE_CENTER
+        position.middle_center
+    else     
+        position.bottom_center
+    output
+
 cell(int columnID, int rowID, string displayText, color textColor, color background) =>
     table.cell(
      table_id       =  displayTabel, 
@@ -247,7 +259,7 @@ cell(int columnID, int rowID, string displayText, color textColor, color backgro
      text           =  displayText, 
      text_color     =  textColor,
     //  text_size      =  size.small,
-    //  text_size      =  size.large,
+     text_size      =  getTableSize(),
     //  text_size      =  size.huge,
      bgcolor        =  background
      )
@@ -425,6 +437,17 @@ color cryptoColor = math.abs(cryptoDiffRatio) > 0.1 ? colour.FIRE_BRICK() : DF_T
 
 if barstate.islast
     int nextRow = 0
+    displayTabel := table.new(
+     position       =  getTablePosition(),
+     columns        =  8,
+     rows           =  20,
+     //  bgcolor        =  color.new(color = colour.DIM_GRAY(), transp = 0),
+     //  frame_color    =  color.new(color =  color.black, transp = 0),
+     frame_width    =  5,
+     //  border_color   =  color.new(color =  color.black, transp = 0),
+     border_width   =  3
+     )
+    
     // Draw table
     //標題
     if INPUT_DISPLAY_TITLE
