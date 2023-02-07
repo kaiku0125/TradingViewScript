@@ -160,27 +160,77 @@ var color COLOR_AQUA = color.rgb(0, 255, 255)
 export AQUA() =>
     COLOR_AQUA
 
+var color COLOR_LIGHT_CYAN = color.rgb(red = 224, green = 255, blue = 255, transp = 0) 
+export LIGHT_CYAN() =>
+    COLOR_LIGHT_CYAN
 
-// light cyan	#E0FFFF	(224,255,255)
-// dark turquoise	#00CED1	(0,206,209)
-// turquoise	#40E0D0	(64,224,208)
-// medium turquoise	#48D1CC	(72,209,204)
-// pale turquoise	#AFEEEE	(175,238,238)
-// aqua marine	#7FFFD4	(127,255,212)
-// powder blue	#B0E0E6	(176,224,230)
-// cadet blue	#5F9EA0	(95,158,160)
-// steel blue	#4682B4	(70,130,180)
-// corn flower blue	#6495ED	(100,149,237)
-// deep sky blue	#00BFFF	(0,191,255)
-// dodger blue	#1E90FF	(30,144,255)
-// light blue	#ADD8E6	(173,216,230)
-// sky blue	#87CEEB	(135,206,235)
-// light sky blue	#87CEFA	(135,206,250)
-// midnight blue	#191970	(25,25,112)
-// navy	#000080	(0,0,128)
-// dark blue	#00008B	(0,0,139)
-// medium blue	#0000CD	(0,0,205)
+var color COLOR_DARK_TURPUOISE = color.rgb(red = 0, green = 206, blue = 209, transp = 0) 
+export DARK_TURPUOISE() =>
+    COLOR_DARK_TURPUOISE
 
+var color COLOR_TURPUOISE = color.rgb(red = 64, green = 224, blue = 208, transp = 0) 
+export TURPUOISE() =>
+    COLOR_TURPUOISE
+
+var color COLOR_MEDIUM_TURPUOISE = color.rgb(red = 72, green = 209, blue = 204, transp = 0) 
+export MEDIUM_TURPUOISE() =>
+    COLOR_MEDIUM_TURPUOISE
+
+var color COLOR_PALE_TURQUOISE = color.rgb(red = 175, green = 238, blue = 238, transp = 0) 
+export PALE_TURQUOISE() =>
+    COLOR_PALE_TURQUOISE
+
+var color COLOR_AQUA_MARINE = color.rgb(red = 127, green = 255, blue = 212, transp = 0) 
+export AQUA_MARINE() =>
+    COLOR_AQUA_MARINE
+
+var color COLOR_POWDER_BLUE = color.rgb(red = 176, green = 224, blue = 230, transp = 0) 
+export POWDER_BLUE() =>
+    COLOR_POWDER_BLUE
+
+var color COLOR_CODET_BLUE = color.rgb(red = 95, green = 158, blue = 160, transp = 0) 
+export CODET_BLUE() =>
+    COLOR_CODET_BLUE
+
+var color COLOR_STEEL_BLUE = color.rgb(red = 70, green = 130, blue = 180, transp = 0) 
+export STEEL_BLUE() =>
+    COLOR_STEEL_BLUE
+
+var color COLOR_CORN_FLOWER_BLUE = color.rgb(red = 100, green = 149, blue = 237, transp = 0) 
+export CORN_FLOWER_BLUE() =>
+    COLOR_CORN_FLOWER_BLUE
+
+var color COLOR_DEEP_SKY_BLUE = color.rgb(red = 0, green = 191, blue = 255, transp = 0) 
+export DEEP_SKY_BLUE() =>
+    COLOR_DEEP_SKY_BLUE
+
+var color COLOR_DODGER_BLUE = color.rgb(red = 30, green = 144, blue = 255, transp = 0) 
+export DODGER_BLUE() =>
+    COLOR_DODGER_BLUE
+
+var color COLOR_LIGHT_BLUE = color.rgb(red = 173, green = 216, blue = 230, transp = 0) 
+export LIGHT_BLUE() =>
+    COLOR_LIGHT_BLUE
+
+var color COLOR_SKY_BLUE = color.rgb(red = 135, green = 206, blue = 235, transp = 0) 
+export SKY_BLUE() =>
+    COLOR_SKY_BLUE
+
+var color COLOR_LIGHT_SKY_BLUE = color.rgb(red = 135, green = 206, blue = 250, transp = 0) 
+export LIGHT_SKY_BLUE() =>
+    COLOR_LIGHT_SKY_BLUE
+
+var color COLOR_MIDNIGHT_BLUE = color.rgb(red = 25, green = 25, blue = 112, transp = 0) 
+export MIDNIGHT_BLUE() =>
+    COLOR_MIDNIGHT_BLUE
+
+var color COLOR_DARK_BLUE = color.rgb(red = 0, green = 0, blue = 139, transp = 0) 
+export DARK_BLUE() =>
+    COLOR_DARK_BLUE
+
+var color COLOR_MEDIUM_BLUE = color.rgb(red = 0, green = 0, blue = 205, transp = 0) 
+export MEDIUM_BLUE() =>
+    COLOR_MEDIUM_BLUE
 
 var color COLOR_ROYAL_BLUE = color.rgb(red = 65, green = 105, blue = 225, transp = 0) 
 export ROYAL_BLUE() =>
@@ -438,6 +488,9 @@ export DARK_GREEN() =>
 var color COLOR_DIM_GRAY = color.rgb(105, 105, 105, 0)
 export DIM_GRAY() =>
     COLOR_DIM_GRAY
+
+
+
 
 export getSDKVersion() =>
     VERSION_NAME

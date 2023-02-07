@@ -54,8 +54,8 @@ var float ILV_POSITION = 1.058                  // ILV (顆)
 var float ILV_COST = 99.89                      // ILV總投入 (USD)
 var float RNDR_POSITION = 29.51                 // RNDR (顆)
 var float RNDR_COST = 49.98                     // RNDR總投入 (USD)
-var float ALI_POSITION = 397.9                  // ALI (顆)
-var float ALI_COST = 20                         // ALI總投入 (USD)
+var float ALI_POSITION = 1179.9                 // ALI (顆)
+var float ALI_COST = 100                        // ALI總投入 (USD)
 var float AGIX_POSITION = 22                    // AGIX (顆)
 var float AGIX_COST = 9.78                      // AGIX總投入 (USD)
 
@@ -344,9 +344,10 @@ cellRebalance(int rowID, string targetSymbol, nowRatio) =>
     cell(2, rowID, DISPLAY_NONE, DF_TEXT_COLOR, DF_CELL_COLOR)
 
 getRebalanceText(string bankName, float bankAval, float rebalance) =>
-    float diff = rebalance - bankAval
+    float _rebalance = INPUT_DISPLAY_CURRENCY == TWD ? rebalance : rebalance * pUsd_Twd
+    float diff = _rebalance - bankAval
     string action =  diff > 0 ? "入金 " : "提領 "
-    string output = bankName + action + fm.fString(math.abs(diff), 0)
+    string output = bankName + action + fm.fString(math.abs(diff), 0) + " TWD"
     output
 
 // 6. Code logic start
@@ -427,6 +428,7 @@ color cashColor = math.abs(cashDiffRatio) > 0.1 ?  colour.FIRE_BRICK() : DF_TEXT
 
 float twStockDiffRatio = getRatioDiff(twStocksRatioNow, twStocksRatio)
 string twStockDiffText = fm.fString(stockRebalance, 0) + " (" + fm.ratioString(twStockDiffRatio) + ")"
+// float twdStockRebalance = INPUT_DISPLAY_CURRENCY == TWD ? stockRebalance : stockRebalance * pUsd_Twd
 string twStockPNLText = getRebalanceText("元大 ", BANK3_AVAL, stockRebalance)
 color stockColor = math.abs(twStockDiffRatio) > 0.1 ? colour.FIRE_BRICK() : DF_TEXT_COLOR
 
