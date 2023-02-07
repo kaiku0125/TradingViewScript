@@ -2,7 +2,7 @@
 
 // 1. Import library
 import kaiku0125/Debug/1 as debug
-import kaiku0125/Colour/5 as colour
+import kaiku0125/Colour/6 as colour
 import kaiku0125/FormatSDK/1 as fm
 
 // # ========================================================================= #
@@ -196,38 +196,20 @@ var float totalCryptoAssets = na
 var float totalSpecultaionAssets = na
 var float totalAssets = na
 
-var float remainOthers = na
-var float pnlOthers =  na
-var float pnlPercentOthers = na
-
 var float p006208 = na
-var float now002608Ratio = na
 var float pBTC = na
-var float nowBTCRatio = na
 var float pETH = na
-var float nowETHRatio = na
 var float pCRO = na
-var float nowCRORatio = na
 var float pMATIC = na
-var float nowMATICRatio = na
 var float pILV = na
-var float nowILVRatio = na
 var float pRNDR = na
-var float nowRNDRRatio = na
 var float pALI = na
-var float nowALIRatio = na
 var float pAGIX = na
-var float nowAGIXRatio = na
 var float pCHZ = na
 var float pGMT = na
 var float pAXS = na
 var float pALICE = na
 var float pSAND = na
-var float nowOthersRatio = na
-
-var float cashRebalance = na
-var float stockRebalance = na
-var float cryptoRebalance = na
 
 var table displayTabel = na
 
@@ -381,7 +363,7 @@ totalCash := (INPUT_BANK1 + INPUT_BANK2 + INPUT_BANK3) * twdExChange + INPUT_MAX
 totalStocksAssets := (p006208 * MY_006208_POSITION) * twdExChange
 // totalCryptoAssets := (INPUT_BINANCE + INPUT_BYBIT + INPUT_COOL_WALLET + INPUT_PIONEX + INPUT_CRYPTO_COM + INPUT_MAX) * usdExChange
 totalCryptoAssets := pBTC * MY_BTC_POSITION + pETH * MY_ETH_POSITION + pCRO * MY_CRO_POSITION + pMATIC * MY_MATIC_POSITION + pILV * MY_ILV_POSITION + pRNDR * MY_RNDR_POSITION + pALI * MY_ALI_POSITION + pAGIX * MY_AGIX_POSITION
-remainOthers := pCHZ * MY_CHZ_POSITION + pGMT * MY_GMT_POSITION + pAXS * MY_AXS_POSITION + pALICE * MY_ALICE_POSITION + pSAND * MY_SAND_POSITION
+remainOthers = pCHZ * MY_CHZ_POSITION + pGMT * MY_GMT_POSITION + pAXS * MY_AXS_POSITION + pALICE * MY_ALICE_POSITION + pSAND * MY_SAND_POSITION
 totalCryptoAssets := (totalCryptoAssets + remainOthers) * usdExChange
 totalSpecultaionAssets := totalStocksAssets + totalCryptoAssets
 totalAssets := totalCash + totalSpecultaionAssets
@@ -391,9 +373,9 @@ cashRatioNow := totalCash / totalAssets
 twStocksRatioNow := totalStocksAssets / totalAssets
 cryptoRatioNow := totalCryptoAssets / totalAssets
 
-cashRebalance := totalAssets * cashRatio - totalCash
-stockRebalance := totalAssets * twStocksRatio - totalStocksAssets
-cryptoRebalance := totalAssets * cryptoRatio - totalCryptoAssets
+cashRebalance = totalAssets * cashRatio - totalCash
+stockRebalance = totalAssets * twStocksRatio - totalStocksAssets
+cryptoRebalance = totalAssets * cryptoRatio - totalCryptoAssets
 
 [remain006208, pnl006208, pnlPercent006208] = getOutput(p006208 * twdExChange, MY_006208_POSITION, MY_006208_COST * twdExChange)
 [remainBTC, pnlBTC, pnlPercentBTC] = getOutput(pBTC * usdExChange, MY_BTC_POSITION, MY_BTC_COST * usdExChange)
@@ -406,17 +388,16 @@ cryptoRebalance := totalAssets * cryptoRatio - totalCryptoAssets
 [remainAGIX, pnlAGIX, pnlPercentAGIX] = getOutput(pAGIX * usdExChange, MY_AGIX_POSITION, MY_AGIX_COST * usdExChange)
 [remainOther, pnlOther, pnlPercentOther] = getOutPut(remainOthers * usdExChange, MY_OTHER_CRYPTO_COST * usdExChange)
 
-
-now002608Ratio := remain006208 / totalAssets
-nowBTCRatio := remainBTC / totalAssets
-nowETHRatio := remainETH / totalAssets
-nowCRORatio := remainCRO / totalAssets
-nowMATICRatio := remainMATIC / totalAssets
-nowILVRatio := remainILV / totalAssets
-nowRNDRRatio := remainRNDR / totalAssets
-nowALIRatio := remainALI / totalAssets
-nowAGIXRatio := remainAGIX / totalAssets
-nowOthersRatio := remainOther / totalAssets
+now002608Ratio = remain006208 / totalAssets
+nowBTCRatio = remainBTC / totalAssets
+nowETHRatio = remainETH / totalAssets
+nowCRORatio = remainCRO / totalAssets
+nowMATICRatio = remainMATIC / totalAssets
+nowILVRatio = remainILV / totalAssets
+nowRNDRRatio = remainRNDR / totalAssets
+nowALIRatio = remainALI / totalAssets
+nowAGIXRatio = remainAGIX / totalAssets
+nowOthersRatio = remainOther / totalAssets
 
 //Calcultion and judgement variable before display
 float cashDiffRatio = getRatioDiff(cashRatioNow, cashRatio)

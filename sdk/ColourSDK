@@ -3,7 +3,7 @@
 
 
 library(title = "Colour", overlay =  true) 
-var VERSION_NAME = "v5"
+var VERSION_NAME = "v6"
 
 
 var color COLOR_MAROON = color.rgb(red = 128, green = 0, blue = 0, transp = 0)
