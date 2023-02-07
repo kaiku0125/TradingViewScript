@@ -38,7 +38,7 @@ var float BYBIT_AVAL = 105          // bybit (USD)
 var float COOL_WALLET_AVAL = 2335   // 冷錢包 (USD)
 var float PIONEX_AVAL = 436          // 派網 (USD)
 var float CRYPTO_COM_AVAL = 1819    // crypto.com (USD)
-var float VISA_AVAL = 1600          // Visa (USD)
+var float VISA_AVAL = 1700          // Visa (USD)
 
 var float _006208_POSITION = 100                // 006208 (股)
 var float _006208_COST = 6990                   // 006208總投入 (TWD)
@@ -70,8 +70,8 @@ var string MIDDLE_CENTER = "正中央"
 var string GROUP_RATIO = "總配比"
 var string GROUP_ASSETS_RATIO = "資產配比"
 var string GROUP_CASH = "💲 現金"
+var string GROUP_EXCHANGE = "💲 交易所"
 var string GROUP_ASSETS = "💲 資產"
-var string GROUP_PNL = "損益"
  
 var string GROUP_VERSION = "💬 關於   ©️"
 var string VERSION_NAME = "v1.0"
@@ -96,33 +96,33 @@ INPUT_BANK2 = input.float(defval = BANK2_AVAL, title = "兆豐(TWD)", group = GR
 INPUT_BANK3 = input.float(defval = BANK3_AVAL, title = "元大(TWD)", group = GROUP_CASH) 
 INPUT_MAX = input.float(defval = MAX_AVAL, title = "MAX(U)", group = GROUP_CASH)
 
-// INPUT_TW_STOCKS = input.float(defval = 6980, title = "投資先生(TWD)", group = GROUP_ASSETS)
+// INPUT_TW_STOCKS = input.float(defval = 6980, title = "投資先生(TWD)", group = GROUP_EXCHANGE)
 
-INPUT_BINANCE = input.float(defval = BINANCE_AVAL, title = "Binance(U)", group = GROUP_ASSETS)
-INPUT_BYBIT = input.float(defval = BYBIT_AVAL, title = "Bybit(U)", group = GROUP_ASSETS)
-INPUT_COOL_WALLET = input.float(defval = COOL_WALLET_AVAL, title = "冷錢包(U)", group = GROUP_ASSETS)
-INPUT_PIONEX = input.float(defval = PIONEX_AVAL, title = "Pionex(U)", group = GROUP_ASSETS)
-INPUT_CRYPTO_COM = input.float(defval = CRYPTO_COM_AVAL, title = "Crypto.com(U)", group = GROUP_ASSETS)
-INPUT_CRYPTO_COM_VISA = input.float(defval = VISA_AVAL, title = "幣圈Visa(U)", group = GROUP_ASSETS)
+INPUT_BINANCE = input.float(defval = BINANCE_AVAL, title = "Binance(U)", group = GROUP_EXCHANGE)
+INPUT_BYBIT = input.float(defval = BYBIT_AVAL, title = "Bybit(U)", group = GROUP_EXCHANGE)
+INPUT_COOL_WALLET = input.float(defval = COOL_WALLET_AVAL, title = "冷錢包(U)", group = GROUP_EXCHANGE)
+INPUT_PIONEX = input.float(defval = PIONEX_AVAL, title = "Pionex(U)", group = GROUP_EXCHANGE)
+INPUT_CRYPTO_COM = input.float(defval = CRYPTO_COM_AVAL, title = "Crypto.com(U)", group = GROUP_EXCHANGE)
+INPUT_CRYPTO_COM_VISA = input.float(defval = VISA_AVAL, title = "幣圈Visa(U)", group = GROUP_EXCHANGE)
 
-MY_006208_POSITION = input.float(defval = _006208_POSITION, title = "006208(股)", inline = "03", group = GROUP_PNL)
-MY_006208_COST = input.float(defval = _006208_COST, title = " 成本", inline = "03", group = GROUP_PNL)
-MY_BTC_POSITION = input.float(defval = BTC_POSITION, title = "BTC(顆)", inline = "04", group = GROUP_PNL) 
-MY_BTC_COST = input.float(defval = BTC_COST, title = " 成本", inline = "04", group = GROUP_PNL) 
-MY_ETH_POSITION = input.float(defval = ETH_POSITION, title = "ETH(顆)", inline = "05", group = GROUP_PNL) 
-MY_ETH_COST = input.float(defval = ETH_COST, title = " 成本", inline = "05", group = GROUP_PNL) 
-MY_CRO_POSITION = input.float(defval = CRO_POSITION, title = "CRO(顆)", inline = "06", group = GROUP_PNL) 
-MY_CRO_COST = input.float(defval = CRO_COST, title = " 成本", inline = "06", group = GROUP_PNL) 
-MY_MATIC_POSITION = input.float(defval = MATIC_POSITION, title = "MATIC(顆)", inline = "07", group = GROUP_PNL) 
-MY_MATIC_COST = input.float(defval = MATIC_COST, title = " 成本", inline = "07", group = GROUP_PNL) 
-MY_ILV_POSITION = input.float(defval = ILV_POSITION, title = "ILV(顆)", inline = "08", group = GROUP_PNL) 
-MY_ILV_COST = input.float(defval = ILV_COST, title = " 成本", inline = "08", group = GROUP_PNL) 
-MY_RNDR_POSITION = input.float(defval = RNDR_POSITION, title = "RNDR(顆)", inline = "09", group = GROUP_PNL) 
-MY_RNDR_COST = input.float(defval = RNDR_COST, title = " 成本", inline = "09", group = GROUP_PNL) 
-MY_ALI_POSITION = input.float(defval = ALI_POSITION, title = "ALI(顆)", inline = "10", group = GROUP_PNL) 
-MY_ALI_COST = input.float(defval = ALI_COST, title = " 成本", inline = "10", group = GROUP_PNL) 
-MY_AGIX_POSITION = input.float(defval = AGIX_POSITION, title = "AGIX(顆)", inline = "11", group = GROUP_PNL) 
-MY_AGIX_COST = input.float(defval = AGIX_COST, title = " 成本", inline = "11", group = GROUP_PNL) 
+MY_006208_POSITION = input.float(defval = _006208_POSITION, title = "006208(股)", inline = "03", group = GROUP_ASSETS)
+MY_006208_COST = input.float(defval = _006208_COST, title = " 成本", inline = "03", group = GROUP_ASSETS)
+MY_BTC_POSITION = input.float(defval = BTC_POSITION, title = "BTC(顆)", inline = "04", group = GROUP_ASSETS) 
+MY_BTC_COST = input.float(defval = BTC_COST, title = " 成本", inline = "04", group = GROUP_ASSETS) 
+MY_ETH_POSITION = input.float(defval = ETH_POSITION, title = "ETH(顆)", inline = "05", group = GROUP_ASSETS) 
+MY_ETH_COST = input.float(defval = ETH_COST, title = " 成本", inline = "05", group = GROUP_ASSETS) 
+MY_CRO_POSITION = input.float(defval = CRO_POSITION, title = "CRO(顆)", inline = "06", group = GROUP_ASSETS) 
+MY_CRO_COST = input.float(defval = CRO_COST, title = " 成本", inline = "06", group = GROUP_ASSETS) 
+MY_MATIC_POSITION = input.float(defval = MATIC_POSITION, title = "MATIC(顆)", inline = "07", group = GROUP_ASSETS) 
+MY_MATIC_COST = input.float(defval = MATIC_COST, title = " 成本", inline = "07", group = GROUP_ASSETS) 
+MY_ILV_POSITION = input.float(defval = ILV_POSITION, title = "ILV(顆)", inline = "08", group = GROUP_ASSETS) 
+MY_ILV_COST = input.float(defval = ILV_COST, title = " 成本", inline = "08", group = GROUP_ASSETS) 
+MY_RNDR_POSITION = input.float(defval = RNDR_POSITION, title = "RNDR(顆)", inline = "09", group = GROUP_ASSETS) 
+MY_RNDR_COST = input.float(defval = RNDR_COST, title = " 成本", inline = "09", group = GROUP_ASSETS) 
+MY_ALI_POSITION = input.float(defval = ALI_POSITION, title = "ALI(顆)", inline = "10", group = GROUP_ASSETS) 
+MY_ALI_COST = input.float(defval = ALI_COST, title = " 成本", inline = "10", group = GROUP_ASSETS) 
+MY_AGIX_POSITION = input.float(defval = AGIX_POSITION, title = "AGIX(顆)", inline = "11", group = GROUP_ASSETS) 
+MY_AGIX_COST = input.float(defval = AGIX_COST, title = " 成本", inline = "11", group = GROUP_ASSETS) 
 MY_CHZ_POSITION = 443 + 699
 MY_CHZ_COST = 100 + 126
 MY_GMT_POSITION = 201.8
@@ -143,14 +143,14 @@ var string TW_STOCKS_TITLE = "➋ 台股"
 var string CRYPTO_TITLE = "➌ 幣圈"
 var string DISPLAY_NONE = "--"
 var string ICON_MONEY = "💰 "
-var string ICON_ROCKET = "🚀 "
-var string ICON_UP_50 = "🤑 "
-var string ICON_UP_20 = "😀 "
-var string ICON_UP = "🙂 "
-var string ICON_DOWN = "🙁 "
-var string ICON_DOWN_20 = "😨 "
-var string ICON_DOWN_50 = "😱 "
-var string ICON_GG = "🈹 "
+var string ICON_ROCKET = " 🚀"
+var string ICON_UP_50 = " 🤑"
+var string ICON_UP_20 = " 😀"
+var string ICON_UP = " 🙂"
+var string ICON_DOWN = " 🙁"
+var string ICON_DOWN_20 = " 😨"
+var string ICON_DOWN_50 = " 😱"
+var string ICON_GG = " 🈹"
 
 var string USD_TWD_SYMBOL = "FX_IDC:USDTWD"
 var string STOCK_006208_SYMBOL = "TWSE_DLY:006208"
@@ -197,8 +197,8 @@ var float totalSpecultaionAssets = na
 var float totalAssets = na
 
 var float remainOthers = na
-var float profitOthers =  na
-var float profitPercentOthers = na
+var float pnlOthers =  na
+var float pnlPercentOthers = na
 
 var float p006208 = na
 var float now002608Ratio = na
@@ -291,29 +291,26 @@ stateJudge(float ratio) =>
 
 getOutput(currentPrice, position, cost) =>
     remain = currentPrice * position
-    profit = remain - cost
-    profitPercent = profit / cost
-    [remain, profit, profitPercent]
+    pnl = remain - cost
+    pnlPercent = pnl / cost
+    [remain, pnl, pnlPercent]
 
 getOutPut(remain, cost) =>
-    profit = remain - cost
-    profitPercent = profit / cost
-    [remain, profit, profitPercent]
+    pnl = remain - cost
+    pnlPercent = pnl / cost
+    [remain, pnl, pnlPercent]
 
-cellPNL(rowID, remain, profit, profitPercent) =>
+cellPNL(rowID, remain, pnl, pnlPercent) =>
     string remainText = fm.fString(remain, 0)
     cell(3, rowID, remainText, DF_TEXT_COLOR, DF_CELL_COLOR)
     
-    string profitText = fm.fString(profit, 0) 
-    // string profitText = str.tostring(value = profit, format =  "#") 
-    string profitPercentText = fm.ratioString(profitPercent)
-    // var string profitPercentText = str.tostring(value = profitPercent, format =  "#.#") + " %"
-    [stateDis, stateColor] = stateJudge(profitPercent * 100)
+    string pnlText = fm.fString(pnl, 0) 
+    string pnlPercentText = fm.ratioString(pnlPercent)
+    [stateDis, stateColor] = stateJudge(pnlPercent * 100)
     cell(
      columnID         =  4, 
      rowID            =  rowID, 
-     displayText      =  profitText + " (" + profitPercentText + ")" + stateDis, 
-    //  textColor        =  profit > 0 ? color.green : colour.FIRE_BRICK(), 
+     displayText      =  pnlText + " (" + pnlPercentText + ")" + stateDis, 
      textColor        =  stateColor,
      background       =  DF_CELL_COLOR
      )
@@ -398,16 +395,16 @@ cashRebalance := totalAssets * cashRatio - totalCash
 stockRebalance := totalAssets * twStocksRatio - totalStocksAssets
 cryptoRebalance := totalAssets * cryptoRatio - totalCryptoAssets
 
-[remain006208, profit006208, profitPercent006208] = getOutput(p006208 * twdExChange, MY_006208_POSITION, MY_006208_COST * twdExChange)
-[remainBTC, profitBTC, profitPercentBTC] = getOutput(pBTC * usdExChange, MY_BTC_POSITION, MY_BTC_COST * usdExChange)
-[remainETH, profitETH, profitPercentETH] = getOutput(pETH * usdExChange, MY_ETH_POSITION, MY_ETH_COST * usdExChange)
-[remainCRO, profitCRO, profitPercentCRO] = getOutput(pCRO * usdExChange, MY_CRO_POSITION, MY_CRO_COST * usdExChange)
-[remainMATIC, profitMATIC, profitPercentMATIC] = getOutput(pMATIC * usdExChange, MY_MATIC_POSITION, MY_MATIC_COST * usdExChange)
-[remainILV, profitILV, profitPercentILV] = getOutput(pILV * usdExChange, MY_ILV_POSITION, MY_ILV_COST * usdExChange)
-[remainRNDR, profitRNDR, profitPercentRNDR] = getOutput(pRNDR * usdExChange, MY_RNDR_POSITION, MY_RNDR_COST * usdExChange)
-[remainALI, profitALI, profitPercentALI] = getOutput(pALI * usdExChange, MY_ALI_POSITION, MY_ALI_COST * usdExChange)
-[remainAGIX, profitAGIX, profitPercentAGIX] = getOutput(pAGIX * usdExChange, MY_AGIX_POSITION, MY_AGIX_COST * usdExChange)
-[remainOther, profitOther, profitPercentOther] = getOutPut(remainOthers * usdExChange, MY_OTHER_CRYPTO_COST * usdExChange)
+[remain006208, pnl006208, pnlPercent006208] = getOutput(p006208 * twdExChange, MY_006208_POSITION, MY_006208_COST * twdExChange)
+[remainBTC, pnlBTC, pnlPercentBTC] = getOutput(pBTC * usdExChange, MY_BTC_POSITION, MY_BTC_COST * usdExChange)
+[remainETH, pnlETH, pnlPercentETH] = getOutput(pETH * usdExChange, MY_ETH_POSITION, MY_ETH_COST * usdExChange)
+[remainCRO, pnlCRO, pnlPercentCRO] = getOutput(pCRO * usdExChange, MY_CRO_POSITION, MY_CRO_COST * usdExChange)
+[remainMATIC, pnlMATIC, pnlPercentMATIC] = getOutput(pMATIC * usdExChange, MY_MATIC_POSITION, MY_MATIC_COST * usdExChange)
+[remainILV, pnlILV, pnlPercentILV] = getOutput(pILV * usdExChange, MY_ILV_POSITION, MY_ILV_COST * usdExChange)
+[remainRNDR, pnlRNDR, pnlPercentRNDR] = getOutput(pRNDR * usdExChange, MY_RNDR_POSITION, MY_RNDR_COST * usdExChange)
+[remainALI, pnlALI, pnlPercentALI] = getOutput(pALI * usdExChange, MY_ALI_POSITION, MY_ALI_COST * usdExChange)
+[remainAGIX, pnlAGIX, pnlPercentAGIX] = getOutput(pAGIX * usdExChange, MY_AGIX_POSITION, MY_AGIX_COST * usdExChange)
+[remainOther, pnlOther, pnlPercentOther] = getOutPut(remainOthers * usdExChange, MY_OTHER_CRYPTO_COST * usdExChange)
 
 
 now002608Ratio := remain006208 / totalAssets
@@ -481,7 +478,7 @@ if barstate.islast
         nextRow := nextRow + 1
 
         cellRebalance(nextRow, "富邦50", now002608Ratio)
-        nextRow := cellPNL(nextRow, remain006208, profit006208, profitPercent006208)
+        nextRow := cellPNL(nextRow, remain006208, pnl006208, pnlPercent006208)
 
         nextRow := cellBlank(nextRow)
 
@@ -495,31 +492,31 @@ if barstate.islast
         nextRow := nextRow + 1
 
         cellRebalance(nextRow, "BTC", nowBTCRatio)
-        nextRow := cellPNL(nextRow, remainBTC, profitBTC, profitPercentBTC)
+        nextRow := cellPNL(nextRow, remainBTC, pnlBTC, pnlPercentBTC)
 
         cellRebalance(nextRow, "ETH", nowETHRatio)
-        nextRow := cellPNL(nextRow, remainETH, profitETH, profitPercentETH)
+        nextRow := cellPNL(nextRow, remainETH, pnlETH, pnlPercentETH)
 
         cellRebalance(nextRow, "CRO", nowCRORatio)
-        nextRow := cellPNL(nextRow, remainCRO, profitCRO, profitPercentCRO)
+        nextRow := cellPNL(nextRow, remainCRO, pnlCRO, pnlPercentCRO)
 
         cellRebalance(nextRow, "MATIC", nowMATICRatio)
-        nextRow := cellPNL(nextRow, remainMATIC, profitMATIC, profitPercentMATIC)
+        nextRow := cellPNL(nextRow, remainMATIC, pnlMATIC, pnlPercentMATIC)
 
         cellRebalance(nextRow, "ILV", nowMATICRatio)
-        nextRow := cellPNL(nextRow, remainILV, profitILV, profitPercentILV)
+        nextRow := cellPNL(nextRow, remainILV, pnlILV, pnlPercentILV)
 
         cellRebalance(nextRow, "RNDR", nowRNDRRatio)
-        nextRow := cellPNL(nextRow, remainRNDR, profitRNDR, profitPercentRNDR)
+        nextRow := cellPNL(nextRow, remainRNDR, pnlRNDR, pnlPercentRNDR)
 
         cellRebalance(nextRow, "ALI", nowALIRatio)
-        nextRow := cellPNL(nextRow, remainALI, profitALI, profitPercentALI)
+        nextRow := cellPNL(nextRow, remainALI, pnlALI, pnlPercentALI)
 
         cellRebalance(nextRow, "AGIX", nowAGIXRatio)
-        nextRow := cellPNL(nextRow, remainAGIX, profitAGIX, profitPercentAGIX)
+        nextRow := cellPNL(nextRow, remainAGIX, pnlAGIX, pnlPercentAGIX)
 
         cellRebalance(nextRow, "垃圾幣", nowOthersRatio)
-        nextRow := cellPNL(nextRow, remainOther, profitOther, profitPercentOther)
+        nextRow := cellPNL(nextRow, remainOther, pnlOther, pnlPercentOther)
 
 
     // getCurrentSymbol(p006208)
