@@ -12,7 +12,7 @@ indicator(
  title                = "PNLRebalance",
  shorttitle           = "損益再平衡",
  overlay              =  true,
- max_bars_back        =  1,
+//  max_bars_back        =  100,
 //  format               =  ,
 //  precision            =  ,
 //  scale                =  ,
@@ -192,6 +192,15 @@ var color DF_CELL_COLOR = COLOR_BG
 // var color DF_CELL_COLOR = COLOR_777
 
 // 4. Variable declartion
+type RecordData
+    int mYear
+    int mMonth
+    int mDay
+    float mNowTotal
+
+
+var array<RecordData> recordDataArray = array.new<RecordData>()
+
 var float pUsd_Twd = na
 var float usdExChange = na
 var float twdExChange = na
@@ -318,7 +327,16 @@ cellPNL(rowID, remain, pnl, pnlPercent) =>
 
 getCurrentSymbol(float value) =>
     string mOutput = fm.fString(value, 4)
-    label debugLabel = debug.printLabel("圖表ID : " + syminfo.tickerid + ", 價格 : " + mOutput)
+
+    string ddd = str.format("{0,time,HH:mm:ss.SSS}", timenow)
+
+    
+    label debugLabel = debug.printLabel("圖表ID : " + syminfo.tickerid + ", 價格 : " + mOutput + "_____")
+    // label.delete(id = debugLabel[1])
+
+getDebugValue(value) =>
+    string mOutput = str.tostring(value = value) 
+    label debugLabel = debug.printLabel(mOutput)
     // label.delete(id = debugLabel[1])
 
 getRatioDiff(float nowRatio, supposeRatio) =>
@@ -362,6 +380,27 @@ getDisplayInfo(float _totalAssets, float _totalSpecultaionAssets, float _specula
     else 
         colour.GOLD()
     [opText, opColor]
+
+isDate(int _year, int _month, int _day) =>
+    bool isDate = time == timestamp(_year, _month, _day) 
+    isDate
+
+// record(float now, float new) => 
+//     float output = if now > new 
+//         math.random(min = new, max = now, seed = 1) 
+//     else 
+//         math.random(min = now, max = new, seed = 1) 
+//     output
+
+
+record(float now, int _year, int _month, int _day, float new) =>
+    bool isDate = time == timestamp(_year, _month, _day) 
+    float output = if isDate
+        new
+    else 
+        now
+    output
+
 
 // 6. Code logic start
 if INPUT_CASH_RATIO + INPUT_SPECULATION_RATIO != 100
@@ -456,6 +495,7 @@ string cryptoDiffText = fm.fString(cryptoRebalance, 0) + " (" + fm.ratioString(c
 string cryptoPNLText = getRebalanceText("兆豐 ", BANK2_AVAL, cryptoRebalance)
 color cryptoColor = math.abs(cryptoDiffRatio) > 0.1 ? colour.FIRE_BRICK() : DF_TEXT_COLOR
 
+
 if barstate.islast
     int nextRow = 0
     displayTabel := table.new(
@@ -544,4 +584,89 @@ if barstate.islast
         nextRow := cellPNL(nextRow, remainOther, pnlOther, pnlPercentOther)
 
 
-    getCurrentSymbol(speculationPNL)
+        // getCurrentSymbol(speculationPNL)
+barTimeStr = str.format_time(time, "yyyy/MM/dd", "Asia/Taipei")
+
+
+
+
+
+
+var float recoredAssets = 0
+// var float drawPrice = 0
+// var int maxSize = 3
+
+
+// if array.size(id = recordDataArray) >= 2
+//     temp = array.get(id = recordDataArray, index = 0) 
+//     tempNext = array.get(id = recordDataArray, index = 1) 
+//     if time == timestamp(temp.mYear, temp.mMonth, temp.mDay)
+//         recoredAssets := temp.mNowTotal
+//         drawPrice := recoredAssets
+//         array.shift(id = recordDataArray) 
+//     else if time < timestamp(temp.mYear, temp.mMonth, temp.mDay) and recoredAssets != 0
+//         drawPrice := record(recoredAssets, temp.mNowTotal)
+//     // else
+//     //     drawPrice := 0
+
+// else if array.size(id = recordDataArray) == 1 
+//     RecordData temp = array.get(id = recordDataArray, index = 0) 
+//     recoredAssets := temp.mNowTotal
+//     drawPrice := recoredAssets + math.random(min = -1000, max = 1000, seed = 1) 
+
+// else 
+//     array.push(id = recordDataArray, value = RecordData.new(2022, 8, 22, -224161)) 
+//     array.push(id = recordDataArray, value = RecordData.new(2022, 8, 29, -244077)) 
+//     array.push(id = recordDataArray, value = RecordData.new(2022, 9, 5, -244682)) 
+//     array.push(id = recordDataArray, value = RecordData.new(2022, 9, 12, -232487)) 
+
+// if array.size(id = recordDataArray) >= 2
+//     tmep = array.get(id = recordDataArray, index = 0) 
+//     tempNext = array.get(id = recordDataArray, index = 1) 
+//     if time == timestamp(temp.mYear, temp.mMonth, temp.mDay)
+//         recoredAssets := temp.mNowTotal
+//         drawPrice = recoredAssets
+//         array.shift(id = recordDataArray) 
+//     else if time > timestamp(temp.mYear, temp.mMonth, temp.mDay) and time < timestamp(tempNext.mYear, tempNext.mMonth, tempNext.mDay)
+//         drawPrice = record(recoredAssets, temp.mNowTotal)
+//     else
+//         drawPrice = 0
+    
+
+
+
+
+recoredAssets := record(recoredAssets, 2022, 8, 22, -224161)
+recoredAssets := record(recoredAssets, 2022, 8, 29, -244077)
+recoredAssets := record(recoredAssets, 2022, 9, 5, -244682)
+recoredAssets := record(recoredAssets, 2022, 9, 12, -232487)
+recoredAssets := record(recoredAssets, 2022, 9, 24, -234052)
+recoredAssets := record(recoredAssets, 2022, 10, 20, -252814)
+recoredAssets := record(recoredAssets, 2022, 10, 31, -236102)
+recoredAssets := record(recoredAssets, 2022, 11, 12, -279702)
+recoredAssets := record(recoredAssets, 2022, 11, 13, -298406)
+recoredAssets := record(recoredAssets, 2022, 11, 24, -301561)
+recoredAssets := record(recoredAssets, 2022, 12, 19, -325004)
+recoredAssets := record(recoredAssets, 2022, 12, 29, -323720)
+recoredAssets := record(recoredAssets, 2023, 1, 14, -299458)
+recoredAssets := record(recoredAssets, 2022, 1, 21, -280488)
+recoredAssets := record(recoredAssets, 2022, 1, 29, -281278)
+recoredAssets := record(recoredAssets, 2022, 2, 5, -291086)
+
+
+// float drawPrice = if time > timestamp(2023, 2, 1)
+//     5000
+// else
+//     -5000
+
+
+plot(
+ series       =  recoredAssets,
+ color        = recoredAssets > 0 ? color.green : color.red,
+ linewidth    = 1
+//  style        =  plot.style_his
+ )
+
+// getDebugValue(array.size(id = recordDataArray) )
+
+        
