@@ -1,0 +1,136 @@
+//@version=5
+
+// 1. Import library
+import kaiku0125/Debug/1 as debug
+// # ========================================================================= #
+// #                   |   Indicator  |
+// # ========================================================================= #
+indicator(
+ title                = "RebalanceDisplay",
+ shorttitle           = "資產再平衡",
+ overlay              =  true
+//  format               =  ,
+//  precision            =  ,
+//  scale                =  ,
+//  timeframe            = " ",
+//  timeframe_gaps       =  ,
+//  explicit_plot_zorder =  ,
+//  max_lines_count      =  ,
+//  max_labels_count     =  ,
+//  max_boxes_count      =  
+ )
+// # ========================================================================= #
+// #                   |   Indicator  |
+// # ========================================================================= #
+
+// 2. Preference inputs settings
+var string GROUP_RATIO = "總配比"
+var string GROUP_ASSETS_RATIO = "資產配比"
+var string GROUP_CASH = "💲 現金"
+var string GROUP_ASSETS = "💲 資產"
+var string GROUP_VERSION = "💬 關於"
+var string VERSION_NAME = "v1.0"
+var string RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
+                     "[1] First release."
+
+INPUT_CASH_RATIO = input.float(defval = 25, title = "現金(%)", inline = "01", group = GROUP_RATIO) 
+INPUT_SPECULATION_RATIO = input.float(defval = 75, title = "資產(%)", inline = "01", group = GROUP_RATIO) 
+INPUT_CRYPTO_RATIO = input.float(defval = 80, title = "幣圈(%)", inline = "02", group = GROUP_ASSETS_RATIO)
+INPUT_TW_STOCKS_RATIO = input.float(defval = 20, title = "台股(%)", inline = "02", group = GROUP_ASSETS_RATIO)
+
+INPUT_BANK1 = input.float(defval = 65758, title = "台新(TWD)", group = GROUP_CASH) 
+INPUT_BANK2 = input.float(defval = 30726, title = "兆豐(TWD)", group = GROUP_CASH) 
+INPUT_BANK3 = input.float(defval = 30000, title = "元大(TWD)", group = GROUP_CASH) 
+
+INPUT_TW_STOCKS = input.float(defval = 0, title = "投資先生(TWD)", group = GROUP_ASSETS)
+
+INPUT_BINANCE = input.float(defval = 721, title = "Binance(U)", group = GROUP_ASSETS)
+INPUT_BYBIT = input.float(defval = 933, title = "Bybit(U)", group = GROUP_ASSETS)
+INPUT_COOL_WALLET = input.float(defval = 1932, title = "冷錢包(U)", group = GROUP_ASSETS)
+INPUT_PIONEX = input.float(defval = 436, title = "Pionex(U)", group = GROUP_ASSETS)
+INPUT_CRYPTO_COM = input.float(defval = 1822, title = "Crypto.com(U)", group = GROUP_ASSETS)
+INPUT_CRYPTO_COM_VISA = input.float(defval = 1600, title = "幣圈Visa(U)", group = GROUP_ASSETS)
+INPUT_MAX = input.float(defval = 0, title = "MAX(U)", group = GROUP_ASSETS)
+
+
+// 3. Constant value initialization
+var string USD_TWD_SYMBOL = "FX_IDC:USDTWD"
+
+// 4. Variable declartion
+var float usd_twd = na
+
+var float cashRatio = na
+var float specultaionRatio = na
+var float cryptoRatio = na
+var float twStocksRatio = na
+
+var float totalCash = na
+var float totalStocksAssets = na
+var float totalCryptoAssets = na
+var float totalSpecultaionAssets = na
+var float totalAssets = na
+
+var float cashRebalance = na
+var float stockRebalance = na
+var float cryptoRebalance = na
+
+var table resultTabel = table.new(
+ position       =  position.bottom_center,
+ columns        =  10,
+ rows           =  10,
+ bgcolor        =  color.new(color = color.gray, transp = 0),
+ frame_color    =  color.new(color =  color.black, transp = 0),
+ frame_width    =  2,
+ border_color   =  color.new(color =  color.black, transp = 0),
+ border_width   =  3
+ )
+
+// 5. Define functions
+getCurrentSymbol(float value) =>
+    string mOutput = str.tostring(value = value, format =  "#.####")  // currentCROPrice替換成想加入的變數
+    label debugLabel = debug.printLabel("圖表ID : " + syminfo.tickerid + ", 價格 : " + mOutput)
+    // label.delete(id = debugLabel[1])
+
+
+// 6. Code logic start
+if INPUT_CASH_RATIO + INPUT_SPECULATION_RATIO != 100
+    runtime.error(message = "GGG") 
+if INPUT_CRYPTO_RATIO + INPUT_TW_STOCKS_RATIO != 100
+    runtime.error(message = "GGG") 
+
+usd_twd := request.security(symbol = USD_TWD_SYMBOL, timeframe = "S", expression = close)
+
+cashRatio := INPUT_CASH_RATIO / 100
+specultaionRatio := INPUT_SPECULATION_RATIO / 100
+cryptoRatio := INPUT_CRYPTO_RATIO / 100 * specultaionRatio
+twStocksRatio := INPUT_TW_STOCKS_RATIO / 100 * specultaionRatio
+
+totalCash := INPUT_BANK1 + INPUT_BANK2 + INPUT_BANK3
+totalStocksAssets := INPUT_TW_STOCKS
+totalCryptoAssets := (INPUT_BINANCE + INPUT_BYBIT + INPUT_COOL_WALLET + INPUT_PIONEX + INPUT_CRYPTO_COM + INPUT_MAX) * usd_twd
+totalSpecultaionAssets := totalStocksAssets + totalCryptoAssets
+totalAssets := totalCash + totalSpecultaionAssets
+
+cashRebalance := totalAssets * cashRatio - totalCash
+stockRebalance := totalAssets * twStocksRatio - totalStocksAssets
+cryptoRebalance := totalAssets * cryptoRatio - totalCryptoAssets
+
+if barstate.islast
+    // Draw table
+    table.cell(resultTabel, column = 0, row = 0, text = str.tostring(totalAssets, "#"), text_color = color.yellow, text_size = size.normal)
+    table.cell(resultTabel, column = 1, row = 0, text = "價值")
+    table.cell(resultTabel, column = 2, row = 0, text = "再平衡")
+
+    table.cell(resultTabel, column = 0, row = 1, text = "現金")
+    table.cell(resultTabel, column = 1, row = 1, text = str.tostring(totalCash, "#"))
+    table.cell(resultTabel, column = 2, row = 1, text = str.tostring(cashRebalance, "#"))
+
+    table.cell(resultTabel, column = 0, row = 2, text = "台股")
+    table.cell(resultTabel, column = 1, row = 2, text = str.tostring(totalStocksAssets, "#"))
+    table.cell(resultTabel, column = 2, row = 2, text = str.tostring(stockRebalance, "#"))
+
+    table.cell(resultTabel, column = 0, row = 3, text = "幣圈")
+    table.cell(resultTabel, column = 1, row = 3, text = str.tostring(totalCryptoAssets, "#"))
+    table.cell(resultTabel, column = 2, row = 3, text = str.tostring(cryptoRebalance, "#"))
+
+    // getCurrentSymbol(totalCash)
