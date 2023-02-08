@@ -40,8 +40,8 @@ var float PIONEX_AVAL = 436          // 派網 (USD)
 var float CRYPTO_COM_AVAL = 1819    // crypto.com (USD)
 var float VISA_AVAL = 1700          // Visa (USD)
 
-var float _006208_POSITION = 100                // 006208 (股)
-var float _006208_COST = 6990                   // 006208總投入 (TWD)
+var float _006208_POSITION = 250                // 006208 (股)
+var float _006208_COST = 17430                   // 006208總投入 (TWD)
 var float BTC_POSITION = 0.1004 + 0.005         // btc (顆)
 var float BTC_COST = 2219 + 150                 // btc總投入 (USD)
 var float ETH_POSITION = 0.175174 + 0.06539     // eth (顆)
@@ -56,12 +56,15 @@ var float RNDR_POSITION = 29.51                 // RNDR (顆)
 var float RNDR_COST = 49.98                     // RNDR總投入 (USD)
 var float ALI_POSITION = 1179.9                 // ALI (顆)
 var float ALI_COST = 100                        // ALI總投入 (USD)
-var float AGIX_POSITION = 22                    // AGIX (顆)
-var float AGIX_COST = 9.78                      // AGIX總投入 (USD)
+var float AGIX_POSITION = 37                    // AGIX (顆)
+var float AGIX_COST = 19.23                     // AGIX總投入 (USD)
+var float FET_POSITION = 17                     // FET (顆)
+var float FET_COST = 9.785                      // FET總投入 (USD)
 
 var string GROUP_SETTING = "📌 設定"
 var string USD = "美金"
 var string TWD = "台幣"
+var string SIZE_TINY = "極小"
 var string SIZE_SMALL = "小"
 var string SIZE_NORMAL = "中"
 var string SIZE_LARGE = "大"
@@ -83,7 +86,7 @@ INPUT_DISPLAY_CASH = input.bool(defval = true, title = "現金", inline = "00", 
 INPUT_DISPLAY_TWSTOCK = input.bool(defval = true, title = "台股", inline = "00", group = GROUP_SETTING)
 INPUT_DISPLAY_CRYPTO = input.bool(defval = true, title = "幣圈", inline = "00", group = GROUP_SETTING)
 INPUT_DISPLAY_CURRENCY = input.string(defval = TWD, title = "貨幣顯示", options = [TWD, USD], group = GROUP_SETTING)
-INPUT_DISPLAY_SIZE = input.string(defval = SIZE_LARGE, title = "表格大小", options = [SIZE_SMALL, SIZE_NORMAL, SIZE_LARGE], group = GROUP_SETTING)
+INPUT_DISPLAY_SIZE = input.string(defval = SIZE_LARGE, title = "表格大小", options = [SIZE_TINY, SIZE_SMALL, SIZE_NORMAL, SIZE_LARGE], group = GROUP_SETTING)
 INPUT_DISPLAY_POSITION = input.string(defval = MIDDLE_CENTER, title = "表格位置", options = [MIDDLE_CENTER, BOTTOM_CENTER], group = GROUP_SETTING)
 
 INPUT_CASH_RATIO = input.float(defval = 25, title = "現金(%)", inline = "01", group = GROUP_RATIO) 
@@ -123,6 +126,8 @@ MY_ALI_POSITION = input.float(defval = ALI_POSITION, title = "ALI(顆)", inline 
 MY_ALI_COST = input.float(defval = ALI_COST, title = " 成本", inline = "10", group = GROUP_ASSETS) 
 MY_AGIX_POSITION = input.float(defval = AGIX_POSITION, title = "AGIX(顆)", inline = "11", group = GROUP_ASSETS) 
 MY_AGIX_COST = input.float(defval = AGIX_COST, title = " 成本", inline = "11", group = GROUP_ASSETS) 
+MY_FET_POSITION = input.float(defval = FET_POSITION, title = "FET(顆)", inline = "12", group = GROUP_ASSETS) 
+MY_FET_COST = input.float(defval = FET_COST, title = " 成本", inline = "12", group = GROUP_ASSETS) 
 MY_CHZ_POSITION = 443 + 699
 MY_CHZ_COST = 100 + 126
 MY_GMT_POSITION = 201.8
@@ -167,6 +172,7 @@ var string ALICE_SYMBOL = "BINANCE:ALICEUSDT"
 var string SAND_SYMBOL = "BINANCE:SANDUSDT"
 var string ALI_SYMBOL = "GEMINI:ALIUSD"
 var string AGIX_SYMBOL = "BINANCE:AGIXBUSD"
+var string FET_SYMBOL = "BINANCE:FETUSDT"
 
 var color COLOR_MY_WHITE = color.rgb(255, 255, 204) 
 var color COLOR_BG = color.rgb(77, 77, 77)
@@ -204,6 +210,7 @@ var float pMATIC = na
 var float pILV = na
 var float pRNDR = na
 var float pALI = na
+var float pFET = na
 var float pAGIX = na
 var float pCHZ = na
 var float pGMT = na
@@ -215,7 +222,9 @@ var table displayTabel = na
 
 // 5. Define functions
 getTableSize() =>
-    string output = if INPUT_DISPLAY_SIZE == SIZE_SMALL
+    string output = if INPUT_DISPLAY_SIZE == SIZE_TINY
+        size.tiny
+    else if INPUT_DISPLAY_SIZE == SIZE_SMALL
         size.small
     else if INPUT_DISPLAY_SIZE == SIZE_NORMAL
         size.normal
@@ -345,6 +354,7 @@ pILV := request.security(symbol =  ILV_SYMBOL, timeframe = "S", expression = clo
 pRNDR := request.security(symbol = RNDR_SYMBOL, timeframe = "S", expression = close)
 pALI := request.security(symbol = ALI_SYMBOL, timeframe = "S", expression = close)
 pAGIX := request.security(symbol = AGIX_SYMBOL, timeframe = "S", expression = close)
+pFET := request.security(symbol = FET_SYMBOL, timeframe = "S", expression = close)
 pCHZ := request.security(symbol = CHZ_SYMBOL, timeframe = "S", expression = close)
 pGMT := request.security(symbol = GMT_SYMBOL, timeframe = "S", expression = close)
 pAXS := request.security(symbol = AXS_SYMBOL, timeframe = "S", expression = close)
@@ -362,7 +372,7 @@ twStocksRatio := INPUT_TW_STOCKS_RATIO / 100 * specultaionRatio
 totalCash := (INPUT_BANK1 + INPUT_BANK2 + INPUT_BANK3) * twdExChange + INPUT_MAX * usdExChange
 totalStocksAssets := (p006208 * MY_006208_POSITION) * twdExChange
 // totalCryptoAssets := (INPUT_BINANCE + INPUT_BYBIT + INPUT_COOL_WALLET + INPUT_PIONEX + INPUT_CRYPTO_COM + INPUT_MAX) * usdExChange
-totalCryptoAssets := pBTC * MY_BTC_POSITION + pETH * MY_ETH_POSITION + pCRO * MY_CRO_POSITION + pMATIC * MY_MATIC_POSITION + pILV * MY_ILV_POSITION + pRNDR * MY_RNDR_POSITION + pALI * MY_ALI_POSITION + pAGIX * MY_AGIX_POSITION
+totalCryptoAssets := pBTC * MY_BTC_POSITION + pETH * MY_ETH_POSITION + pCRO * MY_CRO_POSITION + pMATIC * MY_MATIC_POSITION + pILV * MY_ILV_POSITION + pRNDR * MY_RNDR_POSITION + pALI * MY_ALI_POSITION + pAGIX * MY_AGIX_POSITION + pFET * MY_FET_POSITION
 remainOthers = pCHZ * MY_CHZ_POSITION + pGMT * MY_GMT_POSITION + pAXS * MY_AXS_POSITION + pALICE * MY_ALICE_POSITION + pSAND * MY_SAND_POSITION
 totalCryptoAssets := (totalCryptoAssets + remainOthers) * usdExChange
 totalSpecultaionAssets := totalStocksAssets + totalCryptoAssets
@@ -386,6 +396,7 @@ cryptoRebalance = totalAssets * cryptoRatio - totalCryptoAssets
 [remainRNDR, pnlRNDR, pnlPercentRNDR] = getOutput(pRNDR * usdExChange, MY_RNDR_POSITION, MY_RNDR_COST * usdExChange)
 [remainALI, pnlALI, pnlPercentALI] = getOutput(pALI * usdExChange, MY_ALI_POSITION, MY_ALI_COST * usdExChange)
 [remainAGIX, pnlAGIX, pnlPercentAGIX] = getOutput(pAGIX * usdExChange, MY_AGIX_POSITION, MY_AGIX_COST * usdExChange)
+[remainFET, pnlFET, pnlPercentFET] = getOutput(pFET * usdExChange, MY_FET_POSITION, MY_FET_COST * usdExChange)
 [remainOther, pnlOther, pnlPercentOther] = getOutPut(remainOthers * usdExChange, MY_OTHER_CRYPTO_COST * usdExChange)
 
 now002608Ratio = remain006208 / totalAssets
@@ -397,6 +408,7 @@ nowILVRatio = remainILV / totalAssets
 nowRNDRRatio = remainRNDR / totalAssets
 nowALIRatio = remainALI / totalAssets
 nowAGIXRatio = remainAGIX / totalAssets
+nowFETRatio = remainFET / totalAssets
 nowOthersRatio = remainOther / totalAssets
 
 //Calcultion and judgement variable before display
@@ -495,6 +507,9 @@ if barstate.islast
 
         cellRebalance(nextRow, "AGIX", nowAGIXRatio)
         nextRow := cellPNL(nextRow, remainAGIX, pnlAGIX, pnlPercentAGIX)
+
+        cellRebalance(nextRow, "FET", nowFETRatio)
+        nextRow := cellPNL(nextRow, remainFET, pnlFET, pnlPercentFET)
 
         cellRebalance(nextRow, "垃圾幣", nowOthersRatio)
         nextRow := cellPNL(nextRow, remainOther, pnlOther, pnlPercentOther)
