@@ -72,8 +72,8 @@ var string SIZE_NORMAL = "中"
 var string SIZE_LARGE = "大"
 var string BOTTOM_CENTER = "中間靠下"
 var string MIDDLE_CENTER = "正中央"
-var string INFO_ALL_ASSETS = "總資產"
-var string INFO_UNSTEADY_ASSETS = "總波動資產"
+var string INFO_ALL_ASSETS = "資產+現金"
+var string INFO_UNSTEADY_ASSETS = "資產"
 var string INFO_PNL_ASSETS = "總資產PNL"
 
 var string GROUP_SETTING = "📌 設定"
@@ -199,7 +199,7 @@ type RecordData
     float mNowTotal
 
 
-var array<RecordData> recordDataArray = array.new<RecordData>()
+var array<RecordData> rdArray = array.new<RecordData>()
 
 var float pUsd_Twd = na
 var float usdExChange = na
@@ -234,6 +234,8 @@ var float pGMT = na
 var float pAXS = na
 var float pALICE = na
 var float pSAND = na
+
+var float recordAssets = 0
 
 var table displayTabel = na
 
@@ -361,7 +363,7 @@ getRebalanceText(string bankName, float bankAval, float rebalance) =>
     float _rebalance = INPUT_DISPLAY_CURRENCY == TWD ? rebalance : rebalance * pUsd_Twd
     float diff = _rebalance - bankAval
     string action =  diff > 0 ? "入金 " : "提領 "
-    string output = bankName + action + fm.fString(math.abs(diff), 0) + " TWD"
+    string output = bankName + action + fm.fString(math.abs(diff), 0) + " " + TWD
     output
 
 getDisplayInfo(float _totalAssets, float _totalSpecultaionAssets, float _speculationPNL, float _speculaionPNLRatio) =>
@@ -385,14 +387,6 @@ isDate(int _year, int _month, int _day) =>
     bool isDate = time == timestamp(_year, _month, _day) 
     isDate
 
-// record(float now, float new) => 
-//     float output = if now > new 
-//         math.random(min = new, max = now, seed = 1) 
-//     else 
-//         math.random(min = now, max = new, seed = 1) 
-//     output
-
-
 record(float now, int _year, int _month, int _day, float new) =>
     bool isDate = time == timestamp(_year, _month, _day) 
     float output = if isDate
@@ -400,6 +394,10 @@ record(float now, int _year, int _month, int _day, float new) =>
     else 
         now
     output
+
+newData(int _year, int _month, int _day, float _nowTotal) =>
+    RecordData data = RecordData.new(_year, _month, _day, _nowTotal)
+    data
 
 
 // 6. Code logic start
@@ -494,7 +492,7 @@ float cryptoDiffRatio = getRatioDiff(cryptoRatioNow, cryptoRatio)
 string cryptoDiffText = fm.fString(cryptoRebalance, 0) + " (" + fm.ratioString(cryptoDiffRatio) + ")"
 string cryptoPNLText = getRebalanceText("兆豐 ", BANK2_AVAL, cryptoRebalance)
 color cryptoColor = math.abs(cryptoDiffRatio) > 0.1 ? colour.FIRE_BRICK() : DF_TEXT_COLOR
-
+currentTime = str.format_time(timenow, "yyyy/MM/dd HH:mm:ss", "Asia/Taipei")
 
 if barstate.islast
     int nextRow = 0
@@ -511,8 +509,15 @@ if barstate.islast
     
     // Draw table
     //標題
+    cell(0, nextRow, infoText, infoColor, DF_CELL_COLOR)
+    cell(1, nextRow, INPUT_DISPLAY_INFO, DF_TEXT_COLOR, DF_CELL_COLOR)
+    cell(2, nextRow, currentTime, DF_TEXT_COLOR, DF_CELL_COLOR)
+    cell(3, nextRow, "總投入", DF_TEXT_COLOR, DF_CELL_COLOR)
+    cell(4, nextRow, fm.fString(allCost, 0) + "(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR)
+    nextRow := nextRow + 1
+
     if INPUT_DISPLAY_TITLE
-        cell(0, nextRow, infoText, infoColor, DF_CELL_COLOR)
+        cell(0, nextRow, "項目", DF_TEXT_COLOR, DF_CELL_COLOR)
         cell(1, nextRow, "占比", DF_TEXT_COLOR, DF_CELL_COLOR)
         cell(2, nextRow, "再平衡" + "(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR)
         cell(3, nextRow, "價值" + "(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR)
@@ -585,14 +590,7 @@ if barstate.islast
 
 
         // getCurrentSymbol(speculationPNL)
-barTimeStr = str.format_time(time, "yyyy/MM/dd", "Asia/Taipei")
 
-
-
-
-
-
-var float recoredAssets = 0
 // var float drawPrice = 0
 // var int maxSize = 3
 
@@ -601,18 +599,18 @@ var float recoredAssets = 0
 //     temp = array.get(id = recordDataArray, index = 0) 
 //     tempNext = array.get(id = recordDataArray, index = 1) 
 //     if time == timestamp(temp.mYear, temp.mMonth, temp.mDay)
-//         recoredAssets := temp.mNowTotal
-//         drawPrice := recoredAssets
+//         recordAssets := temp.mNowTotal
+//         drawPrice := recordAssets
 //         array.shift(id = recordDataArray) 
-//     else if time < timestamp(temp.mYear, temp.mMonth, temp.mDay) and recoredAssets != 0
-//         drawPrice := record(recoredAssets, temp.mNowTotal)
+//     else if time < timestamp(temp.mYear, temp.mMonth, temp.mDay) and recordAssets != 0
+//         drawPrice := record(recordAssets, temp.mNowTotal)
 //     // else
 //     //     drawPrice := 0
 
 // else if array.size(id = recordDataArray) == 1 
 //     RecordData temp = array.get(id = recordDataArray, index = 0) 
-//     recoredAssets := temp.mNowTotal
-//     drawPrice := recoredAssets + math.random(min = -1000, max = 1000, seed = 1) 
+//     recordAssets := temp.mNowTotal
+//     drawPrice := recordAssets + math.random(min = -1000, max = 1000, seed = 1) 
 
 // else 
 //     array.push(id = recordDataArray, value = RecordData.new(2022, 8, 22, -224161)) 
@@ -620,39 +618,36 @@ var float recoredAssets = 0
 //     array.push(id = recordDataArray, value = RecordData.new(2022, 9, 5, -244682)) 
 //     array.push(id = recordDataArray, value = RecordData.new(2022, 9, 12, -232487)) 
 
-// if array.size(id = recordDataArray) >= 2
-//     tmep = array.get(id = recordDataArray, index = 0) 
-//     tempNext = array.get(id = recordDataArray, index = 1) 
-//     if time == timestamp(temp.mYear, temp.mMonth, temp.mDay)
-//         recoredAssets := temp.mNowTotal
-//         drawPrice = recoredAssets
-//         array.shift(id = recordDataArray) 
-//     else if time > timestamp(temp.mYear, temp.mMonth, temp.mDay) and time < timestamp(tempNext.mYear, tempNext.mMonth, tempNext.mDay)
-//         drawPrice = record(recoredAssets, temp.mNowTotal)
-//     else
-//         drawPrice = 0
-    
+
+if bar_index == 1
+    line.new(x1 = bar_index, y1 = 0, x2 = bar_index + 1, y2 = 0, extend = extend.both, color = color.white, width = 1) 
 
 
 
-
-recoredAssets := record(recoredAssets, 2022, 8, 22, -224161)
-recoredAssets := record(recoredAssets, 2022, 8, 29, -244077)
-recoredAssets := record(recoredAssets, 2022, 9, 5, -244682)
-recoredAssets := record(recoredAssets, 2022, 9, 12, -232487)
-recoredAssets := record(recoredAssets, 2022, 9, 24, -234052)
-recoredAssets := record(recoredAssets, 2022, 10, 20, -252814)
-recoredAssets := record(recoredAssets, 2022, 10, 31, -236102)
-recoredAssets := record(recoredAssets, 2022, 11, 12, -279702)
-recoredAssets := record(recoredAssets, 2022, 11, 13, -298406)
-recoredAssets := record(recoredAssets, 2022, 11, 24, -301561)
-recoredAssets := record(recoredAssets, 2022, 12, 19, -325004)
-recoredAssets := record(recoredAssets, 2022, 12, 29, -323720)
-recoredAssets := record(recoredAssets, 2023, 1, 14, -299458)
-recoredAssets := record(recoredAssets, 2023, 1, 21, -280488)
-recoredAssets := record(recoredAssets, 2023, 1, 29, -281278)
-recoredAssets := record(recoredAssets, 2023, 2, 5, -291086)
-recoredAssets := record(recoredAssets, 2023, 2, 9, -279449)
+if array.size(rdArray) != 0
+    temp = array.get(rdArray, index = 0)
+    if time == timestamp(temp.mYear, temp.mMonth, temp.mDay)
+        recordAssets := temp.mNowTotal
+        if array.size(rdArray) != 1
+            array.shift(rdArray)  
+else
+    array.push(rdArray, newData(2022, 8, 22, -224161)) 
+    array.push(rdArray, newData(2022, 8, 29, -244077))
+    array.push(rdArray, newData(2022, 9, 5, -244682))
+    array.push(rdArray, newData(2022, 9, 12, -232487))
+    array.push(rdArray, newData(2022, 9, 24, -234052))
+    array.push(rdArray, newData(2022, 10, 20, -252814))
+    array.push(rdArray, newData(2022, 10, 31, -236102))
+    array.push(rdArray, newData(2022, 11, 12, -279702))
+    array.push(rdArray, newData(2022, 11, 13, -298406))
+    array.push(rdArray, newData(2022, 11, 24, -301561))
+    array.push(rdArray, newData(2022, 12, 19, -325004))
+    array.push(rdArray, newData(2022, 12, 29, -323720))
+    array.push(rdArray, newData(2023, 1, 14, -299458))
+    array.push(rdArray, newData(2023, 1, 21, -280488))
+    array.push(rdArray, newData(2023, 1, 29, -281278))
+    array.push(rdArray, newData(2023, 2, 5, -291086))
+    array.push(rdArray, newData(2023, 2, 9, -279449))
 
 // float drawPrice = if time > timestamp(2023, 2, 1)
 //     5000
@@ -661,12 +656,12 @@ recoredAssets := record(recoredAssets, 2023, 2, 9, -279449)
 
 
 plot(
- series       =  recoredAssets,
- color        = recoredAssets > 0 ? color.green : color.red,
- linewidth    = 1
-//  style        =  plot.style_his
+ series       =  recordAssets,
+ color        =  recordAssets > 0 ? color.green : color.red,
+//  style        =  plot.style_areabr,
+ linewidth    =  2
  )
 
-// getDebugValue(array.size(id = recordDataArray) )
+// getDebugValue(str.format_time(timenow, "yyyy/MM/dd HH:mm:ss", "Asia/Taipei") )
 
         
