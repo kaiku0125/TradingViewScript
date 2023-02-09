@@ -28,16 +28,16 @@ indicator(
 // # ========================================================================= #
 
 // 2. Preference inputs settings
-var float BANK1_AVAL = 65862        // 台新 (TWD)
-var float BANK2_AVAL = 13857         // 兆豐 (TWD)  
-var float BANK3_AVAL = 61011        // 元大 (TWD)
-var float MAX_AVAL = 166.81         // MAX (USD)
+var float BANK1_AVAL = 65500        // 台新 (TWD)
+var float BANK2_AVAL = 8857         // 兆豐 (TWD)  
+var float BANK3_AVAL = 50571        // 元大 (TWD)
+var float MAX_AVAL = 232            // MAX (USD)
 
-var float BINANCE_AVAL = 1088       // 幣安 (USD)
+var float BINANCE_AVAL = 1145       // 幣安 (USD)
 var float BYBIT_AVAL = 105          // bybit (USD)
-var float COOL_WALLET_AVAL = 2335   // 冷錢包 (USD)
-var float PIONEX_AVAL = 436          // 派網 (USD)
-var float CRYPTO_COM_AVAL = 1819    // crypto.com (USD)
+var float COOL_WALLET_AVAL = 2297   // 冷錢包 (USD)
+var float PIONEX_AVAL = 447          // 派網 (USD)
+var float CRYPTO_COM_AVAL = 1959    // crypto.com (USD)
 var float VISA_AVAL = 1700          // Visa (USD)
 
 var float _006208_POSITION = 250                // 006208 (股)
@@ -56,13 +56,13 @@ var float RNDR_POSITION = 29.51                 // RNDR (顆)
 var float RNDR_COST = 49.98                     // RNDR總投入 (USD)
 var float ALI_POSITION = 1179.9                 // ALI (顆)
 var float ALI_COST = 100                        // ALI總投入 (USD)
-var float AGIX_POSITION = 37                    // AGIX (顆)
-var float AGIX_COST = 19.23                     // AGIX總投入 (USD)
-var float FET_POSITION = 17                     // FET (顆)
-var float FET_COST = 9.785                      // FET總投入 (USD)
+var float AGIX_POSITION = 99                    // AGIX (顆)
+var float AGIX_COST = 50.23                     // AGIX總投入 (USD)
+var float FET_POSITION = 37                     // FET (顆)
+var float FET_COST = 29.79                      // FET總投入 (USD)
 
-var float ALL_STOCKS_COST = 17430
-var float ALL_CRYPTO_COST = _006208_COST
+var float ALL_STOCKS_COST = _006208_COST        //台股成本
+var float ALL_CRYPTO_COST = 517576              //幣圈成本
 
 var string USD = "美金"
 var string TWD = "台幣"
@@ -441,7 +441,7 @@ remainOthers = pCHZ * MY_CHZ_POSITION + pGMT * MY_GMT_POSITION + pAXS * MY_AXS_P
 totalCryptoAssets := (totalCryptoAssets + remainOthers) * usdExChange
 totalSpecultaionAssets := totalStocksAssets + totalCryptoAssets
 totalAssets := totalCash + totalSpecultaionAssets
-allCost = ALL_STOCKS_COST * twdExChange + ALL_CRYPTO_COST * usdExChange
+allCost = (ALL_STOCKS_COST + ALL_CRYPTO_COST) * twdExChange - INPUT_MAX * usdExChange
 
 cashRatioNow := totalCash / totalAssets
 twStocksRatioNow := totalStocksAssets / totalAssets
@@ -649,10 +649,10 @@ recoredAssets := record(recoredAssets, 2022, 11, 24, -301561)
 recoredAssets := record(recoredAssets, 2022, 12, 19, -325004)
 recoredAssets := record(recoredAssets, 2022, 12, 29, -323720)
 recoredAssets := record(recoredAssets, 2023, 1, 14, -299458)
-recoredAssets := record(recoredAssets, 2022, 1, 21, -280488)
-recoredAssets := record(recoredAssets, 2022, 1, 29, -281278)
-recoredAssets := record(recoredAssets, 2022, 2, 5, -291086)
-
+recoredAssets := record(recoredAssets, 2023, 1, 21, -280488)
+recoredAssets := record(recoredAssets, 2023, 1, 29, -281278)
+recoredAssets := record(recoredAssets, 2023, 2, 5, -291086)
+recoredAssets := record(recoredAssets, 2023, 2, 9, -279449)
 
 // float drawPrice = if time > timestamp(2023, 2, 1)
 //     5000
