@@ -31,7 +31,7 @@ indicator(
 var float BANK1_AVAL = 65500        // 台新 (TWD)
 var float BANK2_AVAL = 8857         // 兆豐 (TWD)  
 var float BANK3_AVAL = 50571        // 元大 (TWD)
-var float MAX_AVAL = 232            // MAX (USD)
+var float MAX_AVAL = 132            // MAX (USD)
 
 var float BINANCE_AVAL = 1145       // 幣安 (USD)
 var float BYBIT_AVAL = 105          // bybit (USD)
@@ -648,6 +648,7 @@ else
     array.push(rdArray, newData(2023, 1, 29, -281278))
     array.push(rdArray, newData(2023, 2, 5, -291086))
     array.push(rdArray, newData(2023, 2, 9, -279449))
+    array.push(rdArray, newData(2023, 2, 10, -307114))
 
 // float drawPrice = if time > timestamp(2023, 2, 1)
 //     5000
