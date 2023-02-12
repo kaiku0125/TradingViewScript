@@ -54,12 +54,12 @@ var float ILV_POSITION = 1.058                  // ILV (顆)
 var float ILV_COST = 99.89                      // ILV總投入 (USD)
 var float RNDR_POSITION = 29.51                 // RNDR (顆)
 var float RNDR_COST = 49.98                     // RNDR總投入 (USD)
-var float ALI_POSITION = 1179.9                 // ALI (顆)
-var float ALI_COST = 100                        // ALI總投入 (USD)
+var float ALI_POSITION = 1518.9                 // ALI (顆)
+var float ALI_COST = 120                        // ALI總投入 (USD)
 var float AGIX_POSITION = 99                    // AGIX (顆)
 var float AGIX_COST = 50.23                     // AGIX總投入 (USD)
 var float FET_POSITION = 37                     // FET (顆)
-var float FET_COST = 29.79                      // FET總投入 (USD)
+var float FET_COST = 19.79                      // FET總投入 (USD)
 
 var float ALL_STOCKS_COST = _006208_COST        //台股成本
 var float ALL_CRYPTO_COST = 517576              //幣圈成本
