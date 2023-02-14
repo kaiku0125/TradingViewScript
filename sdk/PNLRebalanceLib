@@ -1,0 +1,4 @@
+library(title = "PNLRebalanceLib", overlay =  true) 
+
+var VERSION_NAME = "v1.0"
+
