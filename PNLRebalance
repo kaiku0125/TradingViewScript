@@ -28,29 +28,30 @@ indicator(
 // # ========================================================================= #
 
 // 2. Preference inputs settings
-var float BANK1_AVAL = 65442        // 台新 (TWD)
-var float BANK2_AVAL = 8857         // 兆豐 (TWD)  
-var float BANK3_AVAL = 40571        // 元大 (TWD)
-var float BANK4_AVAL = 10100        // LineBank (TWD)
-var float MAX_AVAL = 132            // MAX (USD)
+var float BANK1_AVAL = 52384                // 台新 (TWD)
+var float BANK2_AVAL = 1857                 // 兆豐 (TWD)  
+var float BANK3_AVAL = 10221                // 元大 (TWD)
+var float BANK4_AVAL = 10100                // LineBank (TWD)
+var float MAX_AVAL = 0                      // MAX (USD)
+var float EXCHANGE_USD = 91 + 445.3         //bybit + binance(USD)
 
-var float BINANCE_AVAL = 1145       // 幣安 (USD)
-var float BYBIT_AVAL = 105          // bybit (USD)
-var float COOL_WALLET_AVAL = 2297   // 冷錢包 (USD)
-var float PIONEX_AVAL = 447          // 派網 (USD)
-var float CRYPTO_COM_AVAL = 1959    // crypto.com (USD)
-var float VISA_AVAL = 1700          // Visa (USD)
+var float BINANCE_AVAL = 1145               // 幣安 (USD)
+var float BYBIT_AVAL = 105                  // bybit (USD)
+var float COOL_WALLET_AVAL = 2297           // 冷錢包 (USD)
+var float PIONEX_AVAL = 447                 // 派網 (USD)
+var float CRYPTO_COM_AVAL = 1959            // crypto.com (USD)
+var float VISA_AVAL = 1700                  // Visa (USD)
 
-var float _006208_POSITION = 250                // 006208 (股)
-var float _006208_COST = 17430                  // 006208總投入 (TWD)
+var float _006208_POSITION = 400                // 006208 (股)
+var float _006208_COST = 27780                  // 006208總投入 (TWD)
 var float BTC_POSITION = 0.1004 + 0.005         // btc (顆)
 var float BTC_COST = 2219 + 150                 // btc總投入 (USD)
-var float ETH_POSITION = 0.175174 + 0.06539     // eth (顆)
-var float ETH_COST = 281.4 + 150                // eth總投入 (USD)
+var float ETH_POSITION = 0.257634 + 0.06539     // eth (顆)
+var float ETH_COST = 410.2 + 150                // eth總投入 (USD)
 var float CRO_POSITION = 21915                  // cro (顆)
 var float CRO_COST = 3632                       // cro總投入 (USD)
-var float MATIC_POSITION = 112.4                // matic (顆)
-var float MATIC_COST = 120.6                    // matic總投入 (USD)
+var float MATIC_POSITION = 156.6                // matic (顆)
+var float MATIC_COST = 175.8                    // matic總投入 (USD)
 var float ILV_POSITION = 1.058                  // ILV (顆)
 var float ILV_COST = 99.89                      // ILV總投入 (USD)
 var float RNDR_POSITION = 29.51                 // RNDR (顆)
@@ -63,7 +64,7 @@ var float FET_POSITION = 37                     // FET (顆)
 var float FET_COST = 19.79                      // FET總投入 (USD)
 
 var float ALL_STOCKS_COST = _006208_COST        //台股成本
-var float ALL_CRYPTO_COST = 517576              //幣圈成本
+var float ALL_CRYPTO_COST = 527576              //幣圈成本
 
 var string USD = "美金"
 var string TWD = "台幣"
@@ -73,9 +74,12 @@ var string SIZE_NORMAL = "中"
 var string SIZE_LARGE = "大"
 var string BOTTOM_CENTER = "中間靠下"
 var string MIDDLE_CENTER = "正中央"
-var string INFO_ALL_ASSETS = "資產+現金"
+var string INFO_ALL_ASSETS = "資產 + 現金"
 var string INFO_UNSTEADY_ASSETS = "資產"
 var string INFO_PNL_ASSETS = "總資產PNL"
+var string POSITION_TITLE = "量體"
+var string STOCK_COST_TITLE = "股 ➔ 成本"
+var string CRYPTO_COST_TITLE = "顆 ➔ 成本"
 
 var string GROUP_SETTING = "📌 設定"
 var string GROUP_RATIO = "總配比"
@@ -111,33 +115,45 @@ INPUT_MAX = input.float(defval = MAX_AVAL, title = "MAX(U)", group = GROUP_CASH)
 
 // INPUT_TW_STOCKS = input.float(defval = 6980, title = "投資先生(TWD)", group = GROUP_EXCHANGE)
 
-INPUT_BINANCE = input.float(defval = BINANCE_AVAL, title = "Binance(U)", group = GROUP_EXCHANGE)
-INPUT_BYBIT = input.float(defval = BYBIT_AVAL, title = "Bybit(U)", group = GROUP_EXCHANGE)
-INPUT_COOL_WALLET = input.float(defval = COOL_WALLET_AVAL, title = "冷錢包(U)", group = GROUP_EXCHANGE)
-INPUT_PIONEX = input.float(defval = PIONEX_AVAL, title = "Pionex(U)", group = GROUP_EXCHANGE)
-INPUT_CRYPTO_COM = input.float(defval = CRYPTO_COM_AVAL, title = "Crypto.com(U)", group = GROUP_EXCHANGE)
+// INPUT_BINANCE = input.float(defval = BINANCE_AVAL, title = "Binance(U)", group = GROUP_EXCHANGE)
+// INPUT_BYBIT = input.float(defval = BYBIT_AVAL, title = "Bybit(U)", group = GROUP_EXCHANGE)
+// INPUT_COOL_WALLET = input.float(defval = COOL_WALLET_AVAL, title = "冷錢包(U)", group = GROUP_EXCHANGE)
+// INPUT_PIONEX = input.float(defval = PIONEX_AVAL, title = "Pionex(U)", group = GROUP_EXCHANGE)
+// INPUT_CRYPTO_COM = input.float(defval = CRYPTO_COM_AVAL, title = "Crypto.com(U)", group = GROUP_EXCHANGE)
 INPUT_CRYPTO_COM_VISA = input.float(defval = VISA_AVAL, title = "幣圈Visa(U)", group = GROUP_EXCHANGE)
 
-MY_006208_POSITION = input.float(defval = _006208_POSITION, title = "006208(股)", inline = "03", group = GROUP_ASSETS)
-MY_006208_COST = input.float(defval = _006208_COST, title = " 成本", inline = "03", group = GROUP_ASSETS)
-MY_BTC_POSITION = input.float(defval = BTC_POSITION, title = "BTC(顆)", inline = "04", group = GROUP_ASSETS) 
-MY_BTC_COST = input.float(defval = BTC_COST, title = " 成本", inline = "04", group = GROUP_ASSETS) 
-MY_ETH_POSITION = input.float(defval = ETH_POSITION, title = "ETH(顆)", inline = "05", group = GROUP_ASSETS) 
-MY_ETH_COST = input.float(defval = ETH_COST, title = " 成本", inline = "05", group = GROUP_ASSETS) 
-MY_CRO_POSITION = input.float(defval = CRO_POSITION, title = "CRO(顆)", inline = "06", group = GROUP_ASSETS) 
-MY_CRO_COST = input.float(defval = CRO_COST, title = " 成本", inline = "06", group = GROUP_ASSETS) 
-MY_MATIC_POSITION = input.float(defval = MATIC_POSITION, title = "MATIC(顆)", inline = "07", group = GROUP_ASSETS) 
-MY_MATIC_COST = input.float(defval = MATIC_COST, title = " 成本", inline = "07", group = GROUP_ASSETS) 
-MY_ILV_POSITION = input.float(defval = ILV_POSITION, title = "ILV(顆)", inline = "08", group = GROUP_ASSETS) 
-MY_ILV_COST = input.float(defval = ILV_COST, title = " 成本", inline = "08", group = GROUP_ASSETS) 
-MY_RNDR_POSITION = input.float(defval = RNDR_POSITION, title = "RNDR(顆)", inline = "09", group = GROUP_ASSETS) 
-MY_RNDR_COST = input.float(defval = RNDR_COST, title = " 成本", inline = "09", group = GROUP_ASSETS) 
-MY_ALI_POSITION = input.float(defval = ALI_POSITION, title = "ALI(顆)", inline = "10", group = GROUP_ASSETS) 
-MY_ALI_COST = input.float(defval = ALI_COST, title = " 成本", inline = "10", group = GROUP_ASSETS) 
-MY_AGIX_POSITION = input.float(defval = AGIX_POSITION, title = "AGIX(顆)", inline = "11", group = GROUP_ASSETS) 
-MY_AGIX_COST = input.float(defval = AGIX_COST, title = " 成本", inline = "11", group = GROUP_ASSETS) 
-MY_FET_POSITION = input.float(defval = FET_POSITION, title = "FET(顆)", inline = "12", group = GROUP_ASSETS) 
-MY_FET_COST = input.float(defval = FET_COST, title = " 成本", inline = "12", group = GROUP_ASSETS) 
+IS_006208_DISPLAY = input.bool(defval = true, title = "006208 :", inline = "03", group = GROUP_ASSETS) 
+MY_006208_POSITION = input.float(defval = _006208_POSITION, title = POSITION_TITLE, inline = "03", group = GROUP_ASSETS)
+MY_006208_COST = input.float(defval = _006208_COST, title = STOCK_COST_TITLE, inline = "03", group = GROUP_ASSETS)
+IS_BTC_DISPLAY = input.bool(defval = true, title = "BTC : ", inline = "04", group = GROUP_ASSETS) 
+MY_BTC_POSITION = input.float(defval = BTC_POSITION, title = POSITION_TITLE, inline = "04", group = GROUP_ASSETS) 
+MY_BTC_COST = input.float(defval = BTC_COST, title = CRYPTO_COST_TITLE, inline = "04", group = GROUP_ASSETS) 
+IS_ETH_DISPLAY = input.bool(defval = true, title = "ETH : ", inline = "05", group = GROUP_ASSETS) 
+MY_ETH_POSITION = input.float(defval = ETH_POSITION, title = POSITION_TITLE, inline = "05", group = GROUP_ASSETS) 
+MY_ETH_COST = input.float(defval = ETH_COST, title = CRYPTO_COST_TITLE, inline = "05", group = GROUP_ASSETS) 
+IS_CRO_DISPLAY = input.bool(defval = true, title = "CRO : ", inline = "06", group = GROUP_ASSETS) 
+MY_CRO_POSITION = input.float(defval = CRO_POSITION, title = POSITION_TITLE, inline = "06", group = GROUP_ASSETS) 
+MY_CRO_COST = input.float(defval = CRO_COST, title = CRYPTO_COST_TITLE, inline = "06", group = GROUP_ASSETS) 
+IS_MATIC_DISPLAY = input.bool(defval = true, title = "MATIC : ", inline = "07", group = GROUP_ASSETS) 
+MY_MATIC_POSITION = input.float(defval = MATIC_POSITION, title = POSITION_TITLE, inline = "07", group = GROUP_ASSETS) 
+MY_MATIC_COST = input.float(defval = MATIC_COST, title = CRYPTO_COST_TITLE, inline = "07", group = GROUP_ASSETS) 
+IS_ILV_DISPLAY = input.bool(defval = true, title = "ILV : ", inline = "08", group = GROUP_ASSETS) 
+MY_ILV_POSITION = input.float(defval = ILV_POSITION, title = POSITION_TITLE, inline = "08", group = GROUP_ASSETS) 
+MY_ILV_COST = input.float(defval = ILV_COST, title = CRYPTO_COST_TITLE, inline = "08", group = GROUP_ASSETS) 
+IS_RNDR_DISPLAY = input.bool(defval = true, title = "RNDR : ", inline = "09", group = GROUP_ASSETS) 
+MY_RNDR_POSITION = input.float(defval = RNDR_POSITION, title = POSITION_TITLE, inline = "09", group = GROUP_ASSETS) 
+MY_RNDR_COST = input.float(defval = RNDR_COST, title = CRYPTO_COST_TITLE, inline = "09", group = GROUP_ASSETS) 
+IS_ALI_DISPLAY = input.bool(defval = true, title = "ALI : ", inline = "10", group = GROUP_ASSETS) 
+MY_ALI_POSITION = input.float(defval = ALI_POSITION, title = POSITION_TITLE, inline = "10", group = GROUP_ASSETS) 
+MY_ALI_COST = input.float(defval = ALI_COST, title = CRYPTO_COST_TITLE, inline = "10", group = GROUP_ASSETS) 
+IS_AGIX_DISPLAY = input.bool(defval = true, title = "AGIX : ", inline = "11", group = GROUP_ASSETS) 
+MY_AGIX_POSITION = input.float(defval = AGIX_POSITION, title = POSITION_TITLE, inline = "11", group = GROUP_ASSETS) 
+MY_AGIX_COST = input.float(defval = AGIX_COST, title = CRYPTO_COST_TITLE, inline = "11", group = GROUP_ASSETS) 
+IS_FET_DISPLAY = input.bool(defval = true, title = "FET :　", inline = "12", group = GROUP_ASSETS) 
+MY_FET_POSITION = input.float(defval = FET_POSITION, title = POSITION_TITLE, inline = "12", group = GROUP_ASSETS) 
+MY_FET_COST = input.float(defval = FET_COST, title = CRYPTO_COST_TITLE, inline = "12", group = GROUP_ASSETS) 
+
+IS_OTHER_DISPLAY = input.bool(defval = true, title = "垃圾幣", inline = "13", group = GROUP_ASSETS) 
 MY_CHZ_POSITION = 443 + 699
 MY_CHZ_COST = 100 + 126
 MY_GMT_POSITION = 201.8
@@ -256,15 +272,17 @@ cell(int columnID, int rowID, string displayText, color textColor, color backgro
      )
 
 stateJudge(float ratio) => 
-    string outputIcon = if ratio > 0
+    string outputIcon = if ratio >= 0
         if math.abs(ratio) >= 100
             ICON_ROCKET
         else if math.abs(ratio) < 100 and math.abs(ratio) >= 50   
             ICON_UP_50
         else if math.abs(ratio) < 50 and math.abs(ratio) >= 20
             ICON_UP_20
+        else if math.abs(ratio) < 20 and math.abs(ratio) > 0  
+            ICON_UP
         else 
-            ICON_UP   
+            DISPLAY_NONE   
     else 
         if math.abs(ratio) >= 80
             ICON_GG
@@ -277,9 +295,10 @@ stateJudge(float ratio) =>
 
     color outputColor = if ratio > 0
         colour.LIME_GREEN()
-    else 
+    else if ratio < 0
         color.red
-
+    else
+        DF_TEXT_COLOR
     [outputIcon, outputColor]
 
 getOutput(currentPrice, position, cost) =>
@@ -306,7 +325,7 @@ cellPNL(rowID, remain, pnl, pnlPercent) =>
     cell(
      columnID         =  4, 
      rowID            =  rowID, 
-     displayText      =  pnlText + " (" + pnlPercentText + ")" + stateIcon, 
+     displayText      =  stateIcon == DISPLAY_NONE ? DISPLAY_NONE : pnlText + " (" + pnlPercentText + ")" + stateIcon, 
      textColor        =  stateColor,
      background       =  DF_CELL_COLOR,
      tp               =  mTransp
@@ -426,7 +445,7 @@ otherCryptoASssets += pAXS * MY_AXS_POSITION
 otherCryptoASssets += pALICE * MY_ALICE_POSITION
 otherCryptoASssets += pSAND * MY_SAND_POSITION
 
-totalCryptoAssets = (mainCryptoAssets + otherCryptoASssets) * usdEx
+totalCryptoAssets = (mainCryptoAssets + otherCryptoASssets) * usdEx + EXCHANGE_USD * usdEx
 totalSpecultaionAssets = totalStocksAssets + totalCryptoAssets
 totalAssets := totalCash + totalSpecultaionAssets
 allCost = (ALL_STOCKS_COST + ALL_CRYPTO_COST) * twdEx - INPUT_MAX * usdEx
@@ -452,6 +471,7 @@ cryptoRebalance = totalAssets * cryptoRatio - totalCryptoAssets
 [remainAGIX, pnlAGIX, pnlPercentAGIX, nowAGIXRatio] = getOutput(pAGIX * usdEx, MY_AGIX_POSITION, MY_AGIX_COST * usdEx)
 [remainFET, pnlFET, pnlPercentFET, nowFETRatio] = getOutput(pFET * usdEx, MY_FET_POSITION, MY_FET_COST * usdEx)
 [remainOther, pnlOther, pnlPercentOther, nowOthersRatio] = getOutPut(otherCryptoASssets * usdEx, MY_OTHER_CRYPTO_COST * usdEx)
+[remainUSDT, pnlUSDT, pnlPercentUSDT, nowUSDTRatio] = getOutPut(EXCHANGE_USD * usdEx, EXCHANGE_USD * usdEx)
 
 //Calcultion and judgement variable before display
 [infoText, infoColor] = getDisplayInfo(totalAssets, totalSpecultaionAssets, speculationPNL, speculaionPNLRatio)
@@ -521,8 +541,9 @@ if barstate.islast
         cell(4, nextRow, twStockPNLText, DF_TEXT_COLOR, DF_CELL_COLOR, 0)
         nextRow := nextRow + 1
 
-        cellRebalance(nextRow, "富邦50", now002608Ratio)
-        nextRow := cellPNL(nextRow, remain006208, pnl006208, pnlPercent006208)
+        if IS_006208_DISPLAY
+            cellRebalance(nextRow, "富邦50", now002608Ratio)
+            nextRow := cellPNL(nextRow, remain006208, pnl006208, pnlPercent006208)
 
         nextRow := cellBlank(nextRow)
 
@@ -535,35 +556,48 @@ if barstate.islast
         cell(4, nextRow, cryptoPNLText, DF_TEXT_COLOR, DF_CELL_COLOR, 0)
         nextRow := nextRow + 1
 
-        cellRebalance(nextRow, "BTC", nowBTCRatio)
-        nextRow := cellPNL(nextRow, remainBTC, pnlBTC, pnlPercentBTC)
+        if IS_BTC_DISPLAY
+            cellRebalance(nextRow, "BTC", nowBTCRatio)
+            nextRow := cellPNL(nextRow, remainBTC, pnlBTC, pnlPercentBTC)
+        
+        if IS_ETH_DISPLAY
+            cellRebalance(nextRow, "ETH", nowETHRatio)
+            nextRow := cellPNL(nextRow, remainETH, pnlETH, pnlPercentETH)
+        
+        if IS_CRO_DISPLAY
+            cellRebalance(nextRow, "CRO", nowCRORatio)
+            nextRow := cellPNL(nextRow, remainCRO, pnlCRO, pnlPercentCRO)
+        
+        if IS_MATIC_DISPLAY
+            cellRebalance(nextRow, "MATIC", nowMATICRatio)
+            nextRow := cellPNL(nextRow, remainMATIC, pnlMATIC, pnlPercentMATIC)
+        
+        if IS_ILV_DISPLAY
+            cellRebalance(nextRow, "ILV", nowILVRatio)
+            nextRow := cellPNL(nextRow, remainILV, pnlILV, pnlPercentILV)
 
-        cellRebalance(nextRow, "ETH", nowETHRatio)
-        nextRow := cellPNL(nextRow, remainETH, pnlETH, pnlPercentETH)
+        if IS_RNDR_DISPLAY
+            cellRebalance(nextRow, "RNDR", nowRNDRRatio)
+            nextRow := cellPNL(nextRow, remainRNDR, pnlRNDR, pnlPercentRNDR)
 
-        cellRebalance(nextRow, "CRO", nowCRORatio)
-        nextRow := cellPNL(nextRow, remainCRO, pnlCRO, pnlPercentCRO)
+        if IS_ALI_DISPLAY
+            cellRebalance(nextRow, "ALI", nowALIRatio)
+            nextRow := cellPNL(nextRow, remainALI, pnlALI, pnlPercentALI)
+        
+        if IS_AGIX_DISPLAY
+            cellRebalance(nextRow, "AGIX", nowAGIXRatio)
+            nextRow := cellPNL(nextRow, remainAGIX, pnlAGIX, pnlPercentAGIX)
 
-        cellRebalance(nextRow, "MATIC", nowMATICRatio)
-        nextRow := cellPNL(nextRow, remainMATIC, pnlMATIC, pnlPercentMATIC)
-
-        cellRebalance(nextRow, "ILV", nowILVRatio)
-        nextRow := cellPNL(nextRow, remainILV, pnlILV, pnlPercentILV)
-
-        cellRebalance(nextRow, "RNDR", nowRNDRRatio)
-        nextRow := cellPNL(nextRow, remainRNDR, pnlRNDR, pnlPercentRNDR)
-
-        cellRebalance(nextRow, "ALI", nowALIRatio)
-        nextRow := cellPNL(nextRow, remainALI, pnlALI, pnlPercentALI)
-
-        cellRebalance(nextRow, "AGIX", nowAGIXRatio)
-        nextRow := cellPNL(nextRow, remainAGIX, pnlAGIX, pnlPercentAGIX)
-
-        cellRebalance(nextRow, "FET", nowFETRatio)
-        nextRow := cellPNL(nextRow, remainFET, pnlFET, pnlPercentFET)
-
-        cellRebalance(nextRow, "垃圾幣", nowOthersRatio)
-        nextRow := cellPNL(nextRow, remainOther, pnlOther, pnlPercentOther)
+        if IS_FET_DISPLAY
+            cellRebalance(nextRow, "FET", nowFETRatio)
+            nextRow := cellPNL(nextRow, remainFET, pnlFET, pnlPercentFET)
+        
+        if IS_OTHER_DISPLAY
+            cellRebalance(nextRow, "垃圾幣", nowOthersRatio)
+            nextRow := cellPNL(nextRow, remainOther, pnlOther, pnlPercentOther)
+        
+        cellRebalance(nextRow, "USDT", nowUSDTRatio)
+        nextRow := cellPNL(nextRow, remainUSDT, pnlUSDT, pnlPercentUSDT)
 
 
         // getCurrentSymbol(speculationPNL)
@@ -627,7 +661,7 @@ else
     array.push(rdArray, newData(2023, 2, 9, -279449))
     array.push(rdArray, newData(2023, 2, 10, -307114))
     array.push(rdArray, newData(2023, 2, 13, -313540)) 
-
+    array.push(rdArray, newData(2023, 2, 17, -291666))
 // float drawPrice = if time > timestamp(2023, 2, 1)
 //     5000
 // else
