@@ -33,7 +33,7 @@ var float BANK2_AVAL = 1857                 // 兆豐 (TWD)
 var float BANK3_AVAL = 10221                // 元大 (TWD)
 var float BANK4_AVAL = 10100                // LineBank (TWD)
 var float MAX_AVAL = 0                      // MAX (USD)
-var float EXCHANGE_USD = 91 + 445.3         //bybit + binance(USD)
+var float EXCHANGE_USD = 91 + 445.3 + 120   //bybit + binance + 派網
 
 var float BINANCE_AVAL = 1145               // 幣安 (USD)
 var float BYBIT_AVAL = 105                  // bybit (USD)
@@ -97,6 +97,7 @@ INPUT_DISPLAY_TITLE = input.bool(defval = true, title = "標題", inline = "00",
 INPUT_DISPLAY_CASH = input.bool(defval = true, title = "現金", inline = "00", group = GROUP_SETTING)
 INPUT_DISPLAY_TWSTOCK = input.bool(defval = true, title = "台股", inline = "00", group = GROUP_SETTING)
 INPUT_DISPLAY_CRYPTO = input.bool(defval = true, title = "幣圈", inline = "00", group = GROUP_SETTING)
+INPUT_DISPLAY_ASSETS_CHART = input.bool(defval = true, title = "資產走勢線圖", group = GROUP_SETTING)
 INPUT_DISPLAY_CURRENCY = input.string(defval = TWD, title = "貨幣顯示", options = [TWD, USD], group = GROUP_SETTING)
 INPUT_DISPLAY_SIZE = input.string(defval = SIZE_LARGE, title = "表格大小", options = [SIZE_TINY, SIZE_SMALL, SIZE_NORMAL, SIZE_LARGE], group = GROUP_SETTING)
 INPUT_DISPLAY_POSITION = input.string(defval = MIDDLE_CENTER, title = "表格位置", options = [MIDDLE_CENTER, BOTTOM_CENTER], group = GROUP_SETTING)
@@ -113,13 +114,6 @@ INPUT_BANK3 = input.float(defval = BANK3_AVAL, title = "元大(TWD)", group = GR
 INPUT_BANK4 = input.float(defval = BANK4_AVAL, title = "LineBank(TWD)", group = GROUP_CASH)
 INPUT_MAX = input.float(defval = MAX_AVAL, title = "MAX(U)", group = GROUP_CASH)
 
-// INPUT_TW_STOCKS = input.float(defval = 6980, title = "投資先生(TWD)", group = GROUP_EXCHANGE)
-
-// INPUT_BINANCE = input.float(defval = BINANCE_AVAL, title = "Binance(U)", group = GROUP_EXCHANGE)
-// INPUT_BYBIT = input.float(defval = BYBIT_AVAL, title = "Bybit(U)", group = GROUP_EXCHANGE)
-// INPUT_COOL_WALLET = input.float(defval = COOL_WALLET_AVAL, title = "冷錢包(U)", group = GROUP_EXCHANGE)
-// INPUT_PIONEX = input.float(defval = PIONEX_AVAL, title = "Pionex(U)", group = GROUP_EXCHANGE)
-// INPUT_CRYPTO_COM = input.float(defval = CRYPTO_COM_AVAL, title = "Crypto.com(U)", group = GROUP_EXCHANGE)
 INPUT_CRYPTO_COM_VISA = input.float(defval = VISA_AVAL, title = "幣圈Visa(U)", group = GROUP_EXCHANGE)
 
 IS_006208_DISPLAY = input.bool(defval = true, title = "006208 :", inline = "03", group = GROUP_ASSETS) 
@@ -166,6 +160,7 @@ MY_SAND_POSITION = 20.79
 MY_SAND_COST = 100
 MY_OTHER_CRYPTO_COST = MY_CHZ_COST + MY_GMT_COST + MY_AXS_COST + MY_ALICE_COST + MY_SAND_COST
 
+
 INPUT_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUP_VERSION) 
 
 // 3. Constant value initialization
@@ -202,12 +197,9 @@ var string FET_SYMBOL = "BINANCE:FETUSDT"
 
 var color COLOR_MY_WHITE = color.rgb(255, 255, 204) 
 var color COLOR_BG = color.rgb(77, 77, 77)
-// var color DF_TEXT_COLOR = colour.MISTY_ROSE()
 var color DF_TEXT_COLOR = COLOR_MY_WHITE
-// var color DF_TEXT_COLOR = color.rgb(255, 255, 204) 
-
 var color DF_CELL_COLOR = COLOR_BG
-// var color DF_CELL_COLOR = COLOR_777
+
 
 // 4. Variable declartion
 type RecordData
@@ -237,7 +229,7 @@ var float pSAND = na
 
 var float totalAssets = 0
 
-var float recordAssets = 0
+var float recordAssetsVariation = 0
 
 var table displayTabel = na
 
@@ -595,84 +587,53 @@ if barstate.islast
         if IS_OTHER_DISPLAY
             cellRebalance(nextRow, "垃圾幣", nowOthersRatio)
             nextRow := cellPNL(nextRow, remainOther, pnlOther, pnlPercentOther)
-        
+
         cellRebalance(nextRow, "USDT", nowUSDTRatio)
         nextRow := cellPNL(nextRow, remainUSDT, pnlUSDT, pnlPercentUSDT)
 
-
         // getCurrentSymbol(speculationPNL)
 
-// var float drawPrice = 0
-// var int maxSize = 3
-
-
-// if array.size(id = recordDataArray) >= 2
-//     temp = array.get(id = recordDataArray, index = 0) 
-//     tempNext = array.get(id = recordDataArray, index = 1) 
-//     if time == timestamp(temp.mYear, temp.mMonth, temp.mDay)
-//         recordAssets := temp.mNowTotal
-//         drawPrice := recordAssets
-//         array.shift(id = recordDataArray) 
-//     else if time < timestamp(temp.mYear, temp.mMonth, temp.mDay) and recordAssets != 0
-//         drawPrice := record(recordAssets, temp.mNowTotal)
-//     // else
-//     //     drawPrice := 0
-
-// else if array.size(id = recordDataArray) == 1 
-//     RecordData temp = array.get(id = recordDataArray, index = 0) 
-//     recordAssets := temp.mNowTotal
-//     drawPrice := recordAssets + math.random(min = -1000, max = 1000, seed = 1) 
-
-// else 
-//     array.push(id = recordDataArray, value = RecordData.new(2022, 8, 22, -224161)) 
-//     array.push(id = recordDataArray, value = RecordData.new(2022, 8, 29, -244077)) 
-//     array.push(id = recordDataArray, value = RecordData.new(2022, 9, 5, -244682)) 
-//     array.push(id = recordDataArray, value = RecordData.new(2022, 9, 12, -232487)) 
-
-
-if bar_index == 1
-    line.new(x1 = bar_index, y1 = 0, x2 = bar_index + 1, y2 = 0, extend = extend.both, color = color.white, width = 1) 
+if INPUT_DISPLAY_ASSETS_CHART
+    if bar_index == 1
+        line.new(x1 = bar_index, y1 = 0, x2 = bar_index + 1, y2 = 0, extend = extend.both, color = color.white, width = 1) 
 
 
 
-if array.size(rdArray) != 0
-    temp = array.get(rdArray, index = 0)
-    if isDate(temp.mYear, temp.mMonth, temp.mDay)
-        recordAssets := temp.mNowTotal
-        if array.size(rdArray) != 1
-            array.shift(rdArray)  
-else
-    array.push(rdArray, newData(2022, 8, 22, -224161)) 
-    array.push(rdArray, newData(2022, 8, 29, -244077))
-    array.push(rdArray, newData(2022, 9, 5, -244682))
-    array.push(rdArray, newData(2022, 9, 12, -232487))
-    array.push(rdArray, newData(2022, 9, 24, -234052))
-    array.push(rdArray, newData(2022, 10, 20, -252814))
-    array.push(rdArray, newData(2022, 10, 31, -236102))
-    array.push(rdArray, newData(2022, 11, 12, -279702))
-    array.push(rdArray, newData(2022, 11, 13, -298406))
-    array.push(rdArray, newData(2022, 11, 24, -301561))
-    array.push(rdArray, newData(2022, 12, 19, -325004))
-    array.push(rdArray, newData(2022, 12, 29, -323720))
-    array.push(rdArray, newData(2023, 1, 14, -299458))
-    array.push(rdArray, newData(2023, 1, 21, -280488))
-    array.push(rdArray, newData(2023, 1, 29, -281278))
-    array.push(rdArray, newData(2023, 2, 5, -291086))
-    array.push(rdArray, newData(2023, 2, 9, -279449))
-    array.push(rdArray, newData(2023, 2, 10, -307114))
-    array.push(rdArray, newData(2023, 2, 13, -313540)) 
-    array.push(rdArray, newData(2023, 2, 17, -291666))
-// float drawPrice = if time > timestamp(2023, 2, 1)
-//     5000
-// else
-//     -5000
-
+    if array.size(rdArray) != 0
+        temp = array.get(rdArray, index = 0)
+        if isDate(temp.mYear, temp.mMonth, temp.mDay)
+            recordAssetsVariation := temp.mNowTotal
+            if array.size(rdArray) != 1
+                array.shift(rdArray)  
+    else
+        array.push(rdArray, newData(2022, 8, 22, -224161)) 
+        array.push(rdArray, newData(2022, 8, 29, -244077))
+        array.push(rdArray, newData(2022, 9, 5, -244682))
+        array.push(rdArray, newData(2022, 9, 12, -232487))
+        array.push(rdArray, newData(2022, 9, 24, -234052))
+        array.push(rdArray, newData(2022, 10, 20, -252814))
+        array.push(rdArray, newData(2022, 10, 31, -236102))
+        array.push(rdArray, newData(2022, 11, 12, -279702))
+        array.push(rdArray, newData(2022, 11, 13, -298406))
+        array.push(rdArray, newData(2022, 11, 24, -301561))
+        array.push(rdArray, newData(2022, 12, 19, -325004))
+        array.push(rdArray, newData(2022, 12, 29, -323720))
+        array.push(rdArray, newData(2023, 1, 14, -299458))
+        array.push(rdArray, newData(2023, 1, 21, -280488))
+        array.push(rdArray, newData(2023, 1, 29, -281278))
+        array.push(rdArray, newData(2023, 2, 5, -291086))
+        array.push(rdArray, newData(2023, 2, 9, -279449))
+        array.push(rdArray, newData(2023, 2, 10, -307114))
+        array.push(rdArray, newData(2023, 2, 13, -313540)) 
+        array.push(rdArray, newData(2023, 2, 17, -291666))
+        array.push(rdArray, newData(2023, 2, 18, -286358))
 
 plot(
- series       =  recordAssets,
- color        =  recordAssets > 0 ? color.green : color.red,
+ series       =  recordAssetsVariation,
+ color        =  recordAssetsVariation > 0 ? color.green : color.red,
 //  style        =  plot.style_areabr,
- linewidth    =  2
+ linewidth    =  1,
+ display      =  INPUT_DISPLAY_ASSETS_CHART ? display.all : display.none
  )
 
 // getDebugValue(str.format_time(timenow, "yyyy/MM/dd HH:mm:ss", "Asia/Taipei") )
