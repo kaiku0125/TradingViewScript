@@ -11,11 +11,37 @@ var string ICON_DOWN = " 🙁"
 var string ICON_DOWN_20 = " 😨"
 var string ICON_DOWN_50 = " 😱"
 var string ICON_GG = " 🈹"
-var VERSION_NAME = "v2.0"
+
+var string SIZE_TINY = "極小"
+var string SIZE_SMALL = "小"
+var string SIZE_NORMAL = "中"
+var string SIZE_LARGE = "大"
+var string BOTTOM_CENTER = "中間靠下"
+var string MIDDLE_CENTER = "正中央"
+
+var VERSION_NAME = "v5.0"
 
 var color DF_TEXT_COLOR = color.rgb(255, 255, 204) 
 var color DF_CELL_COLOR = color.rgb(77, 77, 77)
 
+
+export getTableSize(string inputSize) =>
+    string output = if inputSize == SIZE_TINY
+        size.tiny
+    else if inputSize == SIZE_SMALL
+        size.small
+    else if inputSize == SIZE_NORMAL
+        size.normal
+    else 
+        size.large
+    output
+
+export getTablePosition(string inputPosition) =>
+    string output = if inputPosition == MIDDLE_CENTER
+        position.middle_center
+    else     
+        position.bottom_center
+    output
 
 export calDefault(float currentPrice, float position, float cost, float totalAssets) =>
     remain = currentPrice * position
@@ -59,6 +85,32 @@ export ratioStateJudge(float ratio, color bullColor) =>
     else
         DF_TEXT_COLOR
     [outputIcon, outputColor]
+
+export getRatioDiff(float nowRatio, float supposeRatio) =>
+    float output = nowRatio - supposeRatio
+    output
+
+export isDate(int _year, int _month, int _day) =>
+    bool isDate = time == timestamp(_year, _month, _day) 
+    isDate
+
+export SIZE_TINY() =>
+    SIZE_TINY
+
+export SIZE_SMALL() =>
+    SIZE_SMALL
+
+export SIZE_NORMAL() =>
+    SIZE_NORMAL
+
+export SIZE_LARGE() =>
+    SIZE_LARGE
+
+export BOTTOM_CENTER() =>
+    BOTTOM_CENTER
+
+export MIDDLE_CENTER() =>
+    MIDDLE_CENTER
 
 export DISPLAY_NONE() =>
     DISPLAY_NONE
