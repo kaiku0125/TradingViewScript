@@ -2,7 +2,7 @@
 
 // 1. Import library
 import kaiku0125/Debug/1 as debug
-import kaiku0125/Colour/6 as colour
+import kaiku0125/Colour/7 as colour
 import kaiku0125/FormatSDK/1 as fm
 import kaiku0125/PNLRebalanceLib/5 as lib
 var bool DEBUG = false
@@ -98,6 +98,7 @@ var string INLINE_BNB = "13"
 var string INLINE_BIT = "14"
 var string INLINE_DYDX = "15"
 var string INLINE_OTHER = "16"
+var string INLINE_USDT = "17"
 
 var string GROUP_SETTING = "📌 設定"
 var string GROUP_RATIO = "總配比"
@@ -199,6 +200,7 @@ MY_ALICE_COST = 100
 MY_SAND_POSITION = 20.79
 MY_SAND_COST = 100
 MY_OTHER_CRYPTO_COST = MY_CHZ_COST + MY_GMT_COST + MY_AXS_COST + MY_ALICE_COST + MY_SAND_COST
+IS_USDT_DISPLAY = input.bool(defval = false, title = "剩餘USDT", inline = INLINE_USDT, group = GROUP_ASSETS)
 
 
 INPUT_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUP_VERSION) 
@@ -233,8 +235,9 @@ var string DYDX_SYMBOL = "BINANCE:DYDXUSDT"
 var color COLOR_MY_WHITE = color.rgb(255, 255, 204) 
 var color COLOR_BG = color.rgb(77, 77, 77)
 var color DF_TEXT_COLOR = COLOR_MY_WHITE
+// var color DF_TEXT_COLOR = colour.LIGHT_SKY_BLUE()
 var color DF_CELL_COLOR = COLOR_BG
-
+// var color DF_CELL_COLOR = colour.INDIGO(10)
 
 // 4. Variable declartion
 type RecordData
@@ -284,6 +287,12 @@ cell(int columnID, int rowID, string displayText, color textColor, color backgro
      bgcolor        =  color.new(color = background, transp = tp) 
      )
 
+cellRebalance(int rowID, string targetSymbol, nowRatio) =>
+    int mTransp = 30
+    cell(0, rowID, targetSymbol, DF_TEXT_COLOR, DF_CELL_COLOR, mTransp)
+    cell(1, rowID, fm.ratioString(nowRatio), DF_TEXT_COLOR, DF_CELL_COLOR, mTransp)
+    cell(2, rowID, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR, mTransp)
+
 cellPNL(rowID, remain, pnl, pnlPercent) =>
     int mTransp = 30
     string remainText = fm.fString(remain, 0)
@@ -303,29 +312,11 @@ cellPNL(rowID, remain, pnl, pnlPercent) =>
     int nextRow = rowID + 1
     nextRow
 
-getCurrentSymbol(float value) =>
-    string mOutput = fm.fString(value, 4)
-    label debugLabel = debug.printLabel("圖表ID : " + syminfo.tickerid + ", 價格 : " + mOutput)
-    // label.delete(id = debugLabel[1])
-
-getDebugValue(value) =>
-    string ddd = str.format("{0,time,HH:mm:ss.SSS}", timenow)
-    string mOutput = str.tostring(value = value) 
-    label debugLabel = debug.printLabel(mOutput)
-    // label.delete(id = debugLabel[1])
-
 cellBlank(int rowID) => 
     for i = 0 to 4
         table.cell(displayTabel, column = i, row = rowID,  text = "", height = 1)
     int nextRow = rowID + 1
     nextRow
-
-
-cellRebalance(int rowID, string targetSymbol, nowRatio) =>
-    int mTransp = 30
-    cell(0, rowID, targetSymbol, DF_TEXT_COLOR, DF_CELL_COLOR, mTransp)
-    cell(1, rowID, fm.ratioString(nowRatio), DF_TEXT_COLOR, DF_CELL_COLOR, mTransp)
-    cell(2, rowID, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR, mTransp)
 
 getRebalanceText(string bankName, float bankAval, float rebalance) =>
     float _rebalance = INPUT_DISPLAY_CURRENCY == TWD ? rebalance : rebalance * pUsd_Twd
@@ -355,6 +346,16 @@ newData(int _year, int _month, int _day, float _nowTotal) =>
     RecordData data = RecordData.new(_year, _month, _day, _nowTotal)
     data
 
+getCurrentSymbol(float value) =>
+    string mOutput = fm.fString(value, 4)
+    label debugLabel = debug.printLabel("圖表ID : " + syminfo.tickerid + ", 價格 : " + mOutput)
+    // label.delete(id = debugLabel[1])
+
+getDebugValue(value) =>
+    string ddd = str.format("{0,time,HH:mm:ss.SSS}", timenow)
+    string mOutput = str.tostring(value = value) 
+    label debugLabel = debug.printLabel(mOutput)
+    // label.delete(id = debugLabel[1])
 
 // 6. Code logic start
 if INPUT_CASH_RATIO + INPUT_SPECULATION_RATIO != 100
@@ -579,8 +580,9 @@ if barstate.islast
             cellRebalance(nextRow, "垃圾幣", nowOthersRatio)
             nextRow := cellPNL(nextRow, remainOther, pnlOther, pnlPercentOther)
 
-        cellRebalance(nextRow, "USDT", nowUSDTRatio)
-        nextRow := cellPNL(nextRow, remainUSDT, pnlUSDT, pnlPercentUSDT)
+        if IS_USDT_DISPLAY
+            cellRebalance(nextRow, "USDT", nowUSDTRatio)
+            nextRow := cellPNL(nextRow, remainUSDT, pnlUSDT, pnlPercentUSDT)
 
         if DEBUG
             getCurrentSymbol(speculationPNL)
@@ -621,6 +623,7 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2023, 2, 18, -286358))
         array.push(rdArray, newData(2023, 2, 20, -281833))
         array.push(rdArray, newData(2023, 2, 22, -275244))
+        array.push(rdArray, newData(2023, 2, 24, -284224))
 
 plot(
  series       =  recordAssetsVariation,

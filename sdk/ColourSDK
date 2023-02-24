@@ -3,7 +3,7 @@
 
 
 library(title = "Colour", overlay =  true) 
-var VERSION_NAME = "v6"
+var VERSION_NAME = "v7"
 
 
 var color COLOR_MAROON = color.rgb(red = 128, green = 0, blue = 0, transp = 0)
@@ -240,9 +240,10 @@ var color COLOR_BLUE_VIOLET = color.rgb(red = 138, green = 43, blue = 226, trans
 export BLUE_VIOLET() =>
     COLOR_BLUE_VIOLET
 
-var color COLOR_INDIGO = color.rgb(red = 75, green = 0, blue = 130, transp = 0) 
-export INDIGO() =>
-    COLOR_INDIGO
+// var color COLOR_INDIGO = color.rgb(red = 75, green = 0, blue = 130, transp = 0) 
+export INDIGO(int _transp) =>
+    color.rgb(red = 75, green = 0, blue = 130, transp = _transp) 
+    
 
 var color COLOR_SLATE_BLUE = color.rgb(red = 106, green = 90, blue = 205, transp = 0) 
 export SLATE_BLUE() =>
