@@ -29,25 +29,25 @@ indicator(
 // # ========================================================================= #
 
 // 2. Preference inputs settings
-var float BANK1_AVAL = 52384                    // 台新 (TWD)
+var float BANK1_AVAL = 52349                    // 台新 (TWD)
 var float BANK2_AVAL = 1857                     // 兆豐 (TWD)  
-var float BANK3_AVAL = 10221                    // 元大 (TWD)
+var float BANK3_AVAL = 0                        // 元大 (TWD)
 var float BANK4_AVAL = 10100                    // LineBank (TWD)
-var float MAX_AVAL = 0                          // MAX (USD)
-var float EXCHANGE_USD = 33 + 197 + 120         //bybit + binance + 派網
+var float MAX_AVAL = 227                        // MAX (USD)
+var float EXCHANGE_USD = 64 + 134 + 120          //bybit + binance + 派網
 
-var float VISA_AVAL = 1700                      // Visa (USD)
+var float VISA_AVAL = 1800                      // Visa (USD)
 
 var float _006208_POSITION = 400                // 006208 (股)
 var float _006208_COST = 27780                  // 006208總投入 (TWD)
 var float BTC_POSITION = 0.1004 + 0.005         // btc (顆)
-var float BTC_COST = 2219 + 150                 // btc總投入 (USD)
-var float ETH_POSITION = 0.327474 + 0.06539     // eth (顆)
-var float ETH_COST = 527.8 + 150                // eth總投入 (USD)
+var float BTC_COST = 2219 + 100                 // btc總投入 (USD)
+var float ETH_POSITION = 0.384374 + 0.06539     // eth (顆)
+var float ETH_COST = 620.2 + 100                // eth總投入 (USD)
 var float CRO_POSITION = 22000                  // cro (顆)
 var float CRO_COST = 3632                       // cro總投入 (USD)
-var float MATIC_POSITION = 191.4                // matic (顆)
-var float MATIC_COST = 226.2                    // matic總投入 (USD)
+var float MATIC_POSITION = 222.92               // matic (顆)
+var float MATIC_COST = 265.8                    // matic總投入 (USD)
 var float ILV_POSITION = 1.058                  // ILV (顆)
 var float ILV_COST = 99.89                      // ILV總投入 (USD)
 var float RNDR_POSITION = 29.51                 // RNDR (顆)
@@ -66,7 +66,7 @@ var float DYDX_POSITION = 18.18                 // DYDX (顆)
 var float DYDX_COST = 49.98                     // DYDX總投入 (USD)
 
 var float ALL_STOCKS_COST = _006208_COST        //台股成本
-var float ALL_CRYPTO_COST = 527576              //幣圈成本
+var float ALL_CRYPTO_COST = 538476              //幣圈成本
 
 var string USD = "美金"
 var string TWD = "台幣"
@@ -167,10 +167,6 @@ MY_RNDR_COST = input.float(defval = RNDR_COST, title = CRYPTO_COST_TITLE, inline
 IS_ALI_DISPLAY = input.bool(defval = true, title = "ALI :", inline = INLINE_ALI, group = GROUP_ASSETS) 
 MY_ALI_POSITION = input.float(defval = ALI_POSITION, title = POSITION_TITLE, inline = INLINE_ALI, group = GROUP_ASSETS) 
 MY_ALI_COST = input.float(defval = ALI_COST, title = CRYPTO_COST_TITLE, inline = INLINE_ALI, group = GROUP_ASSETS) 
-
-IS_AGIX_DISPLAY = input.bool(defval = true, title = "AGIX :", inline = INLINE_AGIX, group = GROUP_ASSETS) 
-MY_AGIX_POSITION = input.float(defval = AGIX_POSITION, title = POSITION_TITLE, inline = INLINE_AGIX, group = GROUP_ASSETS) 
-MY_AGIX_COST = input.float(defval = AGIX_COST, title = CRYPTO_COST_TITLE, inline = INLINE_AGIX, group = GROUP_ASSETS) 
 
 IS_FET_DISPLAY = input.bool(defval = true, title = "FET :", inline = INLINE_FET, group = GROUP_ASSETS) 
 MY_FET_POSITION = input.float(defval = FET_POSITION, title = POSITION_TITLE, inline = INLINE_FET, group = GROUP_ASSETS) 
@@ -402,7 +398,6 @@ mainCryptoAssets += pMATIC * MY_MATIC_POSITION
 mainCryptoAssets += pILV * MY_ILV_POSITION 
 mainCryptoAssets += pRNDR * MY_RNDR_POSITION
 mainCryptoAssets += pALI * MY_ALI_POSITION 
-mainCryptoAssets += pAGIX * MY_AGIX_POSITION 
 mainCryptoAssets += pFET * MY_FET_POSITION
 mainCryptoAssets += pBNB * MY_BNB_POSITION
 mainCryptoAssets += pBIT * MY_BIT_POSITION
@@ -437,7 +432,6 @@ cryptoRebalance = totalAssets * cryptoRatio - totalCryptoAssets
 [remainILV, pnlILV, pnlPercentILV, nowILVRatio] = lib.calDefault(pILV * usdEx, MY_ILV_POSITION, MY_ILV_COST * usdEx, totalAssets)
 [remainRNDR, pnlRNDR, pnlPercentRNDR, nowRNDRRatio] = lib.calDefault(pRNDR * usdEx, MY_RNDR_POSITION, MY_RNDR_COST * usdEx, totalAssets)
 [remainALI, pnlALI, pnlPercentALI, nowALIRatio] = lib.calDefault(pALI * usdEx, MY_ALI_POSITION, MY_ALI_COST * usdEx, totalAssets)
-[remainAGIX, pnlAGIX, pnlPercentAGIX, nowAGIXRatio] = lib.calDefault(pAGIX * usdEx, MY_AGIX_POSITION, MY_AGIX_COST * usdEx, totalAssets)
 [remainFET, pnlFET, pnlPercentFET, nowFETRatio] = lib.calDefault(pFET * usdEx, MY_FET_POSITION, MY_FET_COST * usdEx, totalAssets)
 [remainBNB, pnlBNB, pnlPercentBNB, nowBNBRatio] = lib.calDefault(pBNB * usdEx, MY_BNB_POSITION, MY_BNB_COST * usdEx, totalAssets)
 [remainBIT, pnlBIT, pnlPercentBIT, nowBITRatio] = lib.calDefault(pBIT * usdEx, MY_BIT_POSITION, MY_BIT_COST * usdEx, totalAssets)
@@ -555,10 +549,6 @@ if barstate.islast
         if IS_ALI_DISPLAY
             cellRebalance(nextRow, "ALI", nowALIRatio)
             nextRow := cellPNL(nextRow, remainALI, pnlALI, pnlPercentALI)
-        
-        if IS_AGIX_DISPLAY
-            cellRebalance(nextRow, "AGIX", nowAGIXRatio)
-            nextRow := cellPNL(nextRow, remainAGIX, pnlAGIX, pnlPercentAGIX)
 
         if IS_FET_DISPLAY
             cellRebalance(nextRow, "FET", nowFETRatio)
@@ -624,6 +614,8 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2023, 2, 20, -281833))
         array.push(rdArray, newData(2023, 2, 22, -275244))
         array.push(rdArray, newData(2023, 2, 24, -284224))
+        array.push(rdArray, newData(2023, 3, 2, -286968))
+        array.push(rdArray, newData(2023, 3, 3, -298380))
 
 plot(
  series       =  recordAssetsVariation,
