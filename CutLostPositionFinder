@@ -1,7 +1,7 @@
 //@version=5
 
 // 1. Import library
-import kaiku0125/Colour/1 as colour
+import kaiku0125/Colour/7 as colour
 // # ========================================================================= #
 // #                   |   Indicator  |
 // # ========================================================================= #
@@ -15,59 +15,51 @@ indicator(
 // # ========================================================================= #
 
 // 2. Preference inputs settings
-var GROUP_SETTING = "📌 設定"
 var BULL_GREEN = "綠漲紅跌"
 var BULL_RED = "紅漲綠跌"
+var color LINE_DEFAULT_COLOR = colour.ROSY_BROWN()
+var GROUP_SETTING = "📌 設定"
 var GROUP_VERSION = "💬 關於"
-var VERSION_NAME = "v1.2"
+var VERSION_NAME = "v1.3"
 var RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
-                     "[1] Customize long short color style." + "\n" + 
-                     "[2] Chart show each order lost above cut lost line." + "\n"
+                     "[1] Change line style." + "\n" + 
+                     "[2] Chart show each order lost percentage above cut lost line." + "\n"
 
 
-INPUT_EACH_ORDER_LOST = input.float(defval = 5.0, title = "每單止損", minval = 1.0, maxval =  10000.0, step =  1, tooltip = "調整每單止損金額", group = GROUP_SETTING) 
+INPUT_EACH_ORDER_LOST = input.float(defval = 1.0, title = "每單止損", minval = 1.0, maxval =  10000.0, step =  1, tooltip = "調整每單止損金額", group = GROUP_SETTING) 
 INPUT_CUT_LOST_PRICE = input.price(defval = 0.0, title = "止損價格", confirm = true, group = GROUP_SETTING, inline = "01")
-INPUT_CUT_LOST_PRICE_LINE_COLOR = input.color(defval = color.purple, title = "", inline = "01", group = GROUP_SETTING) 
+INPUT_IS_LINE_COLOR_CUSTOM = input.bool(defval = false, title = "使用客製顏色", inline = "02", group = GROUP_SETTING)
+INPUT_CUT_LOST_PRICE_LINE_COLOR = input.color(defval = color.purple , title = "", inline = "02", group = GROUP_SETTING) 
 INPUT_NEED_SHOW_CUT_LOST_TEXT = input.bool(defval =  true, title = "顯示止損價格", group = GROUP_SETTING) 
 INPUT_PREF_DISPLAY_COLOR = input.string(defval = BULL_GREEN, title = "顯示風格", options = [BULL_GREEN, BULL_RED], tooltip = "調整顯示風格顏色", group = GROUP_SETTING) 
 INPUT_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUP_VERSION) 
 
 // 3. Constant value initialization
-var LABEL_COLOR_BULL = INPUT_PREF_DISPLAY_COLOR == BULL_GREEN ? colour.FOREST_GREEN() : colour.FIRE_BRICK()
-var LABEL_COLOR_BEAR = INPUT_PREF_DISPLAY_COLOR == BULL_RED ? colour.FOREST_GREEN() : colour.FIRE_BRICK()
+var LABEL_COLOR_BULL = INPUT_PREF_DISPLAY_COLOR == BULL_GREEN ? colour.DARK_GREEN() : colour.DARK_RED()
+var LABEL_COLOR_BEAR = INPUT_PREF_DISPLAY_COLOR == BULL_RED ? colour.DARK_GREEN() : colour.DARK_RED()
 
 // 4. Variable declartion
 var float position = 0.0
-var float eachOrderLost = 5.0
+var float eachOrderLost = 1.0
 var string eachOrderLostText = na
 var float cutLostPrice = na
 var string cutLostPriceText = na
-var bool needShowCutLostText = true
-var line cutLossLine = line.new(bar_index - 1, close, bar_index, close, extend = extend.both, width = 1, color = color.fuchsia)
-var color cutLossLineColor = color.purple
+var line cutLossLine = line.new(bar_index - 1, close, bar_index, close, extend = extend.both, width = 2, color = color.fuchsia, style = line.style_dashed)
+var color cutLostLineColor = color.purple
 var label positionLabel = na
-
-
-
-eachOrderLost := INPUT_EACH_ORDER_LOST
-eachOrderLostText := str.tostring(value = eachOrderLost) 
-cutLostPrice := INPUT_CUT_LOST_PRICE
-cutLostPriceText := str.tostring(value = cutLostPrice,format = "#.###") 
-cutLossLineColor := INPUT_CUT_LOST_PRICE_LINE_COLOR
-needShowCutLostText := INPUT_NEED_SHOW_CUT_LOST_TEXT
-
+var label textLabel = na
 
 
 // 5. Define functions
 getText(isLong) =>
-    string direction = isLong ? "多 " : "空 "
+    string direction = isLong ? "多 ➔ " : "空 ➔ "
     output = direction + str.tostring(value = position, format = "#.###") + " " + syminfo.basecurrency + "\n"
     output += "倉位價值 : " + str.tostring(value = position * close, format =  "#")  + " " + syminfo.currency
     output
 
 newLabel(labelText, labelColor) =>
     output = label.new(
-     x            =  bar_index + 2,
+     x            =  bar_index + 5,
      y            =  close,
      text         =  labelText,
     //  xloc         =  ,
@@ -89,6 +81,13 @@ isLong() =>
 
 
 // 6. Code logic start
+eachOrderLost := INPUT_EACH_ORDER_LOST
+eachOrderLostText := str.tostring(value = eachOrderLost) 
+cutLostPrice := INPUT_CUT_LOST_PRICE
+cutLostPriceText := str.tostring(value = cutLostPrice,format = "#.###") 
+cutLostLineColor := INPUT_IS_LINE_COLOR_CUSTOM ? INPUT_CUT_LOST_PRICE_LINE_COLOR : colour.DARK_GOLDEN_ROD() 
+cutLostPercent = str.tostring(math.abs((close - cutLostPrice) / cutLostPrice * 100), "#.#")
+
 if barstate.islast
     position := eachOrderLost / (1 - ((close - math.abs(close - cutLostPrice)) / close)) / close
     positionLabel := newLabel(getText(isLong()), isLong() ? LABEL_COLOR_BULL : LABEL_COLOR_BEAR)
@@ -96,13 +95,13 @@ if barstate.islast
 
     line.set_xy1(cutLossLine, bar_index - 1, cutLostPrice)
     line.set_xy2(cutLossLine, bar_index, cutLostPrice)
-    line.set_color(id = cutLossLine, color = cutLossLineColor) 
+    line.set_color(id = cutLossLine, color = cutLostLineColor) 
     
-    if needShowCutLostText
-        textLabel = label.new(
-         x            =  bar_index + 30,
+    if INPUT_NEED_SHOW_CUT_LOST_TEXT
+        textLabel := label.new(
+         x            =  bar_index + 60,
          y            =  cutLostPrice,
-         text         = "止損價格 : " + cutLostPriceText + "( -"+  eachOrderLostText + "U )",
+         text         = "( " + cutLostPercent + "% ) "+ "止損價格 : " + cutLostPriceText + " ( -"+  eachOrderLostText + "U )",
         //  xloc         = xloc.bar_time,
         //  yloc         =  ,
          color        = color.new(color =  color.black, transp = 0),
@@ -112,7 +111,8 @@ if barstate.islast
         //  textalign    =  ,
         //  tooltip      = "" 
          )
-        label.delete(id = textLabel[1])
+        
+    label.delete(id = textLabel[1])
 
 
 

@@ -1,0 +1,119 @@
+//@version=5
+
+library(title = "PNLRebalanceLib", overlay =  true) 
+
+var string DISPLAY_NONE = "--"
+var string ICON_ROCKET = " 🚀"
+var string ICON_UP_50 = " 🤑"
+var string ICON_UP_20 = " 😀"
+var string ICON_UP = " 🙂"
+var string ICON_DOWN = " 🙁"
+var string ICON_DOWN_20 = " 😨"
+var string ICON_DOWN_50 = " 😱"
+var string ICON_GG = " 🈹"
+
+var string SIZE_TINY = "極小"
+var string SIZE_SMALL = "小"
+var string SIZE_NORMAL = "中"
+var string SIZE_LARGE = "大"
+var string BOTTOM_CENTER = "中間靠下"
+var string MIDDLE_CENTER = "正中央"
+
+var VERSION_NAME = "v5.0"
+
+var color DF_TEXT_COLOR = color.rgb(255, 255, 204) 
+var color DF_CELL_COLOR = color.rgb(77, 77, 77)
+
+
+export getTableSize(string inputSize) =>
+    string output = if inputSize == SIZE_TINY
+        size.tiny
+    else if inputSize == SIZE_SMALL
+        size.small
+    else if inputSize == SIZE_NORMAL
+        size.normal
+    else 
+        size.large
+    output
+
+export getTablePosition(string inputPosition) =>
+    string output = if inputPosition == MIDDLE_CENTER
+        position.middle_center
+    else     
+        position.bottom_center
+    output
+
+export calDefault(float currentPrice, float position, float cost, float totalAssets) =>
+    remain = currentPrice * position
+    pnl = remain - cost
+    pnlPercent = pnl / cost
+    nowRatio = remain / totalAssets
+    [remain, pnl, pnlPercent, nowRatio]
+    
+export calByRemain(float remain, float cost, float totalAssets) =>
+    pnl = remain - cost
+    pnlPercent = pnl / cost
+    nowRatio = remain / totalAssets
+    [remain, pnl, pnlPercent, nowRatio]
+
+export ratioStateJudge(float ratio, color bullColor) =>
+    string outputIcon = if ratio >= 0
+        if math.abs(ratio) >= 100
+            ICON_ROCKET
+        else if math.abs(ratio) < 100 and math.abs(ratio) >= 50   
+            ICON_UP_50
+        else if math.abs(ratio) < 50 and math.abs(ratio) >= 20
+            ICON_UP_20
+        else if math.abs(ratio) < 20 and math.abs(ratio) > 0  
+            ICON_UP
+        else 
+            DISPLAY_NONE   
+    else 
+        if math.abs(ratio) >= 80
+            ICON_GG
+        else if math.abs(ratio) < 80 and math.abs(ratio) >= 50
+            ICON_DOWN_50
+        else if math.abs(ratio) < 50 and math.abs(ratio) >= 20
+            ICON_DOWN_20
+        else 
+            ICON_DOWN
+
+    color outputColor = if ratio > 0
+        bullColor
+    else if ratio < 0
+        color.red
+    else
+        DF_TEXT_COLOR
+    [outputIcon, outputColor]
+
+export getRatioDiff(float nowRatio, float supposeRatio) =>
+    float output = nowRatio - supposeRatio
+    output
+
+export isDate(int _year, int _month, int _day) =>
+    bool isDate = time == timestamp(_year, _month, _day) 
+    isDate
+
+export SIZE_TINY() =>
+    SIZE_TINY
+
+export SIZE_SMALL() =>
+    SIZE_SMALL
+
+export SIZE_NORMAL() =>
+    SIZE_NORMAL
+
+export SIZE_LARGE() =>
+    SIZE_LARGE
+
+export BOTTOM_CENTER() =>
+    BOTTOM_CENTER
+
+export MIDDLE_CENTER() =>
+    MIDDLE_CENTER
+
+export DISPLAY_NONE() =>
+    DISPLAY_NONE
+
+export getSDKVersion() =>
+    VERSION_NAME

@@ -1,6 +1,6 @@
 //@version=5
 
-library(title = "Util", overlay =  true) 
+library(title = "LiquidityFinderLib", overlay =  true) 
 
 var VERSION_NAME = "v1.0"
 
