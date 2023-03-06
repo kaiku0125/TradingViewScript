@@ -20,10 +20,10 @@ var BULL_RED = "紅漲綠跌"
 var color LINE_DEFAULT_COLOR = colour.ROSY_BROWN()
 var GROUP_SETTING = "📌 設定"
 var GROUP_VERSION = "💬 關於"
-var VERSION_NAME = "v1.2"
+var VERSION_NAME = "v1.3"
 var RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
-                     "[1] Customize long short color style." + "\n" + 
-                     "[2] Chart show each order lost above cut lost line." + "\n"
+                     "[1] Change line style." + "\n" + 
+                     "[2] Chart show each order lost percentage above cut lost line." + "\n"
 
 
 INPUT_EACH_ORDER_LOST = input.float(defval = 1.0, title = "每單止損", minval = 1.0, maxval =  10000.0, step =  1, tooltip = "調整每單止損金額", group = GROUP_SETTING) 
