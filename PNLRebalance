@@ -29,8 +29,8 @@ indicator(
 // # ========================================================================= #
 
 // 2. Preference inputs settings
-var float BANK1_AVAL = 52349                    // 台新 (TWD)
-var float BANK2_AVAL = 1857                     // 兆豐 (TWD)  
+var float BANK1_AVAL = 81953                    // 台新 (TWD)
+var float BANK2_AVAL = 11988                     // 兆豐 (TWD)  
 var float BANK3_AVAL = 0                        // 元大 (TWD)
 var float BANK4_AVAL = 10100                    // LineBank (TWD)
 var float MAX_AVAL = 227                        // MAX (USD)
@@ -54,8 +54,6 @@ var float RNDR_POSITION = 29.51                 // RNDR (顆)
 var float RNDR_COST = 49.98                     // RNDR總投入 (USD)
 var float ALI_POSITION = 1518.9                 // ALI (顆)
 var float ALI_COST = 120                        // ALI總投入 (USD)
-var float AGIX_POSITION = 99                    // AGIX (顆)
-var float AGIX_COST = 50.23                     // AGIX總投入 (USD)
 var float FET_POSITION = 37                     // FET (顆)
 var float FET_COST = 19.79                      // FET總投入 (USD)
 var float BNB_POSITION = 0.137                  // BNB (顆)
@@ -523,11 +521,11 @@ if barstate.islast
         nextRow := nextRow + 1
 
         if IS_BTC_DISPLAY
-            cellRebalance(nextRow, "BTC", nowBTCRatio)
+            cellRebalance(nextRow, "₿ BTC", nowBTCRatio)
             nextRow := cellPNL(nextRow, remainBTC, pnlBTC, pnlPercentBTC)
         
         if IS_ETH_DISPLAY
-            cellRebalance(nextRow, "ETH", nowETHRatio)
+            cellRebalance(nextRow, "⟠ ETH", nowETHRatio)
             nextRow := cellPNL(nextRow, remainETH, pnlETH, pnlPercentETH)
         
         if IS_CRO_DISPLAY
