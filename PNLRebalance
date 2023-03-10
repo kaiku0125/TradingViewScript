@@ -234,12 +234,13 @@ var string BNB_SYMBOL = "BINANCE:BNBUSDT"
 var string BIT_SYMBOL = "BYBIT:BITUSDT.P"
 var string DYDX_SYMBOL = "BINANCE:DYDXUSDT"
 
-var color COLOR_MY_WHITE = color.rgb(255, 255, 204) 
-var color COLOR_BG = color.rgb(77, 77, 77)
+var color COLOR_MY_WHITE = color.rgb(255, 255, 204, 30) 
+var color COLOR_BG = color.rgb(77, 77, 77, 30)
 var color DF_TEXT_COLOR = COLOR_MY_WHITE
 // var color DF_TEXT_COLOR = colour.LIGHT_SKY_BLUE()
 var color DF_CELL_COLOR = COLOR_BG
 // var color DF_CELL_COLOR = colour.INDIGO(10)
+var color DF_ASSET_TITLE_COLOR = colour.LIGHT_CYAN(0)
 
 // 4. Variable declartion
 type RecordData
@@ -278,7 +279,7 @@ var float recordAssetsVariation = 0
 var table displayTabel = na
 
 // 5. Define functions
-cell(int columnID, int rowID, string displayText, color textColor, color background, int tp) =>
+cell(int columnID, int rowID, string displayText, color textColor, color background) =>
     table.cell(
      table_id       =  displayTabel, 
      column         =  columnID, 
@@ -286,19 +287,17 @@ cell(int columnID, int rowID, string displayText, color textColor, color backgro
      text           =  displayText, 
      text_color     =  textColor,
      text_size      =  lib.getTableSize(INPUT_DISPLAY_SIZE),
-     bgcolor        =  color.new(color = background, transp = tp) 
+     bgcolor        =  background
      )
 
 cellRebalance(int rowID, string targetSymbol, nowRatio) =>
-    int mTransp = 30
-    cell(0, rowID, targetSymbol, DF_TEXT_COLOR, DF_CELL_COLOR, mTransp)
-    cell(1, rowID, fm.ratioString(nowRatio), DF_TEXT_COLOR, DF_CELL_COLOR, mTransp)
-    cell(2, rowID, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR, mTransp)
+    cell(0, rowID, targetSymbol, DF_ASSET_TITLE_COLOR, DF_CELL_COLOR)
+    cell(1, rowID, fm.ratioString(nowRatio), DF_TEXT_COLOR, DF_CELL_COLOR)
+    cell(2, rowID, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
 
 cellPNL(rowID, remain, pnl, pnlPercent) =>
-    int mTransp = 30
     string remainText = fm.fString(remain, 0)
-    cell(3, rowID, remainText, DF_TEXT_COLOR, DF_CELL_COLOR, mTransp)
+    cell(3, rowID, remainText, DF_TEXT_COLOR, DF_CELL_COLOR)
     
     string pnlText = fm.fString(pnl, 0) 
     string pnlPercentText = fm.ratioString(pnlPercent)
@@ -306,10 +305,9 @@ cellPNL(rowID, remain, pnl, pnlPercent) =>
     cell(
      columnID         =  4, 
      rowID            =  rowID, 
-     displayText      =  stateIcon == lib.DISPLAY_NONE() ? lib.DISPLAY_NONE() : pnlText + " (" + pnlPercentText + ")" + stateIcon, 
+     displayText      =  stateIcon == lib.DISPLAY_NONE() ? lib.DISPLAY_NONE() : pnlText + " [" + pnlPercentText + "] " + stateIcon, 
      textColor        =  stateColor,
-     background       =  DF_CELL_COLOR,
-     tp               =  mTransp
+     background       =  DF_CELL_COLOR
      )
     int nextRow = rowID + 1
     nextRow
@@ -324,14 +322,14 @@ getRebalanceText(string bankName, float bankAval, float rebalance) =>
     float _rebalance = INPUT_DISPLAY_CURRENCY == TWD ? rebalance : rebalance * pUsd_Twd
     float diff = _rebalance - bankAval
     string action =  diff > 0 ? "入金 " : "提領 "
-    string output = bankName + action + fm.fString(math.abs(diff), 0) + " " + TWD
+    string output = bankName + action + fm.fString(math.abs(diff), 0) + "\t" + TWD
     output
 
 getDisplayInfo(float _totalAssets, float _totalSpecultaionAssets, float _speculationPNL, float _speculaionPNLRatio) =>
     string opText = if INPUT_DISPLAY_INFO == INFO_UNSTEADY_ASSETS
         ICON_MONEY + fm.fString(_totalSpecultaionAssets, 0)
     else if INPUT_DISPLAY_INFO == INFO_PNL_ASSETS
-        ICON_MONEY + fm.fString(_speculationPNL, 0) + " (" + fm.ratioString(_speculaionPNLRatio) + ")"
+        ICON_MONEY + fm.fString(_speculationPNL, 0) + "\t[" + fm.ratioString(_speculaionPNLRatio) + "]\t"
     else 
         ICON_MONEY + fm.fString(totalAssets, 0)
     
@@ -449,16 +447,16 @@ cryptoRebalance = totalAssets * cryptoRatio - totalCryptoAssets
 [infoText, infoColor] = getDisplayInfo(totalAssets, totalSpecultaionAssets, speculationPNL, speculaionPNLRatio)
 
 float cashDiffRatio = lib.getRatioDiff(cashRatioNow, cashRatio)
-string cashDiffText = fm.fString(cashRebalance, 0) + " (" + fm.ratioString(cashDiffRatio) + ")"  
+string cashDiffText = fm.fString(cashRebalance, 0) + "\t[" + fm.ratioString(cashDiffRatio) + "]"  
 color cashColor = math.abs(cashDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_TEXT_COLOR
 
 float twStockDiffRatio = lib.getRatioDiff(twStocksRatioNow, twStocksRatio)
-string twStockDiffText = fm.fString(stockRebalance, 0) + " (" + fm.ratioString(twStockDiffRatio) + ")"
+string twStockDiffText = fm.fString(stockRebalance, 0) + "\t[" + fm.ratioString(twStockDiffRatio) + "]"
 string twStockPNLText = getRebalanceText("元大 ", BANK3_AVAL, stockRebalance)
 color stockColor = math.abs(twStockDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_TEXT_COLOR
 
 float cryptoDiffRatio = lib.getRatioDiff(cryptoRatioNow, cryptoRatio)
-string cryptoDiffText = fm.fString(cryptoRebalance, 0) + " (" + fm.ratioString(cryptoDiffRatio) + ")"
+string cryptoDiffText = fm.fString(cryptoRebalance, 0) + "\t[" + fm.ratioString(cryptoDiffRatio) + "]"
 string cryptoPNLText = getRebalanceText("兆豐 ", BANK2_AVAL, cryptoRebalance)
 color cryptoColor = math.abs(cryptoDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_TEXT_COLOR
 string currentTime = str.format_time(timenow, "yyyy/MM/dd HH:mm:ss", "Asia/Taipei")
@@ -478,39 +476,39 @@ if barstate.islast
     
     // Draw table
     //標題
-    cell(0, nextRow, infoText, infoColor, DF_CELL_COLOR, 0)
-    cell(1, nextRow, INPUT_DISPLAY_INFO, DF_TEXT_COLOR, DF_CELL_COLOR, 0)
-    cell(2, nextRow, currentTime, colour.LIGHT_STEEL_BLUE(0), DF_CELL_COLOR, 0)
-    cell(3, nextRow, "總投入", DF_TEXT_COLOR, DF_CELL_COLOR, 0)
-    cell(4, nextRow, fm.fString(allCost, 0) + "(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR, 0)
+    cell(0, nextRow, infoText, infoColor, DF_CELL_COLOR)
+    cell(1, nextRow, INPUT_DISPLAY_INFO, DF_TEXT_COLOR, DF_CELL_COLOR)
+    cell(2, nextRow, currentTime, colour.LIGHT_STEEL_BLUE(0), DF_CELL_COLOR)
+    cell(3, nextRow, "總投入", DF_TEXT_COLOR, DF_CELL_COLOR)
+    cell(4, nextRow, fm.fString(allCost, 0) + "(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR)
     nextRow := nextRow + 1
 
     if INPUT_DISPLAY_TITLE
-        cell(0, nextRow, "項目", DF_TEXT_COLOR, DF_CELL_COLOR, 0)
-        cell(1, nextRow, "占比", DF_TEXT_COLOR, DF_CELL_COLOR, 0)
-        cell(2, nextRow, "再平衡" + "(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR, 0)
-        cell(3, nextRow, "價值" + "(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR, 0)
-        cell(4, nextRow, "PNL" + "(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR, 0)
+        cell(0, nextRow, "項目", DF_TEXT_COLOR, DF_CELL_COLOR)
+        cell(1, nextRow, "占比", DF_TEXT_COLOR, DF_CELL_COLOR)
+        cell(2, nextRow, "再平衡" + "\t(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR)
+        cell(3, nextRow, "價值" + "\t(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR)
+        cell(4, nextRow, "PNL" + "\t(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR)
         nextRow := nextRow + 1
         nextRow := cellBlank(nextRow)
 
     //-----------------現金-----------------//
     if INPUT_DISPLAY_CASH
-        cell(0, nextRow, CASH_TITLE, colour.DARK_GOLDEN_ROD(0), DF_CELL_COLOR, 0)
-        cell(1, nextRow, fm.ratioString(cashRatioNow), DF_TEXT_COLOR, DF_CELL_COLOR, 0)
-        cell(2, nextRow, cashDiffText, cashColor, DF_CELL_COLOR, 0)
-        cell(3, nextRow, fm.fString(totalCash, 0), DF_TEXT_COLOR, DF_CELL_COLOR, 0)
-        cell(4, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR, 0)
+        cell(0, nextRow, CASH_TITLE, colour.DARK_GOLDEN_ROD(0), DF_CELL_COLOR)
+        cell(1, nextRow, fm.ratioString(cashRatioNow), DF_TEXT_COLOR, DF_CELL_COLOR)
+        cell(2, nextRow, cashDiffText, cashColor, DF_CELL_COLOR)
+        cell(3, nextRow, fm.fString(totalCash, 0), DF_TEXT_COLOR, DF_CELL_COLOR)
+        cell(4, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
         nextRow := nextRow + 1
         nextRow := cellBlank(nextRow)
 
     //-----------------台股-----------------//
     if INPUT_DISPLAY_TWSTOCK
-        cell(0, nextRow, TW_STOCKS_TITLE,  colour.DARK_GOLDEN_ROD(0), DF_CELL_COLOR, 0)
-        cell(1, nextRow, fm.ratioString(twStocksRatioNow), DF_TEXT_COLOR, DF_CELL_COLOR, 0)
-        cell(2, nextRow, twStockDiffText, stockColor, DF_CELL_COLOR, 0)
-        cell(3, nextRow, fm.fString(totalStocksAssets, 0), DF_TEXT_COLOR, DF_CELL_COLOR, 0)
-        cell(4, nextRow, twStockPNLText, DF_TEXT_COLOR, DF_CELL_COLOR, 0)
+        cell(0, nextRow, TW_STOCKS_TITLE,  colour.DARK_GOLDEN_ROD(0), DF_CELL_COLOR)
+        cell(1, nextRow, fm.ratioString(twStocksRatioNow), DF_TEXT_COLOR, DF_CELL_COLOR)
+        cell(2, nextRow, twStockDiffText, stockColor, DF_CELL_COLOR)
+        cell(3, nextRow, fm.fString(totalStocksAssets, 0), DF_TEXT_COLOR, DF_CELL_COLOR)
+        cell(4, nextRow, twStockPNLText, DF_TEXT_COLOR, DF_CELL_COLOR)
         nextRow := nextRow + 1
 
         if IS_006208_DISPLAY
@@ -521,19 +519,19 @@ if barstate.islast
 
     //-----------------幣圈-----------------//
     if INPUT_DISPLAY_CRYPTO
-        cell(0, nextRow, CRYPTO_TITLE,  colour.DARK_GOLDEN_ROD(0), DF_CELL_COLOR, 0)
-        cell(1, nextRow, fm.ratioString(cryptoRatioNow), DF_TEXT_COLOR, DF_CELL_COLOR, 0)
-        cell(2, nextRow, cryptoDiffText, cryptoColor, DF_CELL_COLOR, 0)
-        cell(3, nextRow, fm.fString(totalCryptoAssets, 0), DF_TEXT_COLOR, DF_CELL_COLOR, 0)
-        cell(4, nextRow, cryptoPNLText, DF_TEXT_COLOR, DF_CELL_COLOR, 0)
+        cell(0, nextRow, CRYPTO_TITLE,  colour.DARK_GOLDEN_ROD(0), DF_CELL_COLOR)
+        cell(1, nextRow, fm.ratioString(cryptoRatioNow), DF_TEXT_COLOR, DF_CELL_COLOR)
+        cell(2, nextRow, cryptoDiffText, cryptoColor, DF_CELL_COLOR)
+        cell(3, nextRow, fm.fString(totalCryptoAssets, 0), DF_TEXT_COLOR, DF_CELL_COLOR)
+        cell(4, nextRow, cryptoPNLText, DF_TEXT_COLOR, DF_CELL_COLOR)
         nextRow := nextRow + 1
 
         if IS_BTC_DISPLAY
-            cellRebalance(nextRow, "₿ BTC", nowBTCRatio)
+            cellRebalance(nextRow, "₿\tBTC", nowBTCRatio)
             nextRow := cellPNL(nextRow, remainBTC, pnlBTC, pnlPercentBTC)
         
         if IS_ETH_DISPLAY
-            cellRebalance(nextRow, "⟠ ETH", nowETHRatio)
+            cellRebalance(nextRow, "⟠\tETH", nowETHRatio)
             nextRow := cellPNL(nextRow, remainETH, pnlETH, pnlPercentETH)
         
         if IS_CRO_DISPLAY
@@ -623,7 +621,7 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2023, 3, 2, -286968))
         array.push(rdArray, newData(2023, 3, 3, -298380))
         array.push(rdArray, newData(2023, 3, 7, -297185))
-        array.push(rdArray, newData(2023, 3, 10, -317646))
+        array.push(rdArray, newData(2023, 3, 10, -320464))
 
 plot(
  series       =  recordAssetsVariation,
