@@ -34,7 +34,7 @@ var float BANK2_AVAL = 1988                                 // 兆豐 (TWD)
 var float BANK3_AVAL = 0                                    // 元大 (TWD)
 var float BANK4_AVAL = 10100                                // LineBank (TWD)
 var float MAX_AVAL = 8                                      // MAX (USD)
-var float EXCHANGE_USD = 50 + 0 + 94                       //bybit + binance + 派網
+var float EXCHANGE_USD = 50 + 0 + 94                        // bybit + binance + 派網
 
 var float VISA_AVAL = 1900                                  // Visa (USD)
 
@@ -75,6 +75,7 @@ var float ALL_CRYPTO_COST = 553476                          //幣圈成本
 
 var string USD = "美金"
 var string TWD = "台幣"
+var string SYMBOLL = "【】"
 
 var string SIZE_TINY = "極小"
 var string SIZE_SMALL = "小"
@@ -94,14 +95,14 @@ var string INLINE_BTC = "04"
 var string INLINE_ETH = "05"
 var string INLINE_CRO = "06"
 var string INLINE_MATIC = "07"
-var string INLINE_ILV = "08"
-var string INLINE_RNDR = "09"
-var string INLINE_ALI = "10"
-var string INLINE_AGIX = "11"
-var string INLINE_FET = "12"
-var string INLINE_BNB = "13"
-var string INLINE_BIT = "14"
-var string INLINE_DYDX = "15"
+var string INLINE_BNB = "08"
+var string INLINE_BIT = "09"
+var string INLINE_DYDX = "10"
+var string INLINE_ALI = "11"
+var string INLINE_AGIX = "12"
+var string INLINE_FET = "13"
+var string INLINE_ILV = "14"
+var string INLINE_RNDR = "15"
 var string INLINE_OTHER = "16"
 var string INLINE_USDT = "17"
 
@@ -192,8 +193,8 @@ MY_DYDX_COST = input.float(defval = DYDX_COST, title = CRYPTO_COST_TITLE, inline
 IS_OTHER_DISPLAY = input.bool(defval = true, title = "垃圾幣", inline = INLINE_OTHER, group = GROUP_ASSETS) 
 MY_CHZ_POSITION = 443
 MY_CHZ_COST = 100
-MY_STEPN_GMT = 2 * 95 + 1 * 250
-MY_GMT_POSITION = 302 + 351.6 + MY_STEPN_GMT
+MY_STEPN_GMT = 1 * 95 + 2 * 265 + 70 + 70 + 178 * 2
+MY_GMT_POSITION = MY_STEPN_GMT
 MY_GMT_COST = 100 + 120.9
 MY_AXS_POSITION = 2.27 
 MY_AXS_COST = 133
@@ -279,6 +280,14 @@ var float recordAssetsVariation = 0
 var table displayTabel = na
 
 // 5. Define functions
+getPNLText(string _stateIcon, string _pnlText, string _pnlPercentText) =>
+    string output = lib.DISPLAY_NONE()
+
+    if _stateIcon != lib.DISPLAY_NONE() 
+        output := "\t" + _pnlText + "\t【" + _pnlPercentText + "】" + _stateIcon
+    
+    output
+
 cell(int columnID, int rowID, string displayText, color textColor, color background) =>
     table.cell(
      table_id       =  displayTabel, 
@@ -305,7 +314,7 @@ cellPNL(rowID, remain, pnl, pnlPercent) =>
     cell(
      columnID         =  4, 
      rowID            =  rowID, 
-     displayText      =  stateIcon == lib.DISPLAY_NONE() ? lib.DISPLAY_NONE() : pnlText + " [" + pnlPercentText + "] " + stateIcon, 
+     displayText      =  getPNLText(stateIcon, pnlText, pnlPercentText), 
      textColor        =  stateColor,
      background       =  DF_CELL_COLOR
      )
@@ -329,7 +338,7 @@ getDisplayInfo(float _totalAssets, float _totalSpecultaionAssets, float _specula
     string opText = if INPUT_DISPLAY_INFO == INFO_UNSTEADY_ASSETS
         ICON_MONEY + fm.fString(_totalSpecultaionAssets, 0)
     else if INPUT_DISPLAY_INFO == INFO_PNL_ASSETS
-        ICON_MONEY + fm.fString(_speculationPNL, 0) + "\t[" + fm.ratioString(_speculaionPNLRatio) + "]\t"
+        ICON_MONEY + fm.fString(_speculationPNL, 0) + "\t【" + fm.ratioString(_speculaionPNLRatio) + "】\t"
     else 
         ICON_MONEY + fm.fString(totalAssets, 0)
     
@@ -542,22 +551,6 @@ if barstate.islast
             cellRebalance(nextRow, "MATIC", nowMATICRatio)
             nextRow := cellPNL(nextRow, remainMATIC, pnlMATIC, pnlPercentMATIC)
         
-        if IS_ILV_DISPLAY
-            cellRebalance(nextRow, "ILV", nowILVRatio)
-            nextRow := cellPNL(nextRow, remainILV, pnlILV, pnlPercentILV)
-
-        if IS_RNDR_DISPLAY
-            cellRebalance(nextRow, "RNDR", nowRNDRRatio)
-            nextRow := cellPNL(nextRow, remainRNDR, pnlRNDR, pnlPercentRNDR)
-
-        if IS_ALI_DISPLAY
-            cellRebalance(nextRow, "ALI", nowALIRatio)
-            nextRow := cellPNL(nextRow, remainALI, pnlALI, pnlPercentALI)
-
-        if IS_FET_DISPLAY
-            cellRebalance(nextRow, "FET", nowFETRatio)
-            nextRow := cellPNL(nextRow, remainFET, pnlFET, pnlPercentFET)
-
         if IS_BNB_DISPLAY
             cellRebalance(nextRow, "BNB", nowBNBRatio)
             nextRow := cellPNL(nextRow, remainBNB, pnlBNB, pnlPercentBNB)
@@ -565,10 +558,26 @@ if barstate.islast
         if IS_BIT_DISPLAY
             cellRebalance(nextRow, "BIT", nowBITRatio)
             nextRow := cellPNL(nextRow, remainBIT, pnlBIT, pnlPercentBIT)
-        
+
         if IS_DYDX_DISPLAY
             cellRebalance(nextRow, "DYDX", nowDYDXRatio)
             nextRow := cellPNL(nextRow, remainDYDX, pnlDYDX, pnlPercentDYDX)
+
+        if IS_ALI_DISPLAY
+            cellRebalance(nextRow, "ALI", nowALIRatio)
+            nextRow := cellPNL(nextRow, remainALI, pnlALI, pnlPercentALI)
+
+        if IS_FET_DISPLAY
+            cellRebalance(nextRow, "FET", nowFETRatio)
+            nextRow := cellPNL(nextRow, remainFET, pnlFET, pnlPercentFET)   
+
+        if IS_ILV_DISPLAY
+            cellRebalance(nextRow, "ILV", nowILVRatio)
+            nextRow := cellPNL(nextRow, remainILV, pnlILV, pnlPercentILV)
+
+        if IS_RNDR_DISPLAY
+            cellRebalance(nextRow, "RNDR", nowRNDRRatio)
+            nextRow := cellPNL(nextRow, remainRNDR, pnlRNDR, pnlPercentRNDR)
 
         if IS_OTHER_DISPLAY
             cellRebalance(nextRow, "垃圾幣", nowOthersRatio)
@@ -622,6 +631,15 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2023, 3, 3, -298380))
         array.push(rdArray, newData(2023, 3, 7, -297185))
         array.push(rdArray, newData(2023, 3, 10, -320464))
+        array.push(rdArray, newData(2023, 3, 14, -290237))
+        array.push(rdArray, newData(2023, 3, 15, -281158))
+        array.push(rdArray, newData(2023, 3, 17, -281658))
+
+
+
+
+
+        
 
 plot(
  series       =  recordAssetsVariation,
