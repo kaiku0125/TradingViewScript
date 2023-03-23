@@ -29,6 +29,11 @@ indicator(
 // # ========================================================================= #
 
 // 2. Preference inputs settings
+// costCal(cost, sold, bought) =>
+//     float output = math.ceil(cost * (1 - (sold / bought)))
+    
+//     output
+
 var float BANK1_AVAL = 77546                                // 台新 (TWD)
 var float BANK2_AVAL = 1988                                 // 兆豐 (TWD)  
 var float BANK3_AVAL = 0                                    // 元大 (TWD)
@@ -38,8 +43,12 @@ var float EXCHANGE_USD = 50 + 0 + 94                        // bybit + binance +
 
 var float VISA_AVAL = 1900                                  // Visa (USD)
 
-var float _006208_POSITION = 400                            // 006208 (股)
+var float _006208_POSITION_BOUGHT = 400                     // 006208 (股)
 var float _006208_COST = 27780                              // 006208總投入 (TWD)
+var float _006208_POSITION_SOLD = 100
+var float _006208_INCOME = 7040
+var float INPUT_006208_POSITION = _006208_POSITION_BOUGHT - _006208_POSITION_SOLD
+var float INPUT_006208_COST = math.ceil(_006208_COST * (1 - (_006208_POSITION_SOLD / _006208_POSITION_BOUGHT))) 
 
 var float PIONEX_BTC_POSITION = 0.005 + 0.006862            //網格 + 幣幣天地
 var float PIONEX_BTC_COST = 100 + 152
@@ -143,8 +152,8 @@ INPUT_MAX = input.float(defval = MAX_AVAL, title = "MAX(U)", group = GROUP_CASH)
 INPUT_CRYPTO_COM_VISA = input.float(defval = VISA_AVAL, title = "幣圈Visa(U)", group = GROUP_EXCHANGE)
 
 IS_006208_DISPLAY = input.bool(defval = true, title = "006208 :", inline = INLINE_006208, group = GROUP_ASSETS) 
-MY_006208_POSITION = input.float(defval = _006208_POSITION, title = POSITION_TITLE, inline = INLINE_006208, group = GROUP_ASSETS)
-MY_006208_COST = input.float(defval = _006208_COST, title = STOCK_COST_TITLE, inline = INLINE_006208, group = GROUP_ASSETS)
+MY_006208_POSITION_BOUGHT = input.float(defval = INPUT_006208_POSITION, title = POSITION_TITLE, inline = INLINE_006208, group = GROUP_ASSETS)
+MY_006208_COST = input.float(defval = INPUT_006208_COST, title = STOCK_COST_TITLE, inline = INLINE_006208, group = GROUP_ASSETS)
 
 IS_BTC_DISPLAY = input.bool(defval = true, title = "BTC :", inline = INLINE_BTC, group = GROUP_ASSETS) 
 MY_BTC_POSITION = input.float(defval = BTC_POSITION, title = POSITION_TITLE, inline = INLINE_BTC, group = GROUP_ASSETS) 
@@ -305,12 +314,13 @@ cellRebalance(int rowID, string targetSymbol, nowRatio) =>
     cell(2, rowID, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
 
 cellPNL(rowID, remain, pnl, pnlPercent) =>
+    float mPnlPercent = na(pnlPercent) ? 0 : pnlPercent
     string remainText = fm.fString(remain, 0)
     cell(3, rowID, remainText, DF_TEXT_COLOR, DF_CELL_COLOR)
     
-    string pnlText = fm.fString(pnl, 0) 
-    string pnlPercentText = fm.ratioString(pnlPercent)
-    [stateIcon, stateColor] = lib.ratioStateJudge(pnlPercent * 100, colour.LIME_GREEN(0))
+    string pnlText = pnl == 0 ? lib.DISPLAY_NONE() : fm.fString(pnl, 0) 
+    string pnlPercentText = mPnlPercent == 0 ? lib.DISPLAY_NONE() : fm.ratioString(mPnlPercent)
+    [stateIcon, stateColor] = lib.ratioStateJudge(mPnlPercent * 100, colour.LIME_GREEN(0))
     cell(
      columnID         =  4, 
      rowID            =  rowID, 
@@ -320,6 +330,11 @@ cellPNL(rowID, remain, pnl, pnlPercent) =>
      )
     int nextRow = rowID + 1
     nextRow
+
+cellIncome(rowID, _income, _cost, input_symbol_cost) =>
+    float settlement = _income - (_cost - input_symbol_cost)
+    string settleText = fm.fString(settlement, 0)
+    cell(5, rowID, settleText, DF_TEXT_COLOR, DF_CELL_COLOR)
 
 cellBlank(int rowID) => 
     for i = 0 to 4
@@ -402,7 +417,7 @@ cryptoRatio = INPUT_CRYPTO_RATIO / 100 * specultaionRatio
 twStocksRatio = INPUT_TW_STOCKS_RATIO / 100 * specultaionRatio
 
 totalCash = (INPUT_BANK1 + INPUT_BANK2 + INPUT_BANK3 + INPUT_BANK4) * twdEx + INPUT_MAX * usdEx
-totalStocksAssets = (p006208 * MY_006208_POSITION) * twdEx
+totalStocksAssets = (p006208 * MY_006208_POSITION_BOUGHT) * twdEx
 
 mainCryptoAssets  = pBTC * MY_BTC_POSITION
 mainCryptoAssets += pETH * MY_ETH_POSITION
@@ -437,7 +452,7 @@ cashRebalance = totalAssets * cashRatio - totalCash
 stockRebalance = totalAssets * twStocksRatio - totalStocksAssets
 cryptoRebalance = totalAssets * cryptoRatio - totalCryptoAssets
 
-[remain006208, pnl006208, pnlPercent006208, now002608Ratio] = lib.calDefault(p006208 * twdEx, MY_006208_POSITION, MY_006208_COST * twdEx, totalAssets)
+[remain006208, pnl006208, pnlPercent006208, now002608Ratio] = lib.calDefault(p006208 * twdEx, MY_006208_POSITION_BOUGHT, MY_006208_COST * twdEx, totalAssets)
 [remainBTC, pnlBTC, pnlPercentBTC, nowBTCRatio] = lib.calDefault(pBTC * usdEx, MY_BTC_POSITION, MY_BTC_COST * usdEx, totalAssets)
 [remainETH, pnlETH, pnlPercentETH, nowETHRatio] = lib.calDefault(pETH * usdEx, MY_ETH_POSITION, MY_ETH_COST * usdEx, totalAssets)
 [remainCRO, pnlCRO, pnlPercentCRO, nowCRORatio] = lib.calDefault(pCRO * usdEx, MY_CRO_POSITION, MY_CRO_COST * usdEx, totalAssets)
@@ -490,6 +505,7 @@ if barstate.islast
     cell(2, nextRow, currentTime, colour.LIGHT_STEEL_BLUE(0), DF_CELL_COLOR)
     cell(3, nextRow, "總投入", DF_TEXT_COLOR, DF_CELL_COLOR)
     cell(4, nextRow, fm.fString(allCost, 0) + "(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR)
+    cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
     nextRow := nextRow + 1
 
     if INPUT_DISPLAY_TITLE
@@ -498,6 +514,7 @@ if barstate.islast
         cell(2, nextRow, "再平衡" + "\t(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR)
         cell(3, nextRow, "價值" + "\t(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR)
         cell(4, nextRow, "PNL" + "\t(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR)
+        cell(5, nextRow, "已結盈虧" + "\t(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR)
         nextRow := nextRow + 1
         nextRow := cellBlank(nextRow)
 
@@ -508,6 +525,7 @@ if barstate.islast
         cell(2, nextRow, cashDiffText, cashColor, DF_CELL_COLOR)
         cell(3, nextRow, fm.fString(totalCash, 0), DF_TEXT_COLOR, DF_CELL_COLOR)
         cell(4, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
+        cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
         nextRow := nextRow + 1
         nextRow := cellBlank(nextRow)
 
@@ -522,6 +540,7 @@ if barstate.islast
 
         if IS_006208_DISPLAY
             cellRebalance(nextRow, "富邦50", now002608Ratio)
+            cellIncome(nextRow, _006208_INCOME * twdEx, _006208_COST * twdEx, INPUT_006208_COST * twdEx)
             nextRow := cellPNL(nextRow, remain006208, pnl006208, pnlPercent006208)
 
         nextRow := cellBlank(nextRow)
