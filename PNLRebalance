@@ -34,19 +34,19 @@ indicator(
     
 //     output
 
-var float BANK1_AVAL = 71522                                // 台新 (TWD)
-var float BANK2_AVAL = 1988                                 // 兆豐 (TWD)  
+var float BANK1_AVAL = 78470                                // 台新 (TWD)
+var float BANK2_AVAL = 1486                                 // 兆豐 (TWD)  
 var float BANK3_AVAL = 0                                    // 元大 (TWD)
 var float BANK4_AVAL = 10100                                // LineBank (TWD)
 var float MAX_AVAL = 8                                      // MAX (USD)
-var float EXCHANGE_USD = 50 + 0 + 94                        // bybit + binance + 派網
+var float EXCHANGE_USD = 50 + 41 + 96                       // bybit + binance + 派網
 
-var float VISA_AVAL = 1900                                  // Visa (USD)
+var float VISA_AVAL = 2100                                  // Visa (USD)
 
 var float _006208_POSITION_BOUGHT = 400                     // 006208 (股)
 var float _006208_COST = 27780                              // 006208總投入 (TWD)
-var float _006208_POSITION_SOLD = 100
-var float _006208_INCOME = 7040
+var float _006208_POSITION_SOLD = 0
+var float _006208_INCOME = 0
 var float INPUT_006208_POSITION = _006208_POSITION_BOUGHT - _006208_POSITION_SOLD
 var float INPUT_006208_COST = math.ceil(_006208_COST * (1 - (_006208_POSITION_SOLD / _006208_POSITION_BOUGHT))) 
 
@@ -68,8 +68,8 @@ var float ILV_POSITION = 1.058                              // ILV (顆)
 var float ILV_COST = 99.89                                  // ILV總投入 (USD)
 var float RNDR_POSITION = 29.51                             // RNDR (顆)
 var float RNDR_COST = 49.98                                 // RNDR總投入 (USD)
-var float ALI_POSITION = 1518.9                             // ALI (顆)
-var float ALI_COST = 120                                    // ALI總投入 (USD)
+var float ALI_POSITION = 4616.57                            // ALI (顆)
+var float ALI_COST = 218.58                                 // ALI總投入 (USD)
 var float FET_POSITION = 37                                 // FET (顆)
 var float FET_COST = 19.79                                  // FET總投入 (USD)
 var float BNB_POSITION = 0.208 + 0.005                      // BNB (顆)
@@ -78,12 +78,12 @@ var float BIT_POSITION = 73.03                              // BIT (顆)
 var float BIT_COST = 41.99                                  // BIT總投入 (USD)
 var float DYDX_POSITION = 18.18                             // DYDX (顆)
 var float DYDX_COST = 49.98                                 // DYDX總投入 (USD)
-var float STEPN_GMT = 1* 109 + 2* 298 + 68 + 67 + 2* 172    // GMT (顆)
-var float GMT_POSITION = STEPN_GMT                          
-var float GMT_COST = 3500 + 100 + 120.9                     //GMT總投入(USD)
+var float STEPN_GMT = 11* 109 + 1* 298 + 279 + 356 + 2* 172 // GMT (顆)
+var float GMT_POSITION = STEPN_GMT                         
+var float GMT_COST = 4500 + 100 + 120.9 + 224 + 423         //GMT總投入(USD)
 
 var float ALL_STOCKS_COST = _006208_COST                    //台股成本
-var float ALL_CRYPTO_COST = 553476                          //幣圈成本
+var float ALL_CRYPTO_COST = 584776                          //幣圈成本
 
 var string USD = "美金"
 var string TWD = "台幣"
@@ -144,8 +144,8 @@ INPUT_DISPLAY_INFO = input.string(defval = INFO_ALL_ASSETS, title = "資產資�
 
 INPUT_SPECULATION_RATIO = input.float(defval = 75, title = "資產(%)", inline = "01", group = GROUP_RATIO) 
 INPUT_CASH_RATIO = input.float(defval = 25, title = "現金(%)", inline = "01", group = GROUP_RATIO) 
-INPUT_CRYPTO_RATIO = input.float(defval = 80, title = "幣圈(%)", inline = "02", group = GROUP_ASSETS_RATIO)
-INPUT_TW_STOCKS_RATIO = input.float(defval = 20, title = "台股(%)", inline = "02", group = GROUP_ASSETS_RATIO)
+INPUT_CRYPTO_RATIO = input.float(defval = 90, title = "幣圈(%)", inline = "02", group = GROUP_ASSETS_RATIO)
+INPUT_TW_STOCKS_RATIO = input.float(defval = 10, title = "台股(%)", inline = "02", group = GROUP_ASSETS_RATIO)
 
 INPUT_BANK1 = input.float(defval = BANK1_AVAL, title = "台新(TWD)", group = GROUP_CASH) 
 INPUT_BANK2 = input.float(defval = BANK2_AVAL, title = "兆豐(TWD)", group = GROUP_CASH) 
@@ -489,7 +489,9 @@ float cryptoDiffRatio = lib.getRatioDiff(cryptoRatioNow, cryptoRatio)
 string cryptoDiffText = fm.fString(cryptoRebalance, 0) + "\t【" + fm.ratioString(cryptoDiffRatio) + "】"
 string cryptoPNLText = getRebalanceText("兆豐 ", BANK2_AVAL, cryptoRebalance)
 color cryptoColor = math.abs(cryptoDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_TEXT_COLOR
-string currentTime = str.format_time(timenow, "yyyy/MM/dd HH:mm:ss", "Asia/Taipei")
+string currentDate = str.format_time(timenow, "yyyy/MM/dd", "Asia/Taipei")
+string currentTime = str.format_time(timenow, "HH:mm:ss", "Asia/Taipei")
+
 
 if barstate.islast
     int nextRow = 0
@@ -508,10 +510,10 @@ if barstate.islast
     //標題
     cell(0, nextRow, infoText, infoColor, DF_CELL_COLOR)
     cell(1, nextRow, "☜\t" + INPUT_DISPLAY_INFO, DF_TEXT_COLOR, DF_CELL_COLOR)
-    cell(2, nextRow, currentTime, colour.LIGHT_STEEL_BLUE(0), DF_CELL_COLOR)
-    cell(3, nextRow, "總投入\t☞", DF_TEXT_COLOR, DF_CELL_COLOR)
-    cell(4, nextRow, fm.fString(allCost, 0) + "(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR)
-    cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
+    cell(2, nextRow, currentDate, colour.LIGHT_STEEL_BLUE(0), DF_CELL_COLOR)
+    cell(3, nextRow, currentTime, colour.LIGHT_STEEL_BLUE(0), DF_CELL_COLOR)
+    cell(4, nextRow, "總投入\t☞" + "(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR)
+    cell(5, nextRow, fm.fString(allCost, 0), DF_TEXT_COLOR, DF_CELL_COLOR)
     nextRow := nextRow + 1
 
     if INPUT_DISPLAY_TITLE
@@ -665,11 +667,13 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2023, 3, 17, -281658))
         array.push(rdArray, newData(2023, 3, 18, -267755))
         array.push(rdArray, newData(2023, 3, 22, -270501))
-
-
-
-
-        
+        array.push(rdArray, newData(2023, 4, 3, -275587))
+        array.push(rdArray, newData(2023, 4, 5, -267601))
+        array.push(rdArray, newData(2023, 4, 7, -273668))
+        array.push(rdArray, newData(2023, 4, 11, -268450))
+        array.push(rdArray, newData(2023, 4, 12, -266281))
+        array.push(rdArray, newData(2023, 4, 14, -259939))
+        array.push(rdArray, newData(2023, 4, 17, -262168))
 
 plot(
  series       =  recordAssetsVariation,
