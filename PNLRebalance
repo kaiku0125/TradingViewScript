@@ -31,8 +31,8 @@ indicator(
 // 2. Preference inputs settings
 var float CASH_RATIO = 25
 var float SPECULATION_RATIO = 75
-var float CRYPTO_RATIO = 45
-var float TW_STOCKS_RATIO = 55
+var float CRYPTO_RATIO = 60
+var float TW_STOCKS_RATIO = 40
 
 var float _006208_RATIO = 80
 var float _00631L_RATIO = 20
@@ -43,19 +43,19 @@ var float CRO_CRYPTO_RATIO = 3
 var float ADA_CRYPTO_RATIO = 6
 var float MATIC_CRYPTO_RATIO = 6
 
-var float BANK1_AVAL = 379314 + 50000                                            // LineBank (TWD)
-var float BANK2_AVAL = 290000                                                    // 將來 (TWD)  
-var float BANK3_AVAL = 274264                                                    // 台新 (TWD)
-var float BANK4_AVAL = 0                                                         // 樂天 (TWD)
-var float MAX_AVAL = 1619                                                        // MAX (USD)
-var float EXCHANGE_USD = 130 + 0 + 0 + 390                                       // bybit + binance + 派網 + OKX
+var float BANK1_AVAL = 66924 + 50000                                             // LineBank (TWD)
+var float BANK2_AVAL = 290204                                                    // 將來 (TWD)  
+var float BANK3_AVAL = 300500                                                    // 台新 (TWD)
+var float BANK4_AVAL = 200                                                       // 樂天 (TWD)
+var float MAX_AVAL = 53                                                          // MAX (USD)
+var float EXCHANGE_USD = 309 + 1971 + 0 + 0                                     // bybit + binance + 派網 + OKX
 
-var float VISA_AVAL = 3144                                                      // Visa (USD) 出金
+var float VISA_AVAL = 2722                                                      // Visa (USD) 出金
 
-var float DEBT = -1000000                                                        // 負債
+var float DEBT = -989125                                                        // 負債
 
-var float _006208_POSITION_BOUGHT = 400 + 900                                   // 006208 (股)
-var float _006208_COST = 27780 + 65348                                          // 006208總投入 (TWD)
+var float _006208_POSITION_BOUGHT = 400 + 3000                                   // 006208 (股)
+var float _006208_COST = 27780 + 214179                                          // 006208總投入 (TWD)
 var float _006208_POSITION_SOLD = 400
 var float _006208_INCOME = 28128
 
@@ -64,19 +64,19 @@ var float _00631L_COST = 0
 var float _00631L_POSITION_SOLD = 1
 var float _00631L_INCOME = 0
 
-var float PIONEX_BTC_POSITION = 0.005 + 0.005299                                //網格 + 幣幣天地
-var float PIONEX_BTC_COST = 100 + 214
-var float MANUAL_BTC_POSITION = 0.1612
-var float MANUAL_BTC_COST = 3851
+var float PIONEX_BTC_POSITION = 0.003471                                        //網格 + 幣幣天地
+var float PIONEX_BTC_COST = 150 + 214
+var float MANUAL_BTC_POSITION = 0.2085                                           //倉位
+var float MANUAL_BTC_COST = 5401                                                //成本
 var float BTC_POSITION_BOUGHT = MANUAL_BTC_POSITION + PIONEX_BTC_POSITION       // btc (顆)
 var float BTC_COST = MANUAL_BTC_COST + PIONEX_BTC_COST                          // btc總投入 (USD)
 var float BTC_POSITION_SOLD = 0.00676
 var float BTC_INCOME = 182.78
 
-var float PIONEX_ETH_POSITION = 0.06539 + 0.3647                                //網格 + 幣幣天地
-var float PIONEX_ETH_COST = 100 + 480 
-var float MANUAL_ETH_COST = 871.95
-var float MANUAL_ETH_POSITION = 0.516
+var float PIONEX_ETH_POSITION = 0.6131                                          //網格 + 幣幣天地
+var float PIONEX_ETH_COST = 150 + 480 
+var float MANUAL_ETH_POSITION = 0.9597                                          //倉位
+var float MANUAL_ETH_COST = 1651                                                //成本       
 var float ETH_POSITION_BOUGHT = MANUAL_ETH_POSITION + PIONEX_ETH_POSITION       // eth (顆)         
 var float ETH_COST = MANUAL_ETH_COST + PIONEX_ETH_COST                          // eth總投入 (USD)
 var float ETH_POSITION_SOLD = 0
@@ -84,10 +84,10 @@ var float ETH_INCOME = 0
 
 var float CRO_POSITION = 22952                                      // cro (顆)
 var float CRO_COST = 3632                                           // cro總投入 (USD)
-var float MATIC_POSITION = 368                                      // matic (顆)
-var float MATIC_COST = 365.8                                        // matic總投入 (USD)
-var float ADA_POSITION = 1048                                       // ada (顆)
-var float ADA_COST = 318.74                                         // ada 總投入 (USD)
+var float MATIC_POSITION = 837                                      // matic (顆)
+var float MATIC_COST = 654                                          // matic總投入 (USD)
+var float ADA_POSITION = 2080                                       // ada (顆)
+var float ADA_COST = 607                                            // ada 總投入 (USD)
 var float ILV_POSITION = 1.058                                      // ILV (顆)
 var float ILV_COST = 99.89                                          // ILV總投入 (USD)
 var float ALI_POSITION = 4616.57                                    // ALI (顆)
@@ -100,12 +100,12 @@ var float BIT_POSITION = 73.03                                      // BIT (顆)
 var float BIT_COST = 41.99                                          // BIT總投入 (USD)
 var float DYDX_POSITION = 18.18                                     // DYDX (顆)
 var float DYDX_COST = 49.98                                         // DYDX總投入 (USD)
-var float STEPN_GMT = 30 * 140 + 349 + 319 + 2 * 235                // GMT (顆)
+var float STEPN_GMT = 2200 + 15 * 140 + 349 + 319 + 2 * 235         // GMT (顆)
 var float GMT_POSITION = STEPN_GMT                         
 var float GMT_COST = 4500 + 100 + 120.9 + 224 + 423 + 513           //GMT總投入(USD)
 
 var float ALL_STOCKS_COST = _006208_COST + _00631L_COST             //台股成本
-var float ALL_CRYPTO_COST = 789876                                   //幣圈成本
+var float ALL_CRYPTO_COST = 889876                                   //幣圈成本
 
 var string USD = "美金"
 var string TWD = "台幣"
@@ -685,6 +685,7 @@ if barstate.islast
     cell(4, nextRow, "總負債\t👉", DF_TEXT_COLOR, DF_CELL_COLOR)
     cell(5, nextRow, fm.fString(allDedt, 0) + "(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR)
     nextRow := nextRow + 1
+    nextRow := cellBlank(nextRow) // 空行
 
     if INPUT_DISPLAY_TITLE
         cell(0, nextRow, "項目", DF_TEXT_COLOR, DF_CELL_COLOR)
@@ -921,6 +922,7 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2023, 9, 20, -362643))
         array.push(rdArray, newData(2023, 9, 27, -370787))
         array.push(rdArray, newData(2023, 10, 10, -370165))
+        array.push(rdArray, newData(2023, 10, 24, -304575))
 
 plot(
  series       =  recordAssetsVariation,
