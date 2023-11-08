@@ -40,11 +40,11 @@ var float _00631L_RATIO = 20
 var float BTC_CRYPTO_RATIO = 50
 var float ETH_CRYPTO_RATIO = 25
 var float CRO_CRYPTO_RATIO = 3
-var float ADA_CRYPTO_RATIO = 6
-var float MATIC_CRYPTO_RATIO = 4
-var float LINK_CRYPTO_RATIO = 4
-var float ARB_CRYPTO_RATIO = 4
-var float OP_CRYPTO_RATIO =  4
+var float ADA_CRYPTO_RATIO = 8
+var float MATIC_CRYPTO_RATIO = 5
+var float LINK_CRYPTO_RATIO = 3
+var float ARB_CRYPTO_RATIO = 3
+var float OP_CRYPTO_RATIO =  3
 
 var float BANK1_AVAL = 66924 + 50000                                             // LineBank (TWD)
 var float BANK2_AVAL = 290204                                                    // 將來 (TWD)  
@@ -690,6 +690,27 @@ string titleLINKRatio = "\t【" + fm.fString(linkRatio , 0) + "%】"
 string titleARBRatio = "\t【" + fm.fString(arbRatio , 0) + "%】"
 string titleOPRatio = "\t【" + fm.fString(opRatio , 0) + "%】"
 
+float btcDcaDay = btcRebalanceValue / (40 * usdEx)
+string titleBtcDcaDay = "\t(DCA\t" + fm.fString(btcDcaDay , 0) + "天)"
+
+float ethDcaDay = ethRebalanceValue / (20 * usdEx)
+string titleEthDcaDay = "\tDCA\t(" + fm.fString(ethDcaDay , 0) + "天)"
+
+float adaDcaDay = adaRebalanceValue / (10 * usdEx)
+string titleAdaDcaDay = "\tDCA\t(" + fm.fString(adaDcaDay , 0) + "天)"
+
+float maticDcaDay = maticRebalanceValue / (10 * usdEx)
+string titleMaticDcaDay = "\tDCA\t(" + fm.fString(maticDcaDay , 0) + "天)"
+
+float linkDcaDay = linkRebalanceValue / (3 * usdEx)
+string titleLinkDcaDay = "\tDCA\t(" + fm.fString(linkDcaDay , 0) + "天)"
+
+float arbDcaDay = arbRebalanceValue / (3 * usdEx)
+string titleArbDcaDay = "\tDCA\t(" + fm.fString(arbDcaDay , 0) + "天)"
+
+float opDcaDay = opRebalanceValue / (3 * usdEx)
+string titleOpDcaDay = "\tDCA\t(" + fm.fString(opDcaDay , 0) + "天)"
+
 if barstate.islast
     // ratioTabel := table.new(
     //  position       =  position.middle_left,
@@ -798,12 +819,12 @@ if barstate.islast
         nextRow := nextRow + 1
 
         if IS_BTC_DISPLAY
-            cellRebalance(nextRow, "₿\tBTC" + titleBTCRatio, nowBTCRatio, btcRebalaneText)
+            cellRebalance(nextRow, "₿\tBTC" + titleBTCRatio + titleBtcDcaDay, nowBTCRatio, btcRebalaneText)
             cellIncome(nextRow, BTC_INCOME * usdEx, BTC_COST * usdEx, INPUT_BTC_COST * usdEx)
             nextRow := cellPNL(nextRow, remainBTC, pnlBTC, pnlPercentBTC)
         
         if IS_ETH_DISPLAY
-            cellRebalance(nextRow, "⟠\tETH" + titleETHRatio, nowETHRatio, ethRebalaneText)
+            cellRebalance(nextRow, "⟠\tETH" + titleETHRatio + titleEthDcaDay, nowETHRatio, ethRebalaneText)
             cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
             nextRow := cellPNL(nextRow, remainETH, pnlETH, pnlPercentETH)
         
@@ -813,27 +834,27 @@ if barstate.islast
             nextRow := cellPNL(nextRow, remainCRO, pnlCRO, pnlPercentCRO)
         
         if IS_MATIC_DISPLAY
-            cellRebalance(nextRow, "MATIC" + titleMATICRatio, nowMATICRatio, maticRebalaneText)
+            cellRebalance(nextRow, "MATIC" + titleMATICRatio + titleMaticDcaDay, nowMATICRatio, maticRebalaneText)
             cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
             nextRow := cellPNL(nextRow, remainMATIC, pnlMATIC, pnlPercentMATIC)
 
         if IS_ADA_DISPLAY
-            cellRebalance(nextRow, "ADA" + titleADARatio, nowADARatio, adaRebalaneText)
+            cellRebalance(nextRow, "ADA" + titleADARatio + titleAdaDcaDay, nowADARatio, adaRebalaneText)
             cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
             nextRow := cellPNL(nextRow, remainADA, pnlADA, pnlPercentADA)
 
         if IS_LINK_DISPLAY
-            cellRebalance(nextRow, "LINK" + titleLINKRatio, nowLINKRatio, linkRebalaneText)
+            cellRebalance(nextRow, "LINK" + titleLINKRatio + titleLinkDcaDay, nowLINKRatio, linkRebalaneText)
             cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
             nextRow := cellPNL(nextRow, remainLINK, pnlLINK, pnlPercentLINK)
   
         if IS_ARB_DISPLAY
-            cellRebalance(nextRow, "ARB" + titleARBRatio, nowARBRatio, arbRebalaneText)
+            cellRebalance(nextRow, "ARB" + titleARBRatio + titleArbDcaDay, nowARBRatio, arbRebalaneText)
             cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
             nextRow := cellPNL(nextRow, remainARB, pnlARB, pnlPercentARB)
 
         if IS_OP_DISPLAY
-            cellRebalance(nextRow, "OP" + titleOPRatio, nowOPRatio, opRebalaneText)
+            cellRebalance(nextRow, "OP" + titleOPRatio + titleOpDcaDay, nowOPRatio, opRebalaneText)
             cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
             nextRow := cellPNL(nextRow, remainOP, pnlOP, pnlPercentOP)
         
