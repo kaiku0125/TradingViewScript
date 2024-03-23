@@ -1,0 +1,97 @@
+//@version=5
+
+// 1. Import library
+import kaiku0125/Debug/1 as debug
+import kaiku0125/Colour/8 as colour
+import kaiku0125/FormatSDK/1 as fm
+import kaiku0125/PNLRebalanceLib/5 as lib
+
+// # ========================================================================= #
+// #                   |   Indicator  |
+// # ========================================================================= #
+indicator(
+ title                = "ProfitFly",
+ shorttitle           = "淨利幣放飛",
+ overlay              =  true,
+ explicit_plot_zorder =  true
+ )
+// # ========================================================================= #
+// #                   |   Indicator  |
+// # ========================================================================= #
+
+var string TIME_FRAME = ""
+var color COLOR_MY_WHITE = color.rgb(255, 255, 204, 30) 
+var color COLOR_BG = color.rgb(77, 77, 77, 30)
+var color DF_TEXT_COLOR = COLOR_MY_WHITE
+var color DF_CELL_COLOR = COLOR_BG
+
+var table profitFlyTable = na
+
+var float DEGO_POSITION = 23.65
+var float ICP_POSITION = 11.68
+var float UNI_POSITION = 7.37
+var float TKO_POSITION = 83.54
+var float RVN_POSITION = 2079
+var float THETA_POSITION = 33.5
+var float GALA_POSITION = 1516.4
+
+var string USD_TWD_SYMBOL = "FX_IDC:USDTWD"
+var string DEGO_SYMBOL = "BINANCE:DEGOUSDT"
+var string ICP_SYMBOL = "BINANCE:ICPUSDT"
+var string UNI_SYMBOL = "BINANCE:UNIUSDT"
+var string TKO_SYMBOL = "BINANCE:TKOUSDT"
+var string RVN_SYMBOL = "BINANCE:RVNUSDT"
+var string THETA_SYMBOL = "BINANCE:THETAUSDT"
+var string GALA_SYMBOL = "BINANCE:GALAUSDT"
+
+var float pUsd_Twd = na
+var float pDEGO = na
+var float pICP = na
+var float pUNI = na
+var float pTKO = na
+var float pRVN = na
+var float pTHETA = na
+var float pGALA = na
+
+pUsd_Twd := request.security(symbol = USD_TWD_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pDEGO := request.security(symbol = DEGO_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pICP := request.security(symbol = ICP_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pUNI := request.security(symbol = UNI_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pTKO := request.security(symbol = TKO_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pRVN := request.security(symbol = RVN_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pTHETA := request.security(symbol = THETA_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pGALA := request.security(symbol = GALA_SYMBOL, timeframe = TIME_FRAME, expression = close)
+
+totalMarketValue  = pDEGO * DEGO_POSITION
+totalMarketValue += pICP * ICP_POSITION
+totalMarketValue += pUNI * UNI_POSITION
+totalMarketValue += pTKO * TKO_POSITION
+totalMarketValue += pRVN * RVN_POSITION
+totalMarketValue += pTHETA * THETA_POSITION
+totalMarketValue += pGALA * GALA_POSITION
+
+totalTwd = pUsd_Twd * totalMarketValue
+
+cell(int columnID, int rowID, string displayText, color textColor, color background) =>
+    table.cell(
+     table_id       =  profitFlyTable, 
+     column         =  columnID, 
+     row            =  rowID, 
+     text           =  displayText, 
+     text_color     =  textColor,
+     text_size      =  size.auto,
+     bgcolor        =  background
+     )
+
+if barstate.islast
+    int nextRow = 0
+    profitFlyTable := table.new(
+     position       =  position.bottom_right,
+     columns        =  8,
+     rows           =  30,
+     frame_width    =  5,
+     border_width   =  3
+     )
+
+    cell(0, nextRow, "淨利幣總市值", DF_TEXT_COLOR, DF_CELL_COLOR)
+    cell(1, nextRow, fm.fString(totalTwd, 0) + "\t台幣", colour.LIME_GREEN(0), DF_CELL_COLOR)
