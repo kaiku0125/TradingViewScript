@@ -46,21 +46,21 @@ var float ARB_CRYPTO_RATIO = 2
 var float OP_CRYPTO_RATIO = 2
 var float OTHER_CRYPTO_RATIO = 10
 
-var float BANK1_AVAL = 2832 + 50000                                              // LineBank (TWD)
+var float BANK1_AVAL = 22832 + 50000                                              // LineBank (TWD)
 var float BANK2_AVAL = 0                                                        // 將來 (TWD)  
-var float BANK3_AVAL = 70498                                                    // 台新 (TWD)
+var float BANK3_AVAL = 38868                                                    // 台新 (TWD)
 var float BANK4_AVAL = 200                                                      // 樂天 (TWD)
 var float MAX_AVAL = 0                                                          // MAX (USD)
 
  // RDNT(100) + REEF(100) + UNFI(100) + SUSHI(202) + IOTA(100) + XLM(100) + THETA(100) ➔ 800
  // XLM(100) + IOTA(100) + CAKE(100) + FIL(100) + IOTX(100) + VGX(50) + PNT(50) + GTC(100) ➔ 700
  // COS(94) + ATA(100) + BETA(100) + TROY(100) + HIGH(100) + FIS(100) + FIO(100) + VIB(100) ➔ 794
- // TLM(100) + OOKI(100) + APE(29)➔ 229
+ // TLM(100) + OOKI(100) + APE(50) + OXT(50) + DOGE(10) + EOS(30) ➔ 340
  // RAY(100) ➔ 100 幣安持倉 
-var float PIONEX_OTHER_USD = 800 + 700 + 794 + 229 + 100
-var float EXCHANGE_USD =  (577 + 51) + 432 + 797 + 72 + (22 + PIONEX_OTHER_USD)         // bybit(主 + 副) + binance + EX.Crypto.com + OKX + 派網
+var float PIONEX_OTHER_USD = 800 + 700 + 794 + 340 + 100
+var float EXCHANGE_USD =  (6 + 30) + 869 + 298 + 0 + (22 + PIONEX_OTHER_USD)         // bybit(主 + 副) + binance + EX.Crypto.com + OKX + 派網
 
-var float VISA_AVAL = 4200                                                      // Visa (USD) 出金
+var float VISA_AVAL = 4700                                                      // Visa (USD) 出金
 
 var float DEBT = -945391                                                        // 負債(TWD)
 
@@ -80,8 +80,8 @@ var float BTC_INCOME = 1037
 
 var float PIONEX_ETH_POSITION = 0.6889                                          //網格 + 幣幣天地
 var float PIONEX_ETH_COST = 150 + 480 
-var float MANUAL_ETH_POSITION = 2.198                                            //倉位
-var float MANUAL_ETH_COST = 4342                                                //成本       
+var float MANUAL_ETH_POSITION = 2.27                                            //倉位
+var float MANUAL_ETH_COST = 4580                                                //成本       
 var float ETH_POSITION_BOUGHT = MANUAL_ETH_POSITION + PIONEX_ETH_POSITION       // eth (顆)         
 var float ETH_COST = MANUAL_ETH_COST + PIONEX_ETH_COST                          // eth總投入 (USD)
 var float ETH_POSITION_SOLD = 0
@@ -92,8 +92,8 @@ var float CRO_COST = 5530                                           // cro總投
 
 var float MATIC_POSITION = 1713                                     // matic (顆)
 var float MATIC_COST = 1451                                         // matic總投入 (USD)
-var float ADA_POSITION = 11404                                       // ada (顆)
-var float ADA_COST = 3707                                            // ada 總投入 (USD)
+var float ADA_POSITION = 11827                                       // ada (顆)
+var float ADA_COST = 3997                                            // ada 總投入 (USD)
 
 var float OP_POSITION_BOUGHT = 299                                   // op (顆)
 var float OP_COST = 534                                              // op 總投入 (USD)
@@ -1077,11 +1077,14 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2022, 7, 15, -74161))
         array.push(rdArray, newData(2022, 7, 20, -104161))
         array.push(rdArray, newData(2022, 7, 22, -114161))
+        array.push(rdArray, newData(2022, 7, 28, -124161))
         array.push(rdArray, newData(2022, 7, 30, -144161))
         array.push(rdArray, newData(2022, 8, 3, -194161))
+        array.push(rdArray, newData(2022, 8, 6, -164161))
         array.push(rdArray, newData(2022, 8, 8, -154161))
         array.push(rdArray, newData(2022, 8, 12, -164161))
         array.push(rdArray, newData(2022, 8, 15, -184161))
+        array.push(rdArray, newData(2022, 8, 17, -192161))
         array.push(rdArray, newData(2022, 8, 20, -204161))
 //fake
         array.push(rdArray, newData(2022, 8, 22, -224161)) 
@@ -1102,21 +1105,27 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2023, 2, 10, -307114))
         array.push(rdArray, newData(2023, 2, 13, -313540)) 
         array.push(rdArray, newData(2023, 2, 17, -291666))
+        array.push(rdArray, newData(2023, 2, 18, -286358))
         array.push(rdArray, newData(2023, 2, 20, -281833))
         array.push(rdArray, newData(2023, 2, 22, -275244))
         array.push(rdArray, newData(2023, 2, 24, -284224))
+        array.push(rdArray, newData(2023, 3, 2, -286968))
         array.push(rdArray, newData(2023, 3, 3, -298380))
         array.push(rdArray, newData(2023, 3, 7, -297185))
         array.push(rdArray, newData(2023, 3, 10, -320464))
         array.push(rdArray, newData(2023, 3, 14, -290237))
+        array.push(rdArray, newData(2023, 3, 15, -281158))
         array.push(rdArray, newData(2023, 3, 17, -281658))
+        array.push(rdArray, newData(2023, 3, 18, -267755))
         array.push(rdArray, newData(2023, 3, 22, -270501))
         array.push(rdArray, newData(2023, 4, 3, -275587))
         array.push(rdArray, newData(2023, 4, 5, -267601))
         array.push(rdArray, newData(2023, 4, 7, -273668))
         array.push(rdArray, newData(2023, 4, 11, -268450))
+        array.push(rdArray, newData(2023, 4, 12, -266281))
         array.push(rdArray, newData(2023, 4, 14, -259939))
         array.push(rdArray, newData(2023, 4, 17, -262168))
+        array.push(rdArray, newData(2023, 4, 18, -255441))
         array.push(rdArray, newData(2023, 4, 24, -281677))
         array.push(rdArray, newData(2023, 4, 26, -258756))
         array.push(rdArray, newData(2023, 5, 3, -274724))
@@ -1167,6 +1176,7 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2024, 3, 6, 580910)) //31.5%
         array.push(rdArray, newData(2024, 3, 10, 741322)) //40.2%
         array.push(rdArray, newData(2024, 3, 12, 752599)) //40.9%
+        array.push(rdArray, newData(2024, 3, 19, 476727)) //25.8%
 
 plot(
  series       =  recordAssetsVariation,
