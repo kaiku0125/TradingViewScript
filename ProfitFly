@@ -27,6 +27,7 @@ var color DF_CELL_COLOR = COLOR_BG
 
 var table profitFlyTable = na
 
+//Binance
 var float DEGO_POSITION = 23.65
 var float ICP_POSITION = 11.68
 var float UNI_POSITION = 7.37
@@ -34,8 +35,32 @@ var float TKO_POSITION = 83.54
 var float RVN_POSITION = 2079
 var float THETA_POSITION = 33.5
 var float GALA_POSITION = 1516.4
+var float BNX_POSITION = 149
+var float COS_POSITION = 5186
+var float HIGH_POSITION = 11.79
+var float RAY_POSITION = 40.06
+var float TROY_POSITION = 18521
+var float SUI_POSITION = 44.955
+var float DOGE_POSITION = 827
+
+//OKX
+var float GPT_POSITION = 1180
+var float RUNECOIN_POSITION = 13826
+var float MSN_POSITION = 32.1
+var float ULTI_POSITION = 9284
+var float MAX_POSITION = 563
+
+//Bybit
+var float POPCAT_POSITION = 46.55
+var float KASTA_POSITION = 1620
+var float PEPE_POSITION = 2568916
+
+
+//PIONEX
+var float XLM_POSITION = 900.64
 
 var string USD_TWD_SYMBOL = "FX_IDC:USDTWD"
+
 var string DEGO_SYMBOL = "BINANCE:DEGOUSDT"
 var string ICP_SYMBOL = "BINANCE:ICPUSDT"
 var string UNI_SYMBOL = "BINANCE:UNIUSDT"
@@ -43,8 +68,28 @@ var string TKO_SYMBOL = "BINANCE:TKOUSDT"
 var string RVN_SYMBOL = "BINANCE:RVNUSDT"
 var string THETA_SYMBOL = "BINANCE:THETAUSDT"
 var string GALA_SYMBOL = "BINANCE:GALAUSDT"
+var string BNX_SYMBOL = "BINANCE:BNXUSDT"
+var string COS_SYMBOL = "BINANCE:COSUSDT"
+var string HIGH_SYMBOL = "BINANCE:HIGHUSDT"
+var string RAY_SYMBOL = "BINANCE:RAYUSDT"
+var string TROY_SYMBOL = "BINANCE:TROYUSDT"
+var string SUI_SYMBOL = "BINANCE:SUIUSDT"
+var string DOGE_SYMBOL = "BINANCE:DOGEUSDT"
+
+var string GPT_SYMBOL = "OKX:GPTUSDT"
+var string RUNECOIN_SYMBOL = "OKX:RUNECOINUSDT"
+var string MSN_SYMBOL = "HTX:MSNUSDT"
+var string ULTI_SYMBOL = "OKX:ULTIUSDT"
+var string MAX_SYMBOL = "OKX:MAXUSDT"
+
+var string POPCAT_SYMBOL = "BYBIT:POPCATUSDT"
+var string KASTA_SYMBOL = "BYBIT:KASTAUSDT"
+var string PEPE_SYMBOL = "BYBIT:PEPEUSDT"
+
+var string XLM_SYMBOL = "BINANCE:XLMUSDT"
 
 var float pUsd_Twd = na
+
 var float pDEGO = na
 var float pICP = na
 var float pUNI = na
@@ -52,8 +97,30 @@ var float pTKO = na
 var float pRVN = na
 var float pTHETA = na
 var float pGALA = na
+var float pBNX = na
+var float pCOS = na
+var float pHIGH = na
+var float pRAY = na
+var float pTroy = na
+var float pSui = na
+var float pDoge = na
+
+var float pGPT = na
+var float pRUNECOIN = na
+var float pMSN = na
+var float pULTI = na
+var float pMAX = na
+
+var float pPopcat = na
+var float pKasta = na
+var float pPepe = na
+
+var float pXLM = na
+
 
 pUsd_Twd := request.security(symbol = USD_TWD_SYMBOL, timeframe = TIME_FRAME, expression = close)
+
+// 幣安
 pDEGO := request.security(symbol = DEGO_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pICP := request.security(symbol = ICP_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pUNI := request.security(symbol = UNI_SYMBOL, timeframe = TIME_FRAME, expression = close)
@@ -61,6 +128,29 @@ pTKO := request.security(symbol = TKO_SYMBOL, timeframe = TIME_FRAME, expression
 pRVN := request.security(symbol = RVN_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pTHETA := request.security(symbol = THETA_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pGALA := request.security(symbol = GALA_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pBNX := request.security(symbol = BNX_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pCOS := request.security(symbol = COS_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pHIGH := request.security(symbol = HIGH_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pRAY := request.security(symbol = RAY_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pTroy := request.security(symbol = TROY_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pSui := request.security(symbol = SUI_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pDoge := request.security(symbol = DOGE_SYMBOL, timeframe = TIME_FRAME, expression = close)
+
+// OKX
+pGPT := request.security(symbol = GPT_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pRUNECOIN := request.security(symbol = RUNECOIN_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pMSN := request.security(symbol = MSN_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pULTI := request.security(symbol = ULTI_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pMAX := request.security(symbol = MAX_SYMBOL, timeframe = TIME_FRAME, expression = close)
+
+// Bybit
+pPopcat := request.security(symbol = POPCAT_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pKasta := request.security(symbol = KASTA_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pPepe := request.security(symbol = PEPE_SYMBOL, timeframe = TIME_FRAME, expression = close)
+
+// Pionex
+pXLM := request.security(symbol = XLM_SYMBOL, timeframe = TIME_FRAME, expression = close)
+
 
 totalMarketValue  = pDEGO * DEGO_POSITION
 totalMarketValue += pICP * ICP_POSITION
@@ -69,6 +159,25 @@ totalMarketValue += pTKO * TKO_POSITION
 totalMarketValue += pRVN * RVN_POSITION
 totalMarketValue += pTHETA * THETA_POSITION
 totalMarketValue += pGALA * GALA_POSITION
+totalMarketValue += pBNX * BNX_POSITION
+totalMarketValue += pCOS * COS_POSITION
+totalMarketValue += pHIGH * HIGH_POSITION
+totalMarketValue += pRAY * RAY_POSITION
+totalMarketValue += pTroy * TROY_POSITION
+totalMarketValue += pSui * SUI_POSITION
+totalMarketValue += pDoge * DOGE_POSITION
+
+totalMarketValue += pGPT * GPT_POSITION
+totalMarketValue += pRUNECOIN * RUNECOIN_POSITION
+totalMarketValue += pMSN * MSN_POSITION
+totalMarketValue += pULTI * ULTI_POSITION
+totalMarketValue += pMAX * MAX_POSITION
+
+totalMarketValue += pPopcat * POPCAT_POSITION
+totalMarketValue += pKasta * KASTA_POSITION
+totalMarketValue += pPepe * PEPE_POSITION
+
+totalMarketValue += pXLM * XLM_POSITION
 
 totalTwd = pUsd_Twd * totalMarketValue
 
@@ -93,5 +202,5 @@ if barstate.islast
      border_width   =  3
      )
 
-    cell(0, nextRow, "淨利幣總市值", DF_TEXT_COLOR, DF_CELL_COLOR)
+    cell(0, nextRow, "淨利(零)幣? 總市值", DF_TEXT_COLOR, DF_CELL_COLOR)
     cell(1, nextRow, fm.fString(totalTwd, 0) + "\t台幣", colour.LIME_GREEN(0), DF_CELL_COLOR)

@@ -31,72 +31,91 @@ indicator(
 // 2. Preference inputs settings
 var float CASH_RATIO = 10
 var float SPECULATION_RATIO = 90
-var float CRYPTO_RATIO = 80
-var float TW_STOCKS_RATIO = 20
+var float CRYPTO_RATIO = 95
+var float TW_STOCKS_RATIO = 5
 
 var float _006208_RATIO = 100
 
 var float BTC_CRYPTO_RATIO = 35
-var float ETH_CRYPTO_RATIO = 20
-var float CRO_CRYPTO_RATIO = 10
+var float ETH_CRYPTO_RATIO = 25
 var float ADA_CRYPTO_RATIO = 15
-var float MATIC_CRYPTO_RATIO = 4
-var float LINK_CRYPTO_RATIO = 2
-var float ARB_CRYPTO_RATIO = 2
-var float OP_CRYPTO_RATIO = 2
-var float OTHER_CRYPTO_RATIO = 10
+var float BNB_CRYPTO_RATIO = 11
+var float CRO_CRYPTO_RATIO = 9
+var float POL_CRYPTO_RATIO = 2
+var float LINK_CRYPTO_RATIO = 1
+var float ARB_CRYPTO_RATIO = 1
+var float OP_CRYPTO_RATIO = 1
+//var float OTHER_CRYPTO_RATIO = 5
 
-var float BANK1_AVAL = 4866 + 50000                                              // LineBank (TWD)
-var float BANK2_AVAL = 0                                                        // 將來 (TWD)  
-var float BANK3_AVAL = 28868                                                    // 台新 (TWD)
-var float BANK4_AVAL = 200                                                      // 樂天 (TWD)
-var float MAX_AVAL = 0                                                          // MAX (USD)
+var float BANK1_AVAL = 15869 + 0                                                // LineBank (TWD)
+var float BANK2_AVAL = 0 + 225                                                  // Bankee (TWD)  
+var float BANK3_AVAL = 13462                                                    // 台新 (TWD)
+var float BANK4_AVAL = 137                                                    // 樂天 (TWD)
+var float BITO_AVAL = 0                                                          // 幣託 (USD)
 
- // RDNT(100) + REEF(100) + UNFI(100) + SUSHI(202) + IOTA(100) + XLM(100) ➔ 700
- // XLM(100) + IOTA(100) + CAKE(100) + FIL(100) + IOTX(100) + VGX(50) + GTC(100) ➔ 650
- // COS(100) + ATA(100) + BETA(100) + TROY(100) + HIGH(100) + FIS(100) + FIO(100) + VIB(100) ➔ 800
- // TLM(100) + OOKI(100) + APE(50) + OXT(50) + DOGE(30) + EOS(30) ➔ 360
- // RAY(100) ➔ 100 幣安持倉 
-var float PIONEX_OTHER_USD = 700 + 650 + 800 + 360 + 100
-var float EXCHANGE_USD = (227 + 50) + 272 + 678 + 82 + (694 + PIONEX_OTHER_USD)         // bybit(主 + 副) + binance + EX.Crypto.com + OKX + 派網
+ // CHZ(100) + AXS(725) + SAND(200) + MANA(100) + ILV(200) + DYDX(200) + ALI(218) + UNI(100)
+ // RDNT(100) + REEF(100) + UNFI(100) + SUSHI(202) + IOTA(100) ➔ 600
+ // XLM(200) + IOTA(100) + CAKE(100) + FIL(100) + IOTX(100) ➔ 600
+ // ATA(100) + BETA(100) + TROY(100) + HIGH(100) + FIS(100) + FIO(100) + VIB(100) ➔ 700
+ // TLM(100) + OOKI(100) + APE(100) + OXT(200) + DOGE(150) + EOS(150) + SNX(100) ➔ 650
+ // DCR(50) + APT(100) + DOCK(50) + ZIL(50) + CHZ(50) + OGN(50) ➔ 350
+ // OMG(50) + POND(50) + ONE(50) + NYM(50) + KDA(50) + INCH(50) + ALPHA(50) + CFX(50) + ENJ(50) ➔ 450
+ // REN(100) + WIN(50) + IQ(50) + WLD(50) + ATOM(50) + SUI(50) + PENDLE(50) ➔ 350
+ // TRX(50) + GMT(100) + GRT(50) + LDO(50) + EDU(50) + YGG(100) ➔ 400
+ // MEME(100) + DOGE(100)➔ 200 幣安持倉 
+ // XTZ(50) + SAND(50) + PERP(50) + ALICE(150) + SHIB(50) + PLT(30) + KASTA(50) + MBOX(75) + WIF(25)
+// var float PIONEX_OTHER_USD = 700 + 700 + 700 + 650 + 350 + 450 + 450 + 400 + 200
+// var float PIONEX_OTHER_USD = 2256 + 3100
+var float PIONEX_OTHER_USD = 0
 
-var float VISA_AVAL = 4700                                                      // Visa (USD) 出金
+var float BYBIT_EXCHANGE_USD =          (6000 + 668) + 85 + 1770                            // bybit(主 + 副) + wulin
+var float BINANCE_EXCHANGE_USD =        499                                                 // binance
+var float CRYPTO_DOT_COM_EXCHANGE_USD = 112                                              // EX.Crypto.com
+var float OKX_EXCHANGE_USD =            (0 + 1002)                                        // OKX
+var float PIONEX_EXCHANGE_USD =         (0 + 0 + PIONEX_OTHER_USD)                          // 派網
 
-var float DEBT = -934399                                                        // 負債(TWD)
+var float EXCHANGE_USD = BYBIT_EXCHANGE_USD + BINANCE_EXCHANGE_USD + CRYPTO_DOT_COM_EXCHANGE_USD + OKX_EXCHANGE_USD + PIONEX_EXCHANGE_USD
+
+var float VISA_AVAL = 8300                                                      // Visa (USD) 出金
+
+var float DEBT = -857097 - 386905                                                // 負債(TWD)
 
 var float _006208_POSITION_BOUGHT = 400 + 3000                                   // 006208 (股)
 var float _006208_COST = 27780 + 214179                                          // 006208總投入 (TWD)
-var float _006208_POSITION_SOLD = 400
-var float _006208_INCOME = 28128
+var float _006208_POSITION_SOLD = 2700
+var float _006208_INCOME = 263563
 
-var float PIONEX_BTC_POSITION = 0.002166                                       //網格 + 幣幣天地
+var float PIONEX_BTC_POSITION = 0.003333                                         //網格 + 幣幣天地
 var float PIONEX_BTC_COST = 150 + 214
-var float MANUAL_BTC_POSITION = 0.3487                                           //倉位
-var float MANUAL_BTC_COST = 11146                                                //成本
+var float MANUAL_BTC_POSITION = 0.4573                                           //倉位
+var float MANUAL_BTC_COST = 18030                                                //成本
 var float BTC_POSITION_BOUGHT = MANUAL_BTC_POSITION + PIONEX_BTC_POSITION       // btc (顆)
 var float BTC_COST = MANUAL_BTC_COST + PIONEX_BTC_COST                          // btc總投入 (USD)
-var float BTC_POSITION_SOLD = 0.06156
-var float BTC_INCOME = 1037
+var float BTC_POSITION_SOLD = 0.20723
+var float BTC_INCOME = 2148.29
 
-var float PIONEX_ETH_POSITION = 0.6889                                          //網格 + 幣幣天地
+var float PIONEX_ETH_POSITION = 0.7625                                          //網格 + 幣幣天地
 var float PIONEX_ETH_COST = 150 + 480 
-var float MANUAL_ETH_POSITION = 2.27                                            //倉位
-var float MANUAL_ETH_COST = 4580                                                //成本       
+var float MANUAL_ETH_POSITION = 4.801                                            //倉位
+var float MANUAL_ETH_COST = 8591                                                //成本       
 var float ETH_POSITION_BOUGHT = MANUAL_ETH_POSITION + PIONEX_ETH_POSITION       // eth (顆)         
 var float ETH_COST = MANUAL_ETH_COST + PIONEX_ETH_COST                          // eth總投入 (USD)
-var float ETH_POSITION_SOLD = 0
-var float ETH_INCOME = 0
+var float ETH_POSITION_SOLD = 0.0431
+var float ETH_INCOME = 141.93
 
-var float CRO_POSITION = 20517 + 22800                              // cro (顆)
-var float CRO_COST = 5530                                           // cro總投入 (USD)
+var float CRO_POSITION = 21153 + 41077                              // cro (顆)
+var float CRO_COST = 6682                                           // cro總投入 (USD)
 
-var float MATIC_POSITION = 2024                                     // matic (顆)
-var float MATIC_COST = 1760                                         // matic總投入 (USD)
-var float ADA_POSITION = 12148                                       // ada (顆)
-var float ADA_COST = 4207                                            // ada 總投入 (USD)
+var float POL_POSITION = 2737                                     // pol (顆)
+var float POL_COST = 2120                                         // pol 總投入 (USD)
 
-var float OP_POSITION_BOUGHT = 299                                   // op (顆)
-var float OP_COST = 534                                              // op 總投入 (USD)
+var float ADA_POSITION_BOUGHT = 24773                                // ada (顆)
+var float ADA_COST = 5670                                            // ada 總投入 (USD)
+var float ADA_POSITION_SOLD = 2513
+var float ADA_INCOME = 2299
+
+var float OP_POSITION_BOUGHT = 631                                   // op (顆)
+var float OP_COST = 1134                                              // op 總投入 (USD)
 var float OP_POSITION_SOLD = 91
 var float OP_INCOME = 261
 
@@ -105,24 +124,24 @@ var float LINK_COST = 1149                                            // link �
 var float LINK_POSITION_SOLD = 10.45 
 var float LINK_INCOME = 184.85
 
-var float ARB_POSITION_BOUGHT = 576                                      // arb (顆)
-var float ARB_COST = 630                                                // arb 總投入 (USD)
+var float ARB_POSITION_BOUGHT = 1251                                      // arb (顆)
+var float ARB_COST = 1560                                                // arb 總投入 (USD)
 var float ARB_POSITION_SOLD = 50  
 var float ARB_INCOME = 102        
 
-var float DOT_POSITION_BOUGHT = 176.6                                      // arb (顆)
-var float DOT_COST = 1342                                                // arb 總投入 (USD)
+var float DOT_POSITION_BOUGHT = 176.6                                      // dot (顆)
+var float DOT_COST = 1342                                                // dot 總投入 (USD)
 var float DOT_POSITION_SOLD = 0  
 var float DOT_INCOME = 0    
 
-var float BNB_POSITION = 2.99                                         // BNB (顆)
-var float BNB_COST = 792                                              // BNB總投入 (USD)
-var float STEPN_GMT = 2200 + 6 * 170 + 2049 + 140 + 2 * 194            // GMT (顆)
+var float BNB_POSITION = 10.036                                          // BNB (顆)
+var float BNB_COST = 3735                                              // BNB總投入 (USD)
+var float STEPN_GMT = 2200 +  2 * 515 + 6 * 190 + 2778 + 207 + 2 * 243 // (藍 + 白 + 綠 + 寶石)GMT (顆)
 var float GMT_POSITION = STEPN_GMT                         
 var float GMT_COST = 4500 + 100 + 120.9 + 224 + 423 + 513             //GMT總投入(USD)
 
 var float ALL_STOCKS_COST = _006208_COST  //台股成本
-var float ALL_CRYPTO_COST = 1630000                                   //幣圈成本
+var float ALL_CRYPTO_COST = 2600000                                   //幣圈成本
 
 var string USD = "美金"
 var string TWD = "台幣"
@@ -147,7 +166,7 @@ var string INLINE_006208 = "03"
 var string INLINE_BTC = "06"
 var string INLINE_ETH = "07"
 var string INLINE_CRO = "08"
-var string INLINE_MATIC = "09"
+var string INLINE_POL = "09"
 var string INLINE_ADA = "10"
 var string INLINE_LINK = "11"
 var string INLINE_ARB = "12"
@@ -183,6 +202,9 @@ var float INPUT_BTC_COST = math.ceil(BTC_COST * (1 - (BTC_POSITION_SOLD / BTC_PO
 var float INPUT_ETH_POSITION = ETH_POSITION_BOUGHT - ETH_POSITION_SOLD
 var float INPUT_ETH_COST = math.ceil(ETH_COST * (1 - (ETH_POSITION_SOLD / ETH_POSITION_BOUGHT))) 
 
+var float INPUT_ADA_POSITION = ADA_POSITION_BOUGHT - ADA_POSITION_SOLD
+var float INPUT_ADA_COST = math.ceil(ADA_COST * (1 - (ADA_POSITION_SOLD / ADA_POSITION_BOUGHT))) 
+
 var float INPUT_ARB_POSITION = ARB_POSITION_BOUGHT - ARB_POSITION_SOLD
 var float INPUT_ARB_COST = math.ceil(ARB_COST * (1 - (ARB_POSITION_SOLD / ARB_POSITION_BOUGHT))) 
 
@@ -212,10 +234,10 @@ INPUT_CRYPTO_RATIO = input.float(defval = CRYPTO_RATIO, title = "幣圈(%)", inl
 INPUT_TW_STOCKS_RATIO = input.float(defval = TW_STOCKS_RATIO, title = "台股(%)", inline = "02", group = GROUP_ASSETS_RATIO)
 
 INPUT_BANK1 = input.float(defval = BANK1_AVAL, title = "LineBank(TWD)", group = GROUP_CASH) 
-INPUT_BANK2 = input.float(defval = BANK2_AVAL, title = "將來(TWD)", group = GROUP_CASH) 
+INPUT_BANK2 = input.float(defval = BANK2_AVAL, title = "Bankee(TWD)", group = GROUP_CASH) 
 INPUT_BANK3 = input.float(defval = BANK3_AVAL, title = "台新(TWD)", group = GROUP_CASH) 
 INPUT_BANK4 = input.float(defval = BANK4_AVAL, title = "樂天(TWD)", group = GROUP_CASH)
-INPUT_MAX = input.float(defval = MAX_AVAL, title = "MAX(U)", group = GROUP_CASH)
+INPUT_BITO = input.float(defval = BITO_AVAL, title = "幣託(U)", group = GROUP_CASH)
 
 INPUT_CRYPTO_COM_VISA = input.float(defval = VISA_AVAL, title = "幣圈Visa(U)", group = GROUP_EXCHANGE)
 
@@ -235,12 +257,12 @@ IS_CRO_DISPLAY = input.bool(defval = true, title = "CRO :", inline = INLINE_CRO,
 MY_CRO_POSITION = input.float(defval = CRO_POSITION, title = POSITION_TITLE, inline = INLINE_CRO, group = GROUP_ASSETS) 
 MY_CRO_COST = input.float(defval = CRO_COST, title = CRYPTO_COST_TITLE, inline = INLINE_CRO, group = GROUP_ASSETS) 
 
-IS_MATIC_DISPLAY = input.bool(defval = true, title = "MATIC :", inline = INLINE_MATIC, group = GROUP_ASSETS) 
-MY_MATIC_POSITION = input.float(defval = MATIC_POSITION, title = POSITION_TITLE, inline = INLINE_MATIC, group = GROUP_ASSETS) 
-MY_MATIC_COST = input.float(defval = MATIC_COST, title = CRYPTO_COST_TITLE, inline = INLINE_MATIC, group = GROUP_ASSETS) 
+IS_POL_DISPLAY = input.bool(defval = true, title = "POL :", inline = INLINE_POL, group = GROUP_ASSETS) 
+MY_POL_POSITION = input.float(defval = POL_POSITION, title = POSITION_TITLE, inline = INLINE_POL, group = GROUP_ASSETS) 
+MY_POL_COST = input.float(defval = POL_COST, title = CRYPTO_COST_TITLE, inline = INLINE_POL, group = GROUP_ASSETS) 
 
 IS_ADA_DISPLAY = input.bool(defval = true, title = "ADA :", inline = INLINE_ADA, group = GROUP_ASSETS) 
-MY_ADA_POSITION = input.float(defval = ADA_POSITION, title = POSITION_TITLE, inline = INLINE_ADA, group = GROUP_ASSETS) 
+MY_ADA_POSITION = input.float(defval = INPUT_ADA_POSITION, title = POSITION_TITLE, inline = INLINE_ADA, group = GROUP_ASSETS) 
 MY_ADA_COST = input.float(defval = ADA_COST, title = CRYPTO_COST_TITLE, inline = INLINE_ADA, group = GROUP_ASSETS) 
 
 IS_LINK_DISPLAY = input.bool(defval = true, title = "LINK :", inline = INLINE_LINK, group = GROUP_ASSETS) 
@@ -268,79 +290,13 @@ MY_GMT_POSITION = input.float(defval = GMT_POSITION, title = POSITION_TITLE, inl
 MY_GMT_COST = input.float(defval = GMT_COST, title = CRYPTO_COST_TITLE, inline = INLINE_GMT, group = GROUP_ASSETS) 
 
 IS_OTHER_DISPLAY = input.bool(defval = false, title = "淨利(零)幣?", inline = INLINE_OTHER, group = GROUP_ASSETS) 
-MY_CHZ_POSITION = 443
-MY_CHZ_COST = 100.0
 MY_AXS_POSITION = 43.28 + 33
 MY_AXS_COST = 425 + 300
-MY_ALICE_POSITION = 5.06 
-MY_ALICE_COST = 100
-MY_SAND_POSITION = 200.79
-MY_SAND_COST = 200
-MY_MANA_POSITION = 182.22
-MY_MANA_COST = 100
-MY_ILV_POSITION = 1.058 
-MY_ILV_COST = 100 
-
-MY_ALI_POSITION = 4616.57   
-MY_ALI_COST = 218
-MY_SPELL_POSITION = 165866
-MY_SPELL_COST = 100
-MY_CELR_POSITION = 4734
-MY_CELR_COST = 100
-
-MY_C98_POSITION = 318
-MY_C98_COST = 122
-MY_EPX_POSITION = 345148
-MY_EPX_COST = 105
-MY_VOXEL_POSITION = 348
-MY_VOXEL_COST = 100
-MY_VITE_POSITION = 4177
-MY_VITE_COST = 104
-MY_FLUX_POSITION = 120
-MY_FLUX_COST = 101
-MY_UNI_POSITION = 14.25
-MY_UNI_COST = 100
-MY_DYDX_POSITION = 30.97
-MY_DYDX_COST = 100
-MY_CRV_POSITION = 169
-MY_CRV_COST = 100
-MY_BNX_POSITION = 870
-MY_BNX_COST = 300
 MY_ATOM_POSITION = 31.19
 MY_ATOM_COST = 322
-MY_GPT_POSITION = 1180
-MY_GPT_COST = 0
-MY_ZK_POSITION = 243
-MY_ZK_COST = 0
-PIONEX_MY_OP_POSITION = 103
-PIONEX_MY_OP_COST = 350
-PIONEX_MY_ARB_POSITION = 198
-PIONEX_MY_ARB_COST = 400
 
-MY_OTHER_CRYPTO_COST  = MY_CHZ_COST
-MY_OTHER_CRYPTO_COST += MY_AXS_COST
-MY_OTHER_CRYPTO_COST += MY_ALICE_COST
-MY_OTHER_CRYPTO_COST += MY_SAND_COST
-MY_OTHER_CRYPTO_COST += MY_MANA_COST
-MY_OTHER_CRYPTO_COST += MY_ILV_COST
-MY_OTHER_CRYPTO_COST += MY_BNX_COST
-MY_OTHER_CRYPTO_COST += MY_MANA_COST
-MY_OTHER_CRYPTO_COST += MY_ALI_COST
-MY_OTHER_CRYPTO_COST += MY_SPELL_COST
-MY_OTHER_CRYPTO_COST += MY_CELR_COST
+MY_OTHER_CRYPTO_COST  = MY_AXS_COST
 MY_OTHER_CRYPTO_COST += MY_ATOM_COST
-MY_OTHER_CRYPTO_COST += MY_C98_COST
-MY_OTHER_CRYPTO_COST += MY_EPX_COST
-MY_OTHER_CRYPTO_COST += MY_VOXEL_COST
-MY_OTHER_CRYPTO_COST += MY_VITE_COST
-MY_OTHER_CRYPTO_COST += MY_FLUX_COST
-MY_OTHER_CRYPTO_COST += MY_UNI_COST
-MY_OTHER_CRYPTO_COST += MY_DYDX_COST
-MY_OTHER_CRYPTO_COST += MY_CRV_COST
-MY_OTHER_CRYPTO_COST += MY_GPT_COST
-MY_OTHER_CRYPTO_COST += MY_ZK_COST
-MY_OTHER_CRYPTO_COST += PIONEX_MY_OP_COST
-MY_OTHER_CRYPTO_COST += PIONEX_MY_ARB_COST
 
 IS_USDT_DISPLAY = input.bool(defval = true, title = "剩餘USDT", inline = INLINE_USDT, group = GROUP_ASSETS)
 
@@ -360,35 +316,17 @@ var string STOCK_006208_SYMBOL = "TWSE_DLY:006208"
 var string BTC_SYMBOL = "COINBASE:BTCUSD"
 var string ETH_SYMBOL = "COINBASE:ETHUSD"
 var string CRO_SYMBOL = "COINBASE:CROUSD"
-var string MATIC_SYMBOL = "COINBASE:MATICUSD"
+var string POL_SYMBOL = "COINBASE:MATICUSD"
 var string ADA_SYMBOL = "BINANCE:ADAUSDT"
 var string LINK_SYMBOL = "BINANCE:LINKUSDT"
 var string ARB_SYMBOL = "BINANCE:ARBUSDT"
 var string OP_SYMBOL = "BINANCE:OPUSDT"
-var string ILV_SYMBOL = "BINANCE:ILVUSDT"
-var string CHZ_SYMBOL = "BYBIT:CHZUSDT.P"
 var string GMT_SYMBOL = "BINANCE:GMTUSDT"
 var string AXS_SYMBOL = "BINANCE:AXSUSDT"
-var string ALICE_SYMBOL = "BINANCE:ALICEUSDT"
-var string SAND_SYMBOL = "BINANCE:SANDUSDT"
 var string BNB_SYMBOL = "BINANCE:BNBUSDT"
 var string DOT_SYMBOL = "BINANCE:DOTUSDT"
-var string MANA_SYMBOL = "BINANCE:MANAUSDT"
-var string BNX_SYMBOL = "BINANCE:BNXUSDT"
-var string ALI_SYMBOL = "GEMINI:ALIUSD"
-var string SPELL_SYMBOL = "BINANCE:SPELLUSDT"
-var string CELR_SYMBOL = "BINANCE:CELRUSDT"
 var string ATOM_SYMBOL = "BINANCE:ATOMUSDT"
-var string C98_SYMBOL = "BINANCE:C98USDT"
-var string EPX_SYMBOL = "BINANCE:EPXUSDT"
-var string VOXEL_SYMBOL = "BINANCE:VOXELUSDT"
-var string VITE_SYMBOL = "BINANCE:VITEUSDT"
-var string FLUX_SYMBOL = "BINANCE:FLUXUSDT"
-var string UNI_SYMBOL = "BINANCE:UNIUSDT"
-var string DYDX_SYMBOL = "BINANCE:DYDXUSDT"
-var string CRV_SYMBOL = "BINANCE:CRVUSDT"
-var string GPT_SYMBOL = "OKX:GPTUSDT"
-var string ZK_SYMBOL = "OKX:ZKUSDT"
+
 
 var color COLOR_MY_WHITE = color.rgb(255, 255, 204, 30) 
 var color COLOR_BG = color.rgb(77, 77, 77, 30)
@@ -413,39 +351,17 @@ var float p006208 = na
 var float pBTC = na
 var float pETH = na
 var float pCRO = na
-var float pMATIC = na
+var float pPOL = na
 var float pADA = na
 var float pLINK = na
 var float pARB = na
 var float pOP = na
 var float pBNB = na
 
-var float pCHZ = na
 var float pGMT = na
 var float pAXS = na
-var float pALICE = na
-var float pSAND = na
-var float pMANA = na
-var float pBNX = na
 var float pDOT = na
-var float pILV = na
-var float pALI = na
-var float pSPELL = na
-var float pCELR = na
 var float pATOM = na
-var float pC98 = na
-var float pEPX = na
-var float pVOXEL = na
-var float pVITE = na
-var float pFLUX = na
-var float pUNI = na
-var float pDYDX = na
-var float pCRV = na
-var float pGPT = na
-var float pZK = na
-var float pRDNT = na
-var float pUNFI = na
-var float pREEF = na
 
 var float totalAssets = 0
 
@@ -604,11 +520,12 @@ checkCryptoRatio  = BTC_CRYPTO_RATIO
 checkCryptoRatio += ETH_CRYPTO_RATIO
 checkCryptoRatio += CRO_CRYPTO_RATIO
 checkCryptoRatio += ADA_CRYPTO_RATIO
-checkCryptoRatio += MATIC_CRYPTO_RATIO
+checkCryptoRatio += BNB_CRYPTO_RATIO
+checkCryptoRatio += POL_CRYPTO_RATIO
 checkCryptoRatio += LINK_CRYPTO_RATIO
 checkCryptoRatio += ARB_CRYPTO_RATIO
 checkCryptoRatio += OP_CRYPTO_RATIO
-checkCryptoRatio += OTHER_CRYPTO_RATIO
+//checkCryptoRatio += OTHER_CRYPTO_RATIO
 
 if checkCryptoRatio != 100
     runtime.error(message = "加密資產配比問題") 
@@ -618,36 +535,18 @@ p006208 := request.security(symbol =  STOCK_006208_SYMBOL, timeframe = TIME_FRAM
 pBTC := request.security(symbol =  BTC_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pETH := request.security(symbol =  ETH_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pCRO := request.security(symbol =  CRO_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pMATIC := request.security(symbol =  MATIC_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pPOL := request.security(symbol =  POL_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pADA := request.security(symbol =  ADA_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pLINK := request.security(symbol =  LINK_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pARB := request.security(symbol =  ARB_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pOP := request.security(symbol =  OP_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pBNB := request.security(symbol = BNB_SYMBOL, timeframe = TIME_FRAME, expression = close)
 
-pCHZ := request.security(symbol = CHZ_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pGMT := request.security(symbol = GMT_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pAXS := request.security(symbol = AXS_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pALICE := request.security(symbol = ALICE_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pSAND := request.security(symbol = SAND_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pMANA := request.security(symbol = MANA_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pBNX := request.security(symbol = BNX_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pDOT := request.security(symbol = DOT_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pILV := request.security(symbol = ILV_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pALI := request.security(symbol = ALI_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pSPELL := request.security(symbol = SPELL_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pCELR := request.security(symbol = CELR_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pATOM := request.security(symbol = ATOM_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pC98 := request.security(symbol = C98_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pEPX := request.security(symbol = EPX_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pVOXEL := request.security(symbol = VOXEL_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pVITE := request.security(symbol = VITE_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pFLUX := request.security(symbol = FLUX_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pUNI := request.security(symbol = UNI_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pDYDX := request.security(symbol = DYDX_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pCRV := request.security(symbol = CRV_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pGPT := request.security(symbol = GPT_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pZK := request.security(symbol = ZK_SYMBOL, timeframe = TIME_FRAME, expression = close)
+
 
 usdEx = INPUT_DISPLAY_CURRENCY == TWD ? 1 * pUsd_Twd : 1
 twdEx = INPUT_DISPLAY_CURRENCY == TWD ? 1 : 1 / pUsd_Twd
@@ -663,19 +562,20 @@ btcRatio = cryptoRatio * BTC_CRYPTO_RATIO
 ethRatio = cryptoRatio * ETH_CRYPTO_RATIO
 croRatio = cryptoRatio * CRO_CRYPTO_RATIO
 adaRatio = cryptoRatio * ADA_CRYPTO_RATIO
-maticRatio = cryptoRatio * MATIC_CRYPTO_RATIO
+bnbRatio = cryptoRatio * BNB_CRYPTO_RATIO
+polRatio = cryptoRatio * POL_CRYPTO_RATIO
 linkRatio = cryptoRatio * LINK_CRYPTO_RATIO
 arbRatio = cryptoRatio * ARB_CRYPTO_RATIO
 opRatio = cryptoRatio * OP_CRYPTO_RATIO
-otherRatio = cryptoRatio * OTHER_CRYPTO_RATIO
+//otherRatio = cryptoRatio * OTHER_CRYPTO_RATIO
 
-totalCash = (INPUT_BANK1 + INPUT_BANK2 + INPUT_BANK3 + INPUT_BANK4) * twdEx + INPUT_MAX * usdEx
+totalCash = (INPUT_BANK1 + INPUT_BANK2 + INPUT_BANK3 + INPUT_BANK4) * twdEx + INPUT_BITO * usdEx
 totalStocksAssets = (p006208 * MY_006208_POSITION) * twdEx
 
 mainCryptoAssets  = pBTC * MY_BTC_POSITION
 mainCryptoAssets += pETH * MY_ETH_POSITION
 mainCryptoAssets += pCRO * MY_CRO_POSITION
-mainCryptoAssets += pMATIC * MY_MATIC_POSITION 
+mainCryptoAssets += pPOL * MY_POL_POSITION 
 mainCryptoAssets += pADA * MY_ADA_POSITION 
 mainCryptoAssets += pLINK * MY_LINK_POSITION 
 mainCryptoAssets += pARB * MY_ARB_POSITION 
@@ -684,34 +584,13 @@ mainCryptoAssets += pDOT * MY_DOT_POSITION
 mainCryptoAssets += pBNB * MY_BNB_POSITION
 mainCryptoAssets += pGMT * MY_GMT_POSITION
 
-otherCryptoASssets  = pCHZ * MY_CHZ_POSITION
-otherCryptoASssets += pAXS * MY_AXS_POSITION
-otherCryptoASssets += pALICE * MY_ALICE_POSITION
-otherCryptoASssets += pSAND * MY_SAND_POSITION
-otherCryptoASssets += pMANA * MY_MANA_POSITION
-otherCryptoASssets += pILV * MY_ILV_POSITION
-otherCryptoASssets += pBNX * MY_BNX_POSITION
-otherCryptoASssets += pALI * MY_ALI_POSITION 
-otherCryptoASssets += pSPELL * MY_SPELL_POSITION 
-otherCryptoASssets += pCELR * MY_CELR_POSITION 
+otherCryptoASssets  = pAXS * MY_AXS_POSITION
 otherCryptoASssets += pATOM * MY_ATOM_POSITION 
-otherCryptoASssets += pC98 * MY_C98_POSITION 
-otherCryptoASssets += pEPX * MY_EPX_POSITION 
-otherCryptoASssets += pVOXEL * MY_VOXEL_POSITION 
-otherCryptoASssets += pVITE * MY_VITE_POSITION 
-otherCryptoASssets += pFLUX * MY_FLUX_POSITION 
-otherCryptoASssets += pUNI * MY_UNI_POSITION 
-otherCryptoASssets += pDYDX * MY_DYDX_POSITION 
-otherCryptoASssets += pCRV * MY_CRV_POSITION 
-otherCryptoASssets += pGPT * MY_GPT_POSITION 
-otherCryptoASssets += pZK * MY_ZK_POSITION 
-otherCryptoASssets += pARB * PIONEX_MY_ARB_POSITION 
-otherCryptoASssets += pOP * PIONEX_MY_OP_POSITION 
 
-totalCryptoAssets = (mainCryptoAssets + otherCryptoASssets) * usdEx + EXCHANGE_USD * usdEx
+totalCryptoAssets = (mainCryptoAssets + otherCryptoASssets) * usdEx + EXCHANGE_USD * usdEx      // (主要部位 + 雜魚) + 交易所的U
 totalSpecultaionAssets = totalStocksAssets + totalCryptoAssets                                  //總投機資產
 totalAssets := totalCash + totalSpecultaionAssets                                               //總資產(現金 + 投機)
-allCost = (ALL_STOCKS_COST + ALL_CRYPTO_COST) * twdEx - INPUT_MAX * usdEx                       //總投入成本
+allCost = (ALL_STOCKS_COST + ALL_CRYPTO_COST) * twdEx - INPUT_BITO * usdEx                       //總投入成本
 allDedt= DEBT * twdEx
 
 cashRatioNow = totalCash / totalAssets                                                          //當下現金比例
@@ -728,7 +607,7 @@ cryptoRebalance = totalAssets * cryptoRatio - totalCryptoAssets
 [remainBTC, pnlBTC, pnlPercentBTC, nowBTCRatio] = lib.calDefault(pBTC * usdEx, MY_BTC_POSITION, MY_BTC_COST * usdEx, totalAssets)
 [remainETH, pnlETH, pnlPercentETH, nowETHRatio] = lib.calDefault(pETH * usdEx, MY_ETH_POSITION, MY_ETH_COST * usdEx, totalAssets)
 [remainCRO, pnlCRO, pnlPercentCRO, nowCRORatio] = lib.calDefault(pCRO * usdEx, MY_CRO_POSITION, MY_CRO_COST * usdEx, totalAssets)
-[remainMATIC, pnlMATIC, pnlPercentMATIC, nowMATICRatio] = lib.calDefault(pMATIC * usdEx, MY_MATIC_POSITION, MY_MATIC_COST * usdEx, totalAssets)
+[remainPOL, pnlPOL, pnlPercentPOL, nowPOLRatio] = lib.calDefault(pPOL * usdEx, MY_POL_POSITION, MY_POL_COST * usdEx, totalAssets)
 [remainADA, pnlADA, pnlPercentADA, nowADARatio] = lib.calDefault(pADA * usdEx, MY_ADA_POSITION, MY_ADA_COST * usdEx, totalAssets)
 [remainLINK, pnlLINK, pnlPercentLINK, nowLINKRatio] = lib.calDefault(pLINK * usdEx, MY_LINK_POSITION, MY_LINK_COST * usdEx, totalAssets)
 [remainARB, pnlARB, pnlPercentARB, nowARBRatio] = lib.calDefault(pARB * usdEx, MY_ARB_POSITION, MY_ARB_COST * usdEx, totalAssets)
@@ -736,7 +615,7 @@ cryptoRebalance = totalAssets * cryptoRatio - totalCryptoAssets
 [remainDOT, pnlDOT, pnlPercentDOT, nowDOTRatio] = lib.calDefault(pDOT * usdEx, MY_DOT_POSITION, MY_DOT_COST * usdEx, totalAssets)
 [remainBNB, pnlBNB, pnlPercentBNB, nowBNBRatio] = lib.calDefault(pBNB * usdEx, MY_BNB_POSITION, MY_BNB_COST * usdEx, totalAssets)
 [remainGMT, pnlGMT, pnlPercentGMT, nowGMTRatio] = lib.calDefault(pGMT * usdEx, MY_GMT_POSITION, MY_GMT_COST * usdEx, totalAssets)
-[remainOther, pnlOther, pnlPercentOther, nowOthersRatio] = lib.calByRemain(otherCryptoASssets * usdEx, MY_OTHER_CRYPTO_COST * usdEx, totalAssets)
+//[remainOther, pnlOther, pnlPercentOther, nowOthersRatio] = lib.calByRemain(otherCryptoASssets * usdEx, MY_OTHER_CRYPTO_COST * usdEx, totalAssets)
 [remainUSDT, pnlUSDT, pnlPercentUSDT, nowUSDTRatio] = lib.calByRemain(EXCHANGE_USD * usdEx, EXCHANGE_USD * usdEx, totalAssets)
 
 //Calcultion and judgement variable before display
@@ -754,7 +633,7 @@ color stockColor = math.abs(twStockDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_
 
 float cryptoDiffRatio = lib.getRatioDiff(cryptoRatioNow, cryptoRatio)
 string cryptoDiffText = fm.fString(cryptoRebalance, 0) + "\t【" + fm.ratioString(cryptoDiffRatio) + "】"
-string cryptoPNLText = getRebalanceText("MAX ", MAX_AVAL * usdEx, cryptoRebalance)
+string cryptoPNLText = getRebalanceText("MAX ", BITO_AVAL * usdEx, cryptoRebalance)
 color cryptoColor = math.abs(cryptoDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_TEXT_COLOR
 string currentDate = str.format_time(timenow, "yyyy/MM/dd", "Asia/Taipei")
 string currentTime = str.format_time(timenow, "HH:mm:ss", "Asia/Taipei")
@@ -777,13 +656,17 @@ float croDiffRatio = lib.getRatioDiff(nowCRORatio, croRatio / 100)
 float croRebalanceValue = totalAssets * croRatio / 100 - remainCRO
 string croRebalaneText = fm.fString(croRebalanceValue, 0) + "\t【" + fm.ratioString(croDiffRatio) + "】"  
 
-float maticDiffRatio = lib.getRatioDiff(nowMATICRatio, maticRatio / 100)
-float maticRebalanceValue = totalAssets * maticRatio / 100 - remainMATIC
-string maticRebalaneText = fm.fString(maticRebalanceValue, 0) + "\t【" + fm.ratioString(maticDiffRatio) + "】"  
+float polDiffRatio = lib.getRatioDiff(nowPOLRatio, polRatio / 100)
+float polRebalanceValue = totalAssets * polRatio / 100 - remainPOL
+string polRebalaneText = fm.fString(polRebalanceValue, 0) + "\t【" + fm.ratioString(polDiffRatio) + "】"  
 
 float adaDiffRatio = lib.getRatioDiff(nowADARatio, adaRatio / 100)
 float adaRebalanceValue = totalAssets * adaRatio / 100 - remainADA
 string adaRebalaneText = fm.fString(adaRebalanceValue, 0) + "\t【" + fm.ratioString(adaDiffRatio) + "】"  
+
+float bnbDiffRatio = lib.getRatioDiff(nowBNBRatio, bnbRatio / 100)
+float bnbRebalanceValue = totalAssets * bnbRatio / 100 - remainBNB
+string bnbRebalaneText = fm.fString(bnbRebalanceValue, 0) + "\t【" + fm.ratioString(bnbDiffRatio) + "】"  
 
 float linkDiffRatio = lib.getRatioDiff(nowLINKRatio, linkRatio / 100)
 float linkRebalanceValue = totalAssets * linkRatio / 100 - remainLINK
@@ -797,9 +680,9 @@ float opDiffRatio = lib.getRatioDiff(nowOPRatio, opRatio / 100)
 float opRebalanceValue = totalAssets * opRatio / 100 - remainOP
 string opRebalaneText = fm.fString(opRebalanceValue, 0) + "\t【" + fm.ratioString(opDiffRatio) + "】"  
 
-float otherDiffRatio = lib.getRatioDiff(nowOthersRatio, otherRatio / 100)
-float otherRebalanceValue = totalAssets * otherRatio / 100 - remainOther
-string otherRebalaneText = fm.fString(otherRebalanceValue, 0) + "\t【" + fm.ratioString(otherDiffRatio) + "】"  
+//float otherDiffRatio = lib.getRatioDiff(nowOthersRatio, otherRatio / 100)
+//float otherRebalanceValue = totalAssets * otherRatio / 100 - remainOther
+//string otherRebalaneText = fm.fString(otherRebalanceValue, 0) + "\t【" + fm.ratioString(otherDiffRatio) + "】"  
 
 //計算個項目"預設配比"數值
 string titleCashRatio = "\t【" + fm.fString(INPUT_CASH_RATIO, 0) + "%】"
@@ -812,11 +695,12 @@ string titleBTCRatio = "\t【" + fm.fString(btcRatio , 0) + "%】"
 string titleETHRatio = "\t【" + fm.fString(ethRatio , 0) + "%】"
 string titleCRORatio = "\t【" + fm.fString(croRatio , 0) + "%】"
 string titleADARatio = "\t【" + fm.fString(adaRatio , 0) + "%】"
-string titleMATICRatio = "\t【" + fm.fString(maticRatio , 0) + "%】"
+string titleBNBRatio = "\t【" + fm.fString(bnbRatio , 0) + "%】"
+string titlePOLRatio = "\t【" + fm.fString(polRatio , 0) + "%】"
 string titleLINKRatio = "\t【" + fm.fString(linkRatio , 0) + "%】"
 string titleARBRatio = "\t【" + fm.fString(arbRatio , 0) + "%】"
 string titleOPRatio = "\t【" + fm.fString(opRatio , 0) + "%】"
-string titleOtherRatio = "\t【" + fm.fString(otherRatio , 0) + "%】"
+//string titleOtherRatio = "\t【" + fm.fString(otherRatio , 0) + "%】"
 
 if barstate.islast
     // ratioTabel := table.new(
@@ -927,23 +811,28 @@ if barstate.islast
         
         if IS_ETH_DISPLAY
             cellRebalanceWithNotify(nextRow, "⟠\tETH" + titleETHRatio, nowETHRatio, ethRebalaneText, ethDiffRatio, 0.15)
-            cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
+            cellIncome(nextRow, ETH_INCOME * usdEx, ETH_COST * usdEx, INPUT_ETH_COST * usdEx)
             nextRow := cellPNL(nextRow, remainETH, pnlETH, pnlPercentETH)
+
+        if IS_ADA_DISPLAY
+            cellRebalanceWithNotify(nextRow, "ADA" + titleADARatio, nowADARatio, adaRebalaneText, adaDiffRatio, 0.15)
+            cellIncome(nextRow, ADA_INCOME * usdEx, ADA_COST * usdEx, INPUT_ADA_COST * usdEx)
+            nextRow := cellPNL(nextRow, remainADA, pnlADA, pnlPercentADA)
+
+        if IS_BNB_DISPLAY
+            cellRebalanceWithNotify(nextRow, "BNB" + titleBNBRatio, nowBNBRatio, bnbRebalaneText, bnbDiffRatio, 0.15)
+            cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
+            nextRow := cellPNL(nextRow, remainBNB, pnlBNB, pnlPercentBNB)
         
         if IS_CRO_DISPLAY
             cellRebalanceWithNotify(nextRow, "CRO" + titleCRORatio, nowCRORatio, croRebalaneText, croDiffRatio, 0.15)
             cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
             nextRow := cellPNL(nextRow, remainCRO, pnlCRO, pnlPercentCRO)
-
-        if IS_ADA_DISPLAY
-            cellRebalanceWithNotify(nextRow, "ADA" + titleADARatio, nowADARatio, adaRebalaneText, adaDiffRatio, 0.15)
-            cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
-            nextRow := cellPNL(nextRow, remainADA, pnlADA, pnlPercentADA)
         
-        if IS_MATIC_DISPLAY
-            cellRebalanceWithNotify(nextRow, "MATIC" + titleMATICRatio, nowMATICRatio, maticRebalaneText, maticDiffRatio, 0.15)
+        if IS_POL_DISPLAY
+            cellRebalanceWithNotify(nextRow, "POL" + titlePOLRatio, nowPOLRatio, polRebalaneText, polDiffRatio, 0.15)
             cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
-            nextRow := cellPNL(nextRow, remainMATIC, pnlMATIC, pnlPercentMATIC)
+            nextRow := cellPNL(nextRow, remainPOL, pnlPOL, pnlPercentPOL)
 
         if IS_LINK_DISPLAY
             cellRebalanceWithNotify(nextRow, "LINK" + titleLINKRatio, nowLINKRatio, linkRebalaneText, linkDiffRatio, 0.15)
@@ -965,20 +854,15 @@ if barstate.islast
             cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
             nextRow := cellPNL(nextRow, remainDOT, pnlDOT, pnlPercentDOT)
         
-        if IS_BNB_DISPLAY
-            cellBlankRebalance(nextRow, "BNB", nowBNBRatio)
-            cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
-            nextRow := cellPNL(nextRow, remainBNB, pnlBNB, pnlPercentBNB)
-
         if IS_GMT_DISPLAY
             cellBlankRebalance(nextRow, "GMT", nowGMTRatio)
             cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
             nextRow := cellPNL(nextRow, remainGMT, pnlGMT, pnlPercentGMT)
 
-        if IS_OTHER_DISPLAY
-            cellRebalanceWithNotify(nextRow, "淨利(零)幣?" + titleOtherRatio, nowOthersRatio, otherRebalaneText, otherDiffRatio, 1)
-            cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
-            nextRow := cellPNL(nextRow, remainOther, pnlOther, pnlPercentOther)
+        //if IS_OTHER_DISPLAY
+            //cellRebalanceWithNotify(nextRow, "淨利(零)幣?" + titleOtherRatio, nowOthersRatio, otherRebalaneText, otherDiffRatio, 1)
+            //cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
+            //nextRow := cellPNL(nextRow, remainOther, pnlOther, pnlPercentOther)
 
         if IS_USDT_DISPLAY
             cellBlankRebalance(nextRow, "USDT", nowUSDTRatio)
@@ -1097,6 +981,31 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2024, 3, 12, 752599)) //40.9%
         array.push(rdArray, newData(2024, 3, 19, 476727)) //25.8%
         array.push(rdArray, newData(2024, 3, 29, 721010)) //38.8%
+        array.push(rdArray, newData(2024, 4, 4, 541588)) //28.8%
+        array.push(rdArray, newData(2024, 4, 14, 350072)) //18.4%
+        array.push(rdArray, newData(2024, 4, 18, 310418)) //16.6%
+        array.push(rdArray, newData(2024, 5, 1, 242095)) //12.4%
+        array.push(rdArray, newData(2024, 5, 6, 364505)) //18.8%
+        array.push(rdArray, newData(2024, 5, 14, 197251)) //10.1%
+        array.push(rdArray, newData(2024, 5, 21, 419436)) //21.1%
+        array.push(rdArray, newData(2024, 5, 27, 354038)) //17.8%
+        array.push(rdArray, newData(2024, 6, 11, 146412)) //7.2%
+        array.push(rdArray, newData(2024, 6, 18, -165227)) //-6.7%
+        array.push(rdArray, newData(2024, 7, 5, -415761)) //-21.7%
+        array.push(rdArray, newData(2024, 8, 4, -383499)) //-17.1%
+        array.push(rdArray, newData(2024, 8, 5, -712735)) //-31.8%
+        array.push(rdArray, newData(2024, 8, 17, -480255)) //-21.4%
+        array.push(rdArray, newData(2024, 9, 5, -637407)) //-25.1%
+        array.push(rdArray, newData(2024, 9, 18, -630473)) //-23.4%
+        array.push(rdArray, newData(2024, 9, 26, -406787)) //-15.1%
+        array.push(rdArray, newData(2024, 10, 15, -401316)) //-14.7%
+        array.push(rdArray, newData(2024, 10, 26, -458985)) //-14.7%
+        array.push(rdArray, newData(2024, 11, 3, -548289)) //-19.5%
+        array.push(rdArray, newData(2024, 11, 7, 0)) //fake
+        array.push(rdArray, newData(2024, 11, 11, 192539)) //6.9%
+        array.push(rdArray, newData(2024, 11, 16, 439049)) //15.4%
+        array.push(rdArray, newData(2024, 11, 23, 947223)) //33.3%
+
 
 plot(
  series       =  recordAssetsVariation,
@@ -1109,5 +1018,5 @@ plot(
 // getDebugValue(str.format_time(timenow, "yyyy/MM/dd HH:mm:ss", "Asia/Taipei") )
 
 // 粗略統計
-// 幣安 + OKX + 派網 + bybit + crypto.com + exCrypto.com + coolWallet
-// 7443 + 32432 + 9638 + 300 + 4616 + 6537 + 7443 = 68109
+// 幣安 + OKX + 派網 + bybit + crypto.com  + coolWallet
+// 8862 + 23173 + 6119 + 752 + 5936 + 8593 = 53435
