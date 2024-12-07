@@ -35,29 +35,31 @@ var float TKO_POSITION = 83.54
 var float RVN_POSITION = 2079
 var float THETA_POSITION = 33.5
 var float GALA_POSITION = 1516.4
-var float BNX_POSITION = 149
+var float FORM_POSITION = 149
 var float COS_POSITION = 5186
 var float HIGH_POSITION = 11.79
 var float RAY_POSITION = 40.06
-var float TROY_POSITION = 18521
 var float SUI_POSITION = 44.955
 var float DOGE_POSITION = 827
-
-//OKX
-var float GPT_POSITION = 1180
-var float RUNECOIN_POSITION = 13826
-var float MSN_POSITION = 32.1
-var float ULTI_POSITION = 9284
-var float MAX_POSITION = 563
+var float S_POSITION = 43.96
+var float SPELL_POSITION = 68988
+var float VTHO_POSITION = 7690
 
 //Bybit
-var float POPCAT_POSITION = 46.55
 var float KASTA_POSITION = 1620
-var float PEPE_POSITION = 2568916
 
 
 //PIONEX
 var float XLM_POSITION = 900.64
+var float XRP_POSITION = 100
+var float TRX_POSITION = 206.56
+var float IOTA_POSITION = 184.2
+var float XTZ_POSITION = 37
+var float CRV_POSITION = 90.57
+var float SUSHI_POSITION = 88.6
+
+//Crypto.com
+var float AVAX_POSITION = 3.68
 
 var string USD_TWD_SYMBOL = "FX_IDC:USDTWD"
 
@@ -68,25 +70,27 @@ var string TKO_SYMBOL = "BINANCE:TKOUSDT"
 var string RVN_SYMBOL = "BINANCE:RVNUSDT"
 var string THETA_SYMBOL = "BINANCE:THETAUSDT"
 var string GALA_SYMBOL = "BINANCE:GALAUSDT"
-var string BNX_SYMBOL = "BINANCE:BNXUSDT"
+var string FORM_SYMBOL = "BINANCE:FORMUSDT"
 var string COS_SYMBOL = "BINANCE:COSUSDT"
 var string HIGH_SYMBOL = "BINANCE:HIGHUSDT"
 var string RAY_SYMBOL = "BINANCE:RAYUSDT"
-var string TROY_SYMBOL = "BINANCE:TROYUSDT"
 var string SUI_SYMBOL = "BINANCE:SUIUSDT"
 var string DOGE_SYMBOL = "BINANCE:DOGEUSDT"
+var string S_SYMBOL = "BINANCE:SUSDT"
+var string SPELL_SYMBOL = "BINANCE:SPELLUSDT"
+var string VTHO_SYMBOL = "BINANCE:VTHOUSDT"
 
-var string GPT_SYMBOL = "OKX:GPTUSDT"
-var string RUNECOIN_SYMBOL = "OKX:RUNECOINUSDT"
-var string MSN_SYMBOL = "HTX:MSNUSDT"
-var string ULTI_SYMBOL = "OKX:ULTIUSDT"
-var string MAX_SYMBOL = "OKX:MAXUSDT"
-
-var string POPCAT_SYMBOL = "BYBIT:POPCATUSDT"
 var string KASTA_SYMBOL = "BYBIT:KASTAUSDT"
-var string PEPE_SYMBOL = "BYBIT:PEPEUSDT"
 
 var string XLM_SYMBOL = "BINANCE:XLMUSDT"
+var string XRP_SYMBOL = "BINANCE:XRPUSDT"
+var string TRX_SYMBOL = "BINANCE:TRXUSDT"
+var string IOTA_SYMBOL = "BINANCE:IOTAUSDT"
+var string XTZ_SYMBOL = "BINANCE:XTZUSDT"
+var string CRV_SYMBOL = "BINANCE:CRVUSDT"
+var string SUSHI_SYMBOL = "BINANCE:SUSHIUSDT"
+
+var string AVAX_SYMBOL = "BINANCE:AVAXUSDT"
 
 var float pUsd_Twd = na
 
@@ -97,26 +101,27 @@ var float pTKO = na
 var float pRVN = na
 var float pTHETA = na
 var float pGALA = na
-var float pBNX = na
+var float pFORM = na
 var float pCOS = na
 var float pHIGH = na
 var float pRAY = na
-var float pTroy = na
 var float pSui = na
 var float pDoge = na
+var float pS = na
+var float pSpell = na
+var float pVtho = na
 
-var float pGPT = na
-var float pRUNECOIN = na
-var float pMSN = na
-var float pULTI = na
-var float pMAX = na
-
-var float pPopcat = na
 var float pKasta = na
-var float pPepe = na
 
 var float pXLM = na
+var float pXRP = na
+var float pTRX = na
+var float pIOTA = na
+var float pXTZ = na
+var float pCRV = na
+var float pSUSHI = na
 
+var float pAVAX = na
 
 pUsd_Twd := request.security(symbol = USD_TWD_SYMBOL, timeframe = TIME_FRAME, expression = close)
 
@@ -128,29 +133,30 @@ pTKO := request.security(symbol = TKO_SYMBOL, timeframe = TIME_FRAME, expression
 pRVN := request.security(symbol = RVN_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pTHETA := request.security(symbol = THETA_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pGALA := request.security(symbol = GALA_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pBNX := request.security(symbol = BNX_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pFORM := request.security(symbol = FORM_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pCOS := request.security(symbol = COS_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pHIGH := request.security(symbol = HIGH_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pRAY := request.security(symbol = RAY_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pTroy := request.security(symbol = TROY_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pSui := request.security(symbol = SUI_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pDoge := request.security(symbol = DOGE_SYMBOL, timeframe = TIME_FRAME, expression = close)
-
-// OKX
-pGPT := request.security(symbol = GPT_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pRUNECOIN := request.security(symbol = RUNECOIN_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pMSN := request.security(symbol = MSN_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pULTI := request.security(symbol = ULTI_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pMAX := request.security(symbol = MAX_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pS := request.security(symbol = S_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pSpell := request.security(symbol = SPELL_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pVtho := request.security(symbol = VTHO_SYMBOL, timeframe = TIME_FRAME, expression = close)
 
 // Bybit
-pPopcat := request.security(symbol = POPCAT_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pKasta := request.security(symbol = KASTA_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pPepe := request.security(symbol = PEPE_SYMBOL, timeframe = TIME_FRAME, expression = close)
 
 // Pionex
 pXLM := request.security(symbol = XLM_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pXRP := request.security(symbol = XRP_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pTRX := request.security(symbol = TRX_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pIOTA := request.security(symbol = IOTA_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pXTZ := request.security(symbol = XTZ_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pCRV := request.security(symbol = CRV_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pSUSHI := request.security(symbol = SUSHI_SYMBOL, timeframe = TIME_FRAME, expression = close)
 
+// Crypto.com
+pAVAX := request.security(symbol = AVAX_SYMBOL, timeframe = TIME_FRAME, expression = close)
 
 totalMarketValue  = pDEGO * DEGO_POSITION
 totalMarketValue += pICP * ICP_POSITION
@@ -159,25 +165,27 @@ totalMarketValue += pTKO * TKO_POSITION
 totalMarketValue += pRVN * RVN_POSITION
 totalMarketValue += pTHETA * THETA_POSITION
 totalMarketValue += pGALA * GALA_POSITION
-totalMarketValue += pBNX * BNX_POSITION
+totalMarketValue += pFORM * FORM_POSITION
 totalMarketValue += pCOS * COS_POSITION
 totalMarketValue += pHIGH * HIGH_POSITION
 totalMarketValue += pRAY * RAY_POSITION
-totalMarketValue += pTroy * TROY_POSITION
 totalMarketValue += pSui * SUI_POSITION
 totalMarketValue += pDoge * DOGE_POSITION
+totalMarketValue += pS * S_POSITION
+totalMarketValue += pSpell * SPELL_POSITION
+totalMarketValue += pVtho * VTHO_POSITION
 
-totalMarketValue += pGPT * GPT_POSITION
-totalMarketValue += pRUNECOIN * RUNECOIN_POSITION
-totalMarketValue += pMSN * MSN_POSITION
-totalMarketValue += pULTI * ULTI_POSITION
-totalMarketValue += pMAX * MAX_POSITION
-
-totalMarketValue += pPopcat * POPCAT_POSITION
 totalMarketValue += pKasta * KASTA_POSITION
-totalMarketValue += pPepe * PEPE_POSITION
 
 totalMarketValue += pXLM * XLM_POSITION
+totalMarketValue += pXRP * XRP_POSITION
+totalMarketValue += pTRX * TRX_POSITION
+totalMarketValue += pIOTA * IOTA_POSITION
+totalMarketValue += pXTZ * XTZ_POSITION
+totalMarketValue += pCRV * CRV_POSITION
+totalMarketValue += pSUSHI * CRV_POSITION
+
+totalMarketValue += pAVAX * AVAX_POSITION
 
 totalTwd = pUsd_Twd * totalMarketValue
 
