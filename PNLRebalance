@@ -69,7 +69,7 @@ var float BITO_AVAL = 0                                                         
 var float PIONEX_OTHER_USD = 0
 
 var float BYBIT_EXCHANGE_USD =          (83 + 0) + 0 + 0                            // bybit(主 + 副) + wulin
-var float BINANCE_EXCHANGE_USD =        0 + 4343                                                 // binance
+var float BINANCE_EXCHANGE_USD =        0 + 2027                                                 // binance
 var float CRYPTO_DOT_COM_EXCHANGE_USD = 130                                              // EX.Crypto.com
 var float OKX_EXCHANGE_USD =            (0 + 0)                                        // OKX
 var float PIONEX_EXCHANGE_USD =         (0 + PIONEX_OTHER_USD)                          // 派網
@@ -88,8 +88,8 @@ var float _006208_INCOME = 344242
 
 var float PIONEX_BTC_POSITION = 0                                         //網格 + 幣幣天地
 var float PIONEX_BTC_COST = 0
-var float MANUAL_BTC_POSITION = 0.5098                                           //倉位
-var float MANUAL_BTC_COST = 23615                                                //成本
+var float MANUAL_BTC_POSITION = 0.5198                                           //倉位
+var float MANUAL_BTC_COST = 24532                                                //成本
 var float BTC_POSITION_BOUGHT = MANUAL_BTC_POSITION + PIONEX_BTC_POSITION       // btc (顆)
 var float BTC_COST = MANUAL_BTC_COST + PIONEX_BTC_COST                          // btc總投入 (USD)
 var float BTC_POSITION_SOLD = 0.26980911
@@ -97,8 +97,8 @@ var float BTC_INCOME = 5274.66
 
 var float PIONEX_ETH_POSITION = 0                                          //網格 + 幣幣天地
 var float PIONEX_ETH_COST = 0 
-var float MANUAL_ETH_POSITION = 8.69                                     //倉位
-var float MANUAL_ETH_COST = 19208                                                //成本       
+var float MANUAL_ETH_POSITION = 8.9451                                     //倉位
+var float MANUAL_ETH_COST = 19986                                                //成本       
 var float ETH_POSITION_BOUGHT = MANUAL_ETH_POSITION + PIONEX_ETH_POSITION       // eth (顆)         
 var float ETH_COST = MANUAL_ETH_COST + PIONEX_ETH_COST                          // eth總投入 (USD)
 var float ETH_POSITION_SOLD = 0.272993
@@ -112,8 +112,8 @@ var float CRO_INCOME = 5317.89
 var float POL_POSITION = 2737                                     // pol (顆)
 var float POL_COST = 2120                                         // pol 總投入 (USD)
 
-var float ADA_POSITION_BOUGHT = 31113.8785                               // ada (顆)
-var float ADA_COST = 9932.14                                          // ada 總投入 (USD)
+var float ADA_POSITION_BOUGHT = 32448.8785                               // ada (顆)
+var float ADA_COST = 10551.14                                          // ada 總投入 (USD)
 var float ADA_POSITION_SOLD = 5299
 var float ADA_INCOME = 5182
 
@@ -139,8 +139,8 @@ var float DOT_INCOME = 0
 
 var float BNB_POSITION_BOUGHT = 16.54                                          // BNB (顆)
 var float BNB_COST = 7872                                              // BNB總投入 (USD)
-var float BNB_POSITION_SOLD = 4.66  
-var float BNB_INCOME = 5523 
+var float BNB_POSITION_SOLD = 4.71  
+var float BNB_INCOME = 5579 
 
 var float STEPN_GMT = 2200 +  2 * 515 + 6 * 190 + 2778 + 207 + 2 * 243 // (藍 + 白 + 綠 + 寶石)GMT (顆)
 var float GMT_POSITION = STEPN_GMT                         
@@ -1034,6 +1034,7 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2025, 8, 9, 961097)) //31.6%
         array.push(rdArray, newData(2025, 8, 30, 1545152)) //50.8%
         array.push(rdArray, newData(2025, 11, 15, 485221)) //16%
+        array.push(rdArray, newData(2025, 11, 22, 139468)) //4.6%
 
 
 plot(
