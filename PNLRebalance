@@ -47,10 +47,10 @@ var float ARB_CRYPTO_RATIO = 1
 var float OP_CRYPTO_RATIO = 1
 //var float OTHER_CRYPTO_RATIO = 5
 
-var float BANK1_AVAL = 1293 + 100000                                                // LineBank (TWD)
+var float BANK1_AVAL = 10168 + 200000                                                // LineBank (TWD)
 var float BANK2_AVAL = 0 + 225                                                  // Bankee (TWD)  
-var float BANK3_AVAL = 5820                                                    // 台新 (TWD)
-var float BANK4_AVAL = 5250                                                    // 樂天 (TWD)
+var float BANK3_AVAL = 58170                                                    // 台新 (TWD)
+var float BANK4_AVAL = 5278                                                    // 樂天 (TWD)
 var float BITO_AVAL = 0                                                          // 幣託 (USD)
 
  // CHZ(100) + AXS(725) + SAND(200) + MANA(100) + ILV(200) + DYDX(200) + ALI(218) + UNI(100)
@@ -68,18 +68,18 @@ var float BITO_AVAL = 0                                                         
 // var float PIONEX_OTHER_USD = 2256 + 3100
 var float PIONEX_OTHER_USD = 0
 
-var float BYBIT_EXCHANGE_USD =          (0 + 0) + 0 + 0                            // bybit(主 + 副) + wulin
-var float BINANCE_EXCHANGE_USD =        64 + 12774                                                 // binance
-var float CRYPTO_DOT_COM_EXCHANGE_USD = 484                                              // EX.Crypto.com
+var float BYBIT_EXCHANGE_USD =          (83 + 0) + 0 + 0                            // bybit(主 + 副) + wulin
+var float BINANCE_EXCHANGE_USD =        0 + 4343                                                 // binance
+var float CRYPTO_DOT_COM_EXCHANGE_USD = 130                                              // EX.Crypto.com
 var float OKX_EXCHANGE_USD =            (0 + 0)                                        // OKX
-var float PIONEX_EXCHANGE_USD =         (212 + PIONEX_OTHER_USD)                          // 派網
-var float KRAKEN_USD =                  723                                              // Kraken
+var float PIONEX_EXCHANGE_USD =         (0 + PIONEX_OTHER_USD)                          // 派網
+var float KRAKEN_USD =                  0                                              // Kraken
 
 var float EXCHANGE_USD = BYBIT_EXCHANGE_USD + BINANCE_EXCHANGE_USD + CRYPTO_DOT_COM_EXCHANGE_USD + OKX_EXCHANGE_USD + PIONEX_EXCHANGE_USD + KRAKEN_USD
 
-var float VISA_AVAL = 14600                                                      // Visa (USD) 出金
+var float VISA_AVAL = 22696                                                      // Visa (USD) 出金
 
-var float DEBT = -744524 - 347044                                                // 負債(TWD)
+var float DEBT = -721703 - 338093                                               // 負債(TWD)
 
 var float _006208_POSITION_BOUGHT = 400 + 3000                                   // 006208 (股)
 var float _006208_COST = 27780 + 214179                                          // 006208總投入 (TWD)
@@ -88,21 +88,21 @@ var float _006208_INCOME = 344242
 
 var float PIONEX_BTC_POSITION = 0                                         //網格 + 幣幣天地
 var float PIONEX_BTC_COST = 0
-var float MANUAL_BTC_POSITION = 0.4622                                           //倉位
-var float MANUAL_BTC_COST = 18490                                                //成本
+var float MANUAL_BTC_POSITION = 0.5098                                           //倉位
+var float MANUAL_BTC_COST = 23615                                                //成本
 var float BTC_POSITION_BOUGHT = MANUAL_BTC_POSITION + PIONEX_BTC_POSITION       // btc (顆)
 var float BTC_COST = MANUAL_BTC_COST + PIONEX_BTC_COST                          // btc總投入 (USD)
-var float BTC_POSITION_SOLD = 0.24540911
-var float BTC_INCOME = 2405.27
+var float BTC_POSITION_SOLD = 0.26980911
+var float BTC_INCOME = 5274.66
 
 var float PIONEX_ETH_POSITION = 0                                          //網格 + 幣幣天地
 var float PIONEX_ETH_COST = 0 
-var float MANUAL_ETH_POSITION = 7.9                                     //倉位
-var float MANUAL_ETH_COST = 16141                                                //成本       
+var float MANUAL_ETH_POSITION = 8.69                                     //倉位
+var float MANUAL_ETH_COST = 19208                                                //成本       
 var float ETH_POSITION_BOUGHT = MANUAL_ETH_POSITION + PIONEX_ETH_POSITION       // eth (顆)         
 var float ETH_COST = MANUAL_ETH_COST + PIONEX_ETH_COST                          // eth總投入 (USD)
-var float ETH_POSITION_SOLD = 0.103993
-var float ETH_INCOME = 10072
+var float ETH_POSITION_SOLD = 0.272993
+var float ETH_INCOME = 10812.23
 
 var float CRO_POSITION_BOUGHT = 92986 + 18178                               // cro (顆)
 var float CRO_COST = 13407.48                                           // cro總投入 (USD)
@@ -112,8 +112,8 @@ var float CRO_INCOME = 5317.89
 var float POL_POSITION = 2737                                     // pol (顆)
 var float POL_COST = 2120                                         // pol 總投入 (USD)
 
-var float ADA_POSITION_BOUGHT = 26221                                // ada (顆)
-var float ADA_COST = 6870                                            // ada 總投入 (USD)
+var float ADA_POSITION_BOUGHT = 31113.8785                               // ada (顆)
+var float ADA_COST = 9932.14                                          // ada 總投入 (USD)
 var float ADA_POSITION_SOLD = 5299
 var float ADA_INCOME = 5182
 
@@ -137,8 +137,11 @@ var float DOT_COST = 1342                                                // dot 
 var float DOT_POSITION_SOLD = 0  
 var float DOT_INCOME = 0    
 
-var float BNB_POSITION = 16.54                                          // BNB (顆)
+var float BNB_POSITION_BOUGHT = 16.54                                          // BNB (顆)
 var float BNB_COST = 7872                                              // BNB總投入 (USD)
+var float BNB_POSITION_SOLD = 4.66  
+var float BNB_INCOME = 5523 
+
 var float STEPN_GMT = 2200 +  2 * 515 + 6 * 190 + 2778 + 207 + 2 * 243 // (藍 + 白 + 綠 + 寶石)GMT (顆)
 var float GMT_POSITION = STEPN_GMT                         
 var float GMT_COST = 4500 + 100 + 120.9 + 224 + 423 + 513             //GMT總投入(USD)
@@ -210,6 +213,9 @@ var float INPUT_CRO_COST = math.ceil(CRO_COST * (1 - (CRO_POSITION_SOLD / CRO_PO
 
 var float INPUT_ADA_POSITION = ADA_POSITION_BOUGHT - ADA_POSITION_SOLD
 var float INPUT_ADA_COST = math.ceil(ADA_COST * (1 - (ADA_POSITION_SOLD / ADA_POSITION_BOUGHT))) 
+
+var float INPUT_BNB_POSITION = BNB_POSITION_BOUGHT - BNB_POSITION_SOLD
+var float INPUT_BNB_COST = math.ceil(BNB_COST * (1 - (BNB_POSITION_SOLD / BNB_POSITION_BOUGHT))) 
 
 var float INPUT_ARB_POSITION = ARB_POSITION_BOUGHT - ARB_POSITION_SOLD
 var float INPUT_ARB_COST = math.ceil(ARB_COST * (1 - (ARB_POSITION_SOLD / ARB_POSITION_BOUGHT))) 
@@ -288,8 +294,8 @@ MY_DOT_POSITION = input.float(defval = INPUT_DOT_POSITION, title = POSITION_TITL
 MY_DOT_COST = input.float(defval = INPUT_DOT_COST, title = CRYPTO_COST_TITLE, inline = INLINE_DOT, group = GROUP_ASSETS) 
 
 IS_BNB_DISPLAY = input.bool(defval = true, title = "BNB :", inline = INLINE_BNB, group = GROUP_ASSETS) 
-MY_BNB_POSITION = input.float(defval = BNB_POSITION, title = POSITION_TITLE, inline = INLINE_BNB, group = GROUP_ASSETS) 
-MY_BNB_COST = input.float(defval = BNB_COST, title = CRYPTO_COST_TITLE, inline = INLINE_BNB, group = GROUP_ASSETS) 
+MY_BNB_POSITION = input.float(defval = INPUT_BNB_POSITION, title = POSITION_TITLE, inline = INLINE_BNB, group = GROUP_ASSETS) 
+MY_BNB_COST = input.float(defval = INPUT_BNB_COST, title = CRYPTO_COST_TITLE, inline = INLINE_BNB, group = GROUP_ASSETS) 
 
 IS_GMT_DISPLAY = input.bool(defval = true, title = "GMT :", inline = INLINE_GMT, group = GROUP_ASSETS) 
 MY_GMT_POSITION = input.float(defval = GMT_POSITION, title = POSITION_TITLE, inline = INLINE_GMT, group = GROUP_ASSETS) 
@@ -322,7 +328,7 @@ var string STOCK_006208_SYMBOL = "TWSE_DLY:006208"
 var string BTC_SYMBOL = "COINBASE:BTCUSD"
 var string ETH_SYMBOL = "COINBASE:ETHUSD"
 var string CRO_SYMBOL = "COINBASE:CROUSD"
-var string POL_SYMBOL = "COINBASE:MATICUSD"
+var string POL_SYMBOL = "BINANCE:POLUSDT"
 var string ADA_SYMBOL = "BINANCE:ADAUSDT"
 var string LINK_SYMBOL = "BINANCE:LINKUSDT"
 var string ARB_SYMBOL = "BINANCE:ARBUSDT"
@@ -1027,6 +1033,7 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2025, 7, 16, 359417)) //11.7%
         array.push(rdArray, newData(2025, 8, 9, 961097)) //31.6%
         array.push(rdArray, newData(2025, 8, 30, 1545152)) //50.8%
+        array.push(rdArray, newData(2025, 11, 15, 485221)) //16%
 
 
 plot(

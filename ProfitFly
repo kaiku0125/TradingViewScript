@@ -57,6 +57,7 @@ var float IOTA_POSITION = 184.2
 var float XTZ_POSITION = 37
 var float CRV_POSITION = 90.57
 var float SUSHI_POSITION = 88.6
+var float DCR_POSITION = 1
 
 //Crypto.com
 var float AVAX_POSITION = 3.68
@@ -89,6 +90,7 @@ var string IOTA_SYMBOL = "BINANCE:IOTAUSDT"
 var string XTZ_SYMBOL = "BINANCE:XTZUSDT"
 var string CRV_SYMBOL = "BINANCE:CRVUSDT"
 var string SUSHI_SYMBOL = "BINANCE:SUSHIUSDT"
+var string DCR_SYMBOL = "BINANCE:DCRUSDT"
 
 var string AVAX_SYMBOL = "BINANCE:AVAXUSDT"
 
@@ -120,6 +122,7 @@ var float pIOTA = na
 var float pXTZ = na
 var float pCRV = na
 var float pSUSHI = na
+var float pDCR = na
 
 var float pAVAX = na
 
@@ -154,6 +157,7 @@ pIOTA := request.security(symbol = IOTA_SYMBOL, timeframe = TIME_FRAME, expressi
 pXTZ := request.security(symbol = XTZ_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pCRV := request.security(symbol = CRV_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pSUSHI := request.security(symbol = SUSHI_SYMBOL, timeframe = TIME_FRAME, expression = close)
+pDCR := request.security(symbol = DCR_SYMBOL, timeframe = TIME_FRAME, expression = close)
 
 // Crypto.com
 pAVAX := request.security(symbol = AVAX_SYMBOL, timeframe = TIME_FRAME, expression = close)
@@ -183,7 +187,8 @@ totalMarketValue += pTRX * TRX_POSITION
 totalMarketValue += pIOTA * IOTA_POSITION
 totalMarketValue += pXTZ * XTZ_POSITION
 totalMarketValue += pCRV * CRV_POSITION
-totalMarketValue += pSUSHI * CRV_POSITION
+totalMarketValue += pSUSHI * SUSHI_POSITION
+totalMarketValue += pDCR * DCR_POSITION
 
 totalMarketValue += pAVAX * AVAX_POSITION
 
