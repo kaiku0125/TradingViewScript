@@ -1,4 +1,4 @@
-//@version=5
+//@version=6
 
 // 1. Import library
 import kaiku0125/Debug/1 as debug
