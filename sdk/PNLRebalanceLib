@@ -19,11 +19,49 @@ var string SIZE_LARGE = "大"
 var string BOTTOM_CENTER = "中間靠下"
 var string MIDDLE_CENTER = "正中央"
 
-var VERSION_NAME = "v5.0"
+var VERSION_NAME = "v6.0"
 
 var color DF_TEXT_COLOR = color.rgb(255, 255, 204) 
 var color DF_CELL_COLOR = color.rgb(77, 77, 77)
 
+// AssetType 类型定义
+export type AssetType
+    string symbol
+    string name
+    string icon
+    float position
+    float cost
+    float income
+    float positionSold
+    float ratio
+    bool isDisplay
+    string category
+    string inlineId
+
+export calDefault(float currentPrice, float position, float cost, float totalAssets) =>
+    remain = currentPrice * position
+    pnl = remain - cost
+    pnlPercent = pnl / cost
+    nowRatio = remain / totalAssets
+    [remain, pnl, pnlPercent, nowRatio]
+
+export getRatioDiff(float nowRatio, float supposeRatio) =>
+    float output = nowRatio - supposeRatio
+    output
+
+// 资产计算函数
+export calculateAssetMetrics(AssetType asset, float currentPrice, float totalAssets, float usdEx, float twdEx) =>
+    float exchangeRate = asset.category == "TW_STOCK" ? twdEx : usdEx
+    float adjustedPrice = currentPrice * exchangeRate
+    float adjustedCost = asset.cost * exchangeRate
+    [remain, pnl, pnlPercent, nowRatio] = calDefault(adjustedPrice, asset.position, adjustedCost, totalAssets)
+    [remain, pnl, pnlPercent, nowRatio]
+
+export calculateRebalance(AssetType asset, float totalAssets, float nowRatio, float remain) =>
+    float targetRatio = asset.ratio / 100
+    float rebalanceValue = totalAssets * targetRatio - remain
+    float diffRatio = getRatioDiff(nowRatio, targetRatio)
+    [rebalanceValue, diffRatio]
 
 export getTableSize(string inputSize) =>
     string output = if inputSize == SIZE_TINY
@@ -42,13 +80,6 @@ export getTablePosition(string inputPosition) =>
     else     
         position.bottom_center
     output
-
-export calDefault(float currentPrice, float position, float cost, float totalAssets) =>
-    remain = currentPrice * position
-    pnl = remain - cost
-    pnlPercent = pnl / cost
-    nowRatio = remain / totalAssets
-    [remain, pnl, pnlPercent, nowRatio]
     
 export calByRemain(float remain, float cost, float totalAssets) =>
     pnl = remain - cost
@@ -85,10 +116,6 @@ export ratioStateJudge(float ratio, color bullColor) =>
     else
         DF_TEXT_COLOR
     [outputIcon, outputColor]
-
-export getRatioDiff(float nowRatio, float supposeRatio) =>
-    float output = nowRatio - supposeRatio
-    output
 
 export isDate(int _year, int _month, int _day) =>
     bool isDate = time == timestamp(_year, _month, _day) 
