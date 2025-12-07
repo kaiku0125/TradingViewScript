@@ -273,6 +273,8 @@ INPUT_DISPLAY_CASH = input.bool(defval = true, title = "現金", inline = "00", 
 INPUT_DISPLAY_TWSTOCK = input.bool(defval = true, title = "台股", inline = "00", group = GROUP_SETTING)
 INPUT_DISPLAY_CRYPTO = input.bool(defval = true, title = "幣圈", inline = "00", group = GROUP_SETTING)
 INPUT_DISPLAY_ASSETS_CHART = input.bool(defval = true, title = "資產走勢線圖", group = GROUP_SETTING)
+INPUT_SMOOTHING_ENABLED = input.bool(defval = true, title = "平滑化", group = GROUP_SETTING)
+INPUT_SMOOTHING_PERIOD = input.int(defval = 10, title = "平滑化週期", minval = 1, maxval = 50, group = GROUP_SETTING)
 INPUT_DISPLAY_CURRENCY = input.string(defval = TWD, title = "貨幣顯示", options = [TWD, USD], group = GROUP_SETTING)
 INPUT_DISPLAY_SIZE = input.string(defval = SIZE_LARGE, title = "表格大小", options = [SIZE_TINY, SIZE_SMALL, SIZE_NORMAL, SIZE_LARGE], group = GROUP_SETTING)
 INPUT_DISPLAY_POSITION = input.string(defval = MIDDLE_CENTER, title = "表格位置", options = [MIDDLE_CENTER, BOTTOM_CENTER], group = GROUP_SETTING)
@@ -477,6 +479,8 @@ var float pATOM = na
 // ============================================================================
 var float totalAssets = 0              // 總資產
 var float recordAssetsVariation = 0    // 記錄的資產變化（用於圖表）
+var float filledVariation = na         // 前向填充後的資產變化（用於平滑化）
+var float smoothedVariation = na       // 平滑化後的資產變化（用於圖表）
 
 // ============================================================================
 // 表格變數 - 用於顯示資訊的表格
@@ -1422,20 +1426,35 @@ if barstate.islast
 // ============================================================================
 // 步驟 15：繪製資產走勢圖表
 // ============================================================================
+// 處理歷史記錄數據（前向填充）
+if array.size(rdArray) != 0
+    temp = array.get(rdArray, index = 0)
+    if lib.isDate(temp.mYear, temp.mMonth, temp.mDay)
+        // 遇到新的有效數據點，更新值
+        recordAssetsVariation := temp.mNowTotal
+        filledVariation := temp.mNowTotal
+        if array.size(rdArray) != 1
+            array.shift(rdArray)
+    // 如果沒有新數據點，filledVariation 會自動保持上一個值（var 變數的特性）
+else
+    // 初始化時也需要設置 filledVariation
+    if na(filledVariation) and recordAssetsVariation != 0
+        filledVariation := recordAssetsVariation
+
+// 計算移動平均平滑化（需要在條件塊外調用以保持一致性）
+smoothedVariationCalc = ta.sma(filledVariation, INPUT_SMOOTHING_PERIOD)
+if INPUT_SMOOTHING_ENABLED and not na(filledVariation)
+    smoothedVariation := smoothedVariationCalc
+else
+    smoothedVariation := na
+
 if INPUT_DISPLAY_ASSETS_CHART
     // 初始化基準線
     if bar_index == 1
-        line.new(x1 = bar_index, y1 = 0, x2 = bar_index + 1, y2 = 0, extend = extend.both, color = colour.ANTIQUE_WHITE(70), width = 4) 
-
-    // 處理歷史記錄數據
-    if array.size(rdArray) != 0
-        temp = array.get(rdArray, index = 0)
-        if lib.isDate(temp.mYear, temp.mMonth, temp.mDay)
-            recordAssetsVariation := temp.mNowTotal
-            if array.size(rdArray) != 1
-                array.shift(rdArray)  
-    else
-        // 初始化歷史數據（測試用數據）
+        line.new(x1 = bar_index, y1 = 0, x2 = bar_index + 1, y2 = 0, extend = extend.both, color = colour.ANTIQUE_WHITE(70), width = 4)
+    
+    // 初始化歷史數據（測試用數據，僅在 rdArray 為空時執行）
+    if array.size(rdArray) == 0
         array.push(rdArray, newData(2022, 5, 28, 5161))
         array.push(rdArray, newData(2022, 6, 1, 7161))
         array.push(rdArray, newData(2022, 6, 6, -5161))
@@ -1571,13 +1590,15 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2025, 11, 15, 485221)) //16%
         array.push(rdArray, newData(2025, 11, 22, 139468)) //4.6%
 
+// 選擇要繪製的值（平滑化或原始值）
+plotValue = INPUT_SMOOTHING_ENABLED and not na(smoothedVariation) ? smoothedVariation : (not na(filledVariation) ? filledVariation : recordAssetsVariation)
 
 plot(
- series       =  recordAssetsVariation,
- color        =  recordAssetsVariation > 0 ? colour.LIME_GREEN(70) : colour.FIRE_BRICK(70),
+ series       =  plotValue,
+ color        =  plotValue > 0 ? colour.LIME_GREEN(70) : colour.FIRE_BRICK(70),
  style        =  plot.style_area,
  linewidth    =  3,
- display      =  INPUT_DISPLAY_ASSETS_CHART ? display.all : display.none
+ display      =  display.all
  )
 
 // getDebugValue(str.format_time(timenow, "yyyy/MM/dd HH:mm:ss", "Asia/Taipei") )
