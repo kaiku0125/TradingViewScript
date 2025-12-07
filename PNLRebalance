@@ -48,21 +48,21 @@ var float CRO_CRYPTO_RATIO = 10
 // ============================================================================
 // 銀行現金設定
 // ============================================================================
-var float BANK1_AVAL = 10168 + 200000  // LineBank (TWD)
+var float BANK1_AVAL = 3969 + 180000  // LineBank (TWD)
 var float BANK2_AVAL = 0 + 225         // Bankee (TWD)  
-var float BANK3_AVAL = 58170           // 台新 (TWD)
-var float BANK4_AVAL = 5278            // 樂天 (TWD)
+var float BANK3_AVAL = 103993           // 台新 (TWD)
+var float BANK4_AVAL = 10499            // 樂天 (TWD)
 var float BITO_AVAL = 0                // 幣託 (USD)
 
 // ============================================================================
 // 交易所設定
 // ============================================================================
 var float PIONEX_OTHER_USD = 0
-var float BYBIT_EXCHANGE_USD = (83 + 0) + 0 + 0        // bybit(主 + 副) + wulin
-var float BINANCE_EXCHANGE_USD = 0 + 2027              // binance
+var float BYBIT_EXCHANGE_USD = (0 + 0) + 0 + 0        // bybit(主 + 副) + wulin
+var float BINANCE_EXCHANGE_USD = 0 + 0              // binance
 var float CRYPTO_DOT_COM_EXCHANGE_USD = 130            // EX.Crypto.com
 var float OKX_EXCHANGE_USD = (0 + 0)                    // OKX
-var float PIONEX_EXCHANGE_USD = (0 + PIONEX_OTHER_USD)  // 派網
+var float PIONEX_EXCHANGE_USD = (2136 + PIONEX_OTHER_USD)  // 派網
 var float KRAKEN_EXCHANGE_USD = 0                                // Kraken
 var float EXCHANGE_USD =
       BYBIT_EXCHANGE_USD +
@@ -77,7 +77,7 @@ var float EXCHANGE_USD =
 // 其他設定
 // ============================================================================
 var float VISA_AVAL = 22696        // Visa (USD) 出金
-var float DEBT = -721703 - 338093  // 負債(TWD)
+var float DEBT = -710254 - 333615  // 負債(TWD)
 
 // ============================================================================
 // 台股資產設定
@@ -880,7 +880,7 @@ collectCryptoAssets(
     if IS_BNB_DISPLAY
         asset = CryptoAssetData.new(
          remain = remainBNB,
-         displayType = "withoutIncome",
+         displayType = "withIncome",
          assetName = "BNB",
          titleRatio = titleBNBRatio,
          nowRatio = nowBNBRatio,
@@ -889,9 +889,9 @@ collectCryptoAssets(
          judgeRatio = 0.15,
          pnl = pnlBNB,
          pnlPercent = pnlPercentBNB,
-         income = 0,
-         cost = 0,
-         inputCost = 0
+         income = BNB_INCOME,
+         cost = BNB_COST,
+         inputCost = INPUT_BNB_COST
          )
         array.push(assets, asset)
     
@@ -1589,6 +1589,7 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2025, 8, 30, 1545152)) //50.8%
         array.push(rdArray, newData(2025, 11, 15, 485221)) //16%
         array.push(rdArray, newData(2025, 11, 22, 139468)) //4.6%
+        array.push(rdArray, newData(2025, 12, 7, 311564)) //10.2%
 
 // 選擇要繪製的值（平滑化或原始值）
 plotValue = INPUT_SMOOTHING_ENABLED and not na(smoothedVariation) ? smoothedVariation : (not na(filledVariation) ? filledVariation : recordAssetsVariation)
