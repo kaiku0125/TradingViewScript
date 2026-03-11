@@ -48,10 +48,10 @@ var float CRO_CRYPTO_RATIO = 10
 // ============================================================================
 // 銀行現金設定
 // ============================================================================
-var float BANK1_AVAL = 5812 + 230000  // LineBank (TWD)
+var float BANK1_AVAL = 2006 + 140000  // LineBank (TWD)
 var float BANK2_AVAL = 0 + 0         // Bankee (TWD)  
-var float BANK3_AVAL = 123684           // 台新 (TWD)
-var float BANK4_AVAL = 10514            // 樂天 (TWD)
+var float BANK3_AVAL = 62792           // 台新 (TWD)
+var float BANK4_AVAL = 5335            // 樂天 (TWD)
 var float BITO_AVAL = 0                // 幣託 (USD)
 
 // ============================================================================
@@ -59,10 +59,10 @@ var float BITO_AVAL = 0                // 幣託 (USD)
 // ============================================================================
 var float PIONEX_OTHER_USD = 4000                       // 網格
 var float BYBIT_EXCHANGE_USD = (0 + 0) + 0 + 0        // bybit(主 + 副) + wulin
-var float BINANCE_EXCHANGE_USD = 0 + 0              // binance
-var float CRYPTO_DOT_COM_EXCHANGE_USD = 364            // EX.Crypto.com
+var float BINANCE_EXCHANGE_USD = 439 + 0              // binance
+var float CRYPTO_DOT_COM_EXCHANGE_USD = 365            // EX.Crypto.com
 var float OKX_EXCHANGE_USD = (0 + 0)                    // OKX
-var float PIONEX_EXCHANGE_USD = (4315 + 0 + PIONEX_OTHER_USD)  // 派網 (期限套利+交易帳戶+其餘)
+var float PIONEX_EXCHANGE_USD = (9685 + 0 + PIONEX_OTHER_USD)  // 派網 (期限套利+交易帳戶+其餘)
 var float KRAKEN_EXCHANGE_USD = 0                                // Kraken
 var float EXCHANGE_USD =
       BYBIT_EXCHANGE_USD +
@@ -77,7 +77,7 @@ var float EXCHANGE_USD =
 // 其他設定
 // ============================================================================
 var float VISA_AVAL = 23000        // Visa (USD) 出金
-var float DEBT = -687278 - 324608  // 負債(TWD)
+var float DEBT = -675751 - 320101  // 負債(TWD)
 
 // ============================================================================
 // 台股資產設定
@@ -97,8 +97,8 @@ var float MANUAL_BTC_POSITION = 0.5198    // 倉位
 var float MANUAL_BTC_COST = 24532          // 成本
 var float BTC_POSITION_BOUGHT = MANUAL_BTC_POSITION + PIONEX_BTC_POSITION  // btc (顆)
 var float BTC_COST = MANUAL_BTC_COST + PIONEX_BTC_COST                     // btc總投入 (USD)
-var float BTC_POSITION_SOLD = 0.28793911
-var float BTC_INCOME = 7014.86
+var float BTC_POSITION_SOLD = 0.29393911
+var float BTC_INCOME = 7451.36
 
 // ETH
 var float PIONEX_ETH_POSITION = 0          // 網格 + 幣幣天地
@@ -111,7 +111,7 @@ var float ETH_POSITION_SOLD = 0.272993
 var float ETH_INCOME = 11714.68
 
 // CRO
-var float CRO_POSITION_BOUGHT = 122800  // cro (顆)
+var float CRO_POSITION_BOUGHT = 122800       // cro (顆)
 var float CRO_COST = 14439.48                // cro總投入 (USD)
 var float CRO_POSITION_SOLD = 20178
 var float CRO_INCOME = 5959.89
@@ -132,7 +132,7 @@ var float BNB_INCOME = 5579
 // 總成本設定
 // ============================================================================
 var float ALL_STOCKS_COST = _0050_COST  // 台股成本
-var float ALL_CRYPTO_COST = 2850000      // 幣圈成本
+var float ALL_CRYPTO_COST = 3000000      // 幣圈成本
 
 // ============================================================================
 // 字串常數 - 貨幣單位
@@ -1340,6 +1340,7 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2025, 12, 7, 311564)) //10.2%
         array.push(rdArray, newData(2026, 2, 1, -111152)) //-3.6%
         array.push(rdArray, newData(2026, 2, 7, -347825)) //-11.3%
+        array.push(rdArray, newData(2026, 3, 8, -341457)) //-10.5%
 
 // 選擇要繪製的值（平滑化或原始值）
 plotValue = INPUT_SMOOTHING_ENABLED and not na(smoothedVariation) ? smoothedVariation : (not na(filledVariation) ? filledVariation : recordAssetsVariation)
