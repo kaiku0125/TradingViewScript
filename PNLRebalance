@@ -90,43 +90,59 @@ var float _0050_INCOME = 344242
 // ============================================================================
 // 加密貨幣資產設定
 // ============================================================================
+
+// === AUTO-GENERATED START ===
+var string[] symbols = array.from("BTC", "ETH", "ADA", "BNB", "CRO")
+var float[] buyQtys = array.from(0.5198, 8.61, 32448.8785, 16.54, 122800)
+var float[] buyCosts = array.from(24532, 19986, 10551.14, 7872.07, 14439.48)
+var float[] sellQtys = array.from(0.30588811, 0.272993, 5299, 4.71, 20178)
+var float[] sellIncomes = array.from(8286.55, 11714.68, 5299, 5579, 5959.89)
+// === AUTO-GENERATED END ===
+
+// symbols 對應 index
+var int IDX_BTC = 0
+var int IDX_ETH = 1
+var int IDX_ADA = 2
+var int IDX_BNB = 3
+var int IDX_CRO = 4
+
 // BTC
 var float PIONEX_BTC_POSITION = 0          // 網格 + 幣幣天地
 var float PIONEX_BTC_COST = 0
-var float MANUAL_BTC_POSITION = 0.5198    // 倉位
-var float MANUAL_BTC_COST = 24532          // 成本
+var float MANUAL_BTC_POSITION = array.get(buyQtys, IDX_BTC)    // 倉位
+var float MANUAL_BTC_COST = array.get(buyCosts, IDX_BTC)          // 成本
 var float BTC_POSITION_BOUGHT = MANUAL_BTC_POSITION + PIONEX_BTC_POSITION  // btc (顆)
 var float BTC_COST = MANUAL_BTC_COST + PIONEX_BTC_COST                     // btc總投入 (USD)
-var float BTC_POSITION_SOLD = 0.29393911
-var float BTC_INCOME = 7451.36
+var float BTC_POSITION_SOLD = array.get(sellQtys, IDX_BTC)
+var float BTC_INCOME = array.get(sellIncomes, IDX_BTC)
 
 // ETH
 var float PIONEX_ETH_POSITION = 0          // 網格 + 幣幣天地
 var float PIONEX_ETH_COST = 0 
-var float MANUAL_ETH_POSITION = 8.61    // 倉位
-var float MANUAL_ETH_COST = 19986         // 成本       
+var float MANUAL_ETH_POSITION = array.get(buyQtys, IDX_ETH)    // 倉位
+var float MANUAL_ETH_COST = array.get(buyCosts, IDX_ETH)         // 成本       
 var float ETH_POSITION_BOUGHT = MANUAL_ETH_POSITION + PIONEX_ETH_POSITION  // eth (顆)         
 var float ETH_COST = MANUAL_ETH_COST + PIONEX_ETH_COST                   // eth總投入 (USD)
-var float ETH_POSITION_SOLD = 0.272993
-var float ETH_INCOME = 11714.68
+var float ETH_POSITION_SOLD = array.get(sellQtys, IDX_ETH)
+var float ETH_INCOME = array.get(sellIncomes, IDX_ETH)
 
 // CRO
-var float CRO_POSITION_BOUGHT = 122800       // cro (顆)
-var float CRO_COST = 14439.48                // cro總投入 (USD)
-var float CRO_POSITION_SOLD = 20178
-var float CRO_INCOME = 5959.89
+var float CRO_POSITION_BOUGHT = array.get(buyQtys, IDX_CRO)       // cro (顆)
+var float CRO_COST = array.get(buyCosts, IDX_CRO)                // cro總投入 (USD)
+var float CRO_POSITION_SOLD = array.get(sellQtys, IDX_CRO)
+var float CRO_INCOME = array.get(sellIncomes, IDX_CRO)
 
 // ADA
-var float ADA_POSITION_BOUGHT = 32448.8785  // ada (顆)
-var float ADA_COST = 10551.14               // ada 總投入 (USD)
-var float ADA_POSITION_SOLD = 5299
-var float ADA_INCOME = 5182
+var float ADA_POSITION_BOUGHT = array.get(buyQtys, IDX_ADA)  // ada (顆)
+var float ADA_COST = array.get(buyCosts, IDX_ADA)               // ada 總投入 (USD)
+var float ADA_POSITION_SOLD = array.get(sellQtys, IDX_ADA)
+var float ADA_INCOME = array.get(sellIncomes, IDX_ADA)
 
 // BNB
-var float BNB_POSITION_BOUGHT = 16.54  // BNB (顆)
-var float BNB_COST = 7872               // BNB總投入 (USD)
-var float BNB_POSITION_SOLD = 4.71  
-var float BNB_INCOME = 5579 
+var float BNB_POSITION_BOUGHT = array.get(buyQtys, IDX_BNB)  // BNB (顆)
+var float BNB_COST = array.get(buyCosts, IDX_BNB)               // BNB總投入 (USD)
+var float BNB_POSITION_SOLD = array.get(sellQtys, IDX_BNB)  
+var float BNB_INCOME = array.get(sellIncomes, IDX_BNB) 
 
 // ============================================================================
 // 總成本設定
@@ -261,24 +277,34 @@ MY_0050_COST = input.float(defval = INPUT_0050_COST, title = STOCK_COST_TITLE, i
 
 // 加密貨幣 - 主要
 IS_BTC_DISPLAY = input.bool(defval = true, title = "BTC :", inline = INLINE_BTC, group = GROUP_ASSETS) 
-MY_BTC_POSITION = input.float(defval = INPUT_BTC_POSITION, title = POSITION_TITLE, inline = INLINE_BTC, group = GROUP_ASSETS) 
-MY_BTC_COST = input.float(defval = INPUT_BTC_COST, title = CRYPTO_COST_TITLE, inline = INLINE_BTC, group = GROUP_ASSETS) 
+// MY_BTC_POSITION = input.float(defval = INPUT_BTC_POSITION, title = POSITION_TITLE, inline = INLINE_BTC, group = GROUP_ASSETS) 
+// MY_BTC_COST = input.float(defval = INPUT_BTC_COST, title = CRYPTO_COST_TITLE, inline = INLINE_BTC, group = GROUP_ASSETS) 
+MY_BTC_POSITION = INPUT_BTC_POSITION
+MY_BTC_COST = INPUT_BTC_COST
 
 IS_ETH_DISPLAY = input.bool(defval = true, title = "ETH :", inline = INLINE_ETH, group = GROUP_ASSETS) 
-MY_ETH_POSITION = input.float(defval = INPUT_ETH_POSITION, title = POSITION_TITLE, inline = INLINE_ETH, group = GROUP_ASSETS) 
-MY_ETH_COST = input.float(defval = INPUT_ETH_COST, title = CRYPTO_COST_TITLE, inline = INLINE_ETH, group = GROUP_ASSETS) 
+// MY_ETH_POSITION = input.float(defval = INPUT_ETH_POSITION, title = POSITION_TITLE, inline = INLINE_ETH, group = GROUP_ASSETS) 
+// MY_ETH_COST = input.float(defval = INPUT_ETH_COST, title = CRYPTO_COST_TITLE, inline = INLINE_ETH, group = GROUP_ASSETS) 
+MY_ETH_POSITION = INPUT_ETH_POSITION
+MY_ETH_COST = INPUT_ETH_COST
 
 IS_ADA_DISPLAY = input.bool(defval = true, title = "ADA :", inline = INLINE_ADA, group = GROUP_ASSETS) 
-MY_ADA_POSITION = input.float(defval = INPUT_ADA_POSITION, title = POSITION_TITLE, inline = INLINE_ADA, group = GROUP_ASSETS) 
-MY_ADA_COST = input.float(defval = ADA_COST, title = CRYPTO_COST_TITLE, inline = INLINE_ADA, group = GROUP_ASSETS) 
+// MY_ADA_POSITION = input.float(defval = INPUT_ADA_POSITION, title = POSITION_TITLE, inline = INLINE_ADA, group = GROUP_ASSETS) 
+// MY_ADA_COST = input.float(defval = ADA_COST, title = CRYPTO_COST_TITLE, inline = INLINE_ADA, group = GROUP_ASSETS) 
+MY_ADA_POSITION = INPUT_ADA_POSITION
+MY_ADA_COST = INPUT_ADA_COST
 
 IS_BNB_DISPLAY = input.bool(defval = true, title = "BNB :", inline = INLINE_BNB, group = GROUP_ASSETS) 
-MY_BNB_POSITION = input.float(defval = INPUT_BNB_POSITION, title = POSITION_TITLE, inline = INLINE_BNB, group = GROUP_ASSETS) 
-MY_BNB_COST = input.float(defval = INPUT_BNB_COST, title = CRYPTO_COST_TITLE, inline = INLINE_BNB, group = GROUP_ASSETS) 
+// MY_BNB_POSITION = input.float(defval = INPUT_BNB_POSITION, title = POSITION_TITLE, inline = INLINE_BNB, group = GROUP_ASSETS) 
+// MY_BNB_COST = input.float(defval = INPUT_BNB_COST, title = CRYPTO_COST_TITLE, inline = INLINE_BNB, group = GROUP_ASSETS) 
+MY_BNB_POSITION = INPUT_BNB_POSITION
+MY_BNB_COST = INPUT_BNB_COST
 
 IS_CRO_DISPLAY = input.bool(defval = true, title = "CRO :", inline = INLINE_CRO, group = GROUP_ASSETS) 
-MY_CRO_POSITION = input.float(defval = INPUT_CRO_POSITION, title = POSITION_TITLE, inline = INLINE_CRO, group = GROUP_ASSETS) 
-MY_CRO_COST = input.float(defval = INPUT_CRO_COST, title = CRYPTO_COST_TITLE, inline = INLINE_CRO, group = GROUP_ASSETS) 
+// MY_CRO_POSITION = input.float(defval = INPUT_CRO_POSITION, title = POSITION_TITLE, inline = INLINE_CRO, group = GROUP_ASSETS) 
+// MY_CRO_COST = input.float(defval = INPUT_CRO_COST, title = CRYPTO_COST_TITLE, inline = INLINE_CRO, group = GROUP_ASSETS) 
+MY_CRO_POSITION = INPUT_CRO_POSITION
+MY_CRO_COST = INPUT_CRO_COST
 
 // 其他資產
 IS_OTHER_DISPLAY = input.bool(defval = false, title = "淨利(零)幣?", inline = INLINE_OTHER, group = GROUP_ASSETS) 
