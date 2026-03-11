@@ -39,10 +39,10 @@ var float TW_STOCKS_RATIO = 5
 var float _0050_RATIO = 100
 
 // 加密貨幣配比
-var float BTC_CRYPTO_RATIO = 35
-var float ETH_CRYPTO_RATIO = 25
-var float ADA_CRYPTO_RATIO = 15
-var float BNB_CRYPTO_RATIO = 15
+var float BTC_CRYPTO_RATIO = 50
+var float ETH_CRYPTO_RATIO = 20
+var float ADA_CRYPTO_RATIO = 10
+var float BNB_CRYPTO_RATIO = 10
 var float CRO_CRYPTO_RATIO = 10
 
 // ============================================================================
@@ -59,10 +59,10 @@ var float BITO_AVAL = 0                // 幣託 (USD)
 // ============================================================================
 var float PIONEX_OTHER_USD = 4000                       // 網格
 var float BYBIT_EXCHANGE_USD = (0 + 0) + 0 + 0        // bybit(主 + 副) + wulin
-var float BINANCE_EXCHANGE_USD = 439 + 0              // binance
+var float BINANCE_EXCHANGE_USD = 122 + 0              // binance
 var float CRYPTO_DOT_COM_EXCHANGE_USD = 365            // EX.Crypto.com
 var float OKX_EXCHANGE_USD = (0 + 0)                    // OKX
-var float PIONEX_EXCHANGE_USD = (9685 + 0 + PIONEX_OTHER_USD)  // 派網 (期限套利+交易帳戶+其餘)
+var float PIONEX_EXCHANGE_USD = (9840 + 0 + PIONEX_OTHER_USD)  // 派網 (期限套利+交易帳戶+其餘)
 var float KRAKEN_EXCHANGE_USD = 0                                // Kraken
 var float EXCHANGE_USD =
       BYBIT_EXCHANGE_USD +
@@ -76,7 +76,7 @@ var float EXCHANGE_USD =
 // ============================================================================
 // 其他設定
 // ============================================================================
-var float VISA_AVAL = 23000        // Visa (USD) 出金
+var float VISA_AVAL = 24000        // Visa (USD) 出金
 var float DEBT = -675751 - 320101  // 負債(TWD)
 
 // ============================================================================
