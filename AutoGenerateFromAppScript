@@ -2,118 +2,101 @@
 /* eslint-disable no-undef */
 /* global SpreadsheetApp, Logger */
 
-function roundTo(value, digits) {
-  const factor = Math.pow(10, digits);
-  return Math.round((Number(value) + Number.EPSILON) * factor) / factor;
-}
-
-function formatNumber(value, digits) {
-  return roundTo(value, digits)
-    .toFixed(digits)
-    .replace(/\.?0+$/, "");
-}
-
-function generatePineFromHoldings() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const holdingsSheet = ss.getSheetByName("holdings");
-  const pineSheetName = "pine";
-
-  if (!holdingsSheet) {
-    throw new Error('找不到 "holdings" 工作表');
+const HoldingsService = (() => {
+  function roundTo(value, digits) {
+    const factor = Math.pow(10, digits);
+    return Math.round((Number(value) + Number.EPSILON) * factor) / factor;
   }
 
-  let pineSheet = ss.getSheetByName(pineSheetName);
-  if (!pineSheet) {
-    pineSheet = ss.insertSheet(pineSheetName);
+  function formatNumber(value, digits) {
+    return roundTo(value, digits)
+      .toFixed(digits)
+      .replace(/\.?0+$/, "");
   }
 
-  const data = holdingsSheet.getDataRange().getValues();
+  function getHoldingsData() {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const holdingsSheet = ss.getSheetByName("holdings");
 
-  if (data.length < 2) {
-    throw new Error('"holdings" 工作表沒有資料');
-  }
-
-  const headers = data[0].map(h => String(h).trim());
-  const rows = data.slice(1);
-
-  const colIndex = {};
-  headers.forEach((header, index) => {
-    colIndex[header] = index;
-  });
-
-  const requiredColumns = [
-    "symbol",
-    "buy_qty",
-    "buy_cost",
-    "sell_qty",
-    "sell_income"
-  ];
-
-  requiredColumns.forEach(col => {
-    if (colIndex[col] === undefined) {
-      throw new Error(`holdings 缺少欄位: ${col}`);
+    if (!holdingsSheet) {
+      throw new Error('找不到 "holdings" 工作表');
     }
-  });
 
-  const symbols = [];
-  const buyQtys = [];
-  const buyCosts = [];
-  const sellQtys = [];
-  const sellIncomes = [];
+    const data = holdingsSheet.getDataRange().getValues();
 
-  rows.forEach(row => {
-    const symbol = String(row[colIndex["symbol"]] || "").trim().toUpperCase();
-    if (!symbol) return;
+    if (data.length < 2) {
+      throw new Error('"holdings" 工作表沒有資料');
+    }
 
-    const buyQty = Number(row[colIndex["buy_qty"]] || 0);
-    const buyCost = Number(row[colIndex["buy_cost"]] || 0);
-    const sellQty = Number(row[colIndex["sell_qty"]] || 0);
-    const sellIncome = Number(row[colIndex["sell_income"]] || 0);
+    const headers = data[0].map(h => String(h).trim());
+    const rows = data.slice(1);
 
-    symbols.push(symbol);
-    buyQtys.push(buyQty);
-    buyCosts.push(buyCost);
-    sellQtys.push(sellQty);
-    sellIncomes.push(sellIncome);
-  });
+    const colIndex = {};
+    headers.forEach((header, index) => {
+      colIndex[header] = index;
+    });
 
-  // 顯示在 sheet 的格式化字串
-  const displayBuyQtys = buyQtys.map(v => formatNumber(v, 8));
-  const displayBuyCosts = buyCosts.map(v => formatNumber(v, 2));
-  const displaySellQtys = sellQtys.map(v => formatNumber(v, 8));
-  const displaySellIncomes = sellIncomes.map(v => formatNumber(v, 2));
+    const requiredColumns = [
+      "symbol",
+      "buy_qty",
+      "buy_cost",
+      "sell_qty",
+      "sell_income"
+    ];
 
-  // 給 Pine 用的格式化字串
-  const pineSymbols = symbols.map(s => `"${s}"`).join(", ");
-  const pineBuyQtys = displayBuyQtys.join(", ");
-  const pineBuyCosts = displayBuyCosts.join(", ");
-  const pineSellQtys = displaySellQtys.join(", ");
-  const pineSellIncomes = displaySellIncomes.join(", ");
+    requiredColumns.forEach(col => {
+      if (colIndex[col] === undefined) {
+        throw new Error(`holdings 缺少欄位: ${col}`);
+      }
+    });
 
-  const pineBlock = [
-    "// === AUTO-GENERATED START ===",
-    `var string[] symbols = array.from(${pineSymbols})`,
-    `var float[] buyQtys = array.from(${pineBuyQtys})`,
-    `var float[] buyCosts = array.from(${pineBuyCosts})`,
-    `var float[] sellQtys = array.from(${pineSellQtys})`,
-    `var float[] sellIncomes = array.from(${pineSellIncomes})`,
-    "// === AUTO-GENERATED END ==="
-  ].join("\n");
+    const holdings = rows
+      .map(row => ({
+        symbol: String(row[colIndex["symbol"]] || "").trim().toUpperCase(),
+        buy_qty: Number(formatNumber(row[colIndex["buy_qty"]] || 0, 8)),
+        buy_cost: Number(formatNumber(row[colIndex["buy_cost"]] || 0, 2)),
+        sell_qty: Number(formatNumber(row[colIndex["sell_qty"]] || 0, 8)),
+        sell_income: Number(formatNumber(row[colIndex["sell_income"]] || 0, 2))
+      }))
+      .filter(item => item.symbol);
 
-  pineSheet.clearContents();
-  pineSheet.getRange(1, 1, 6, 2).setValues([
-    ["key", "value"],
-    ["symbols", symbols.join(", ")],
-    ["buyQtys", displayBuyQtys.join(", ")],
-    ["buyCosts", displayBuyCosts.join(", ")],
-    ["sellQtys", displaySellQtys.join(", ")],
-    ["sellIncomes", displaySellIncomes.join(", ")]
-  ]);
+    return {
+      updated_at: new Date().toISOString(),
+      holdings
+    };
+  }
 
-  pineSheet.getRange(8, 1).setValue("pine_block");
-  pineSheet.getRange(8, 2).setValue(pineBlock);
+  return {
+    getHoldingsData
+  };
+})();
 
-  pineSheet.autoResizeColumns(1, 2);
+function debugGetHoldingsData() {
+  try {
+    const result = HoldingsService.getHoldingsData();
 
-  Logger.log(pineBlock);
+    Logger.log("=== debugGetHoldingsData start ===");
+    Logger.log(JSON.stringify(result, null, 2));
+    Logger.log("=== debugGetHoldingsData end ===");
+
+    return result;
+  } catch (error) {
+    Logger.log("debugGetHoldingsData error: " + error.message);
+    Logger.log(error.stack);
+    throw error;
+  }
 }
+
+function doGet(e) {
+  const token = e?.parameter?.token;
+  if (token !== "0125") {
+    return ContentService
+      .createTextOutput(JSON.stringify({ error: "unauthorized" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify(HoldingsService.getHoldingsData()))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
