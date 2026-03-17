@@ -1,0 +1,102 @@
+// @ts-nocheck
+/* eslint-disable no-undef */
+/* global SpreadsheetApp, Logger */
+
+const HoldingsService = (() => {
+  function roundTo(value, digits) {
+    const factor = Math.pow(10, digits);
+    return Math.round((Number(value) + Number.EPSILON) * factor) / factor;
+  }
+
+  function formatNumber(value, digits) {
+    return roundTo(value, digits)
+      .toFixed(digits)
+      .replace(/\.?0+$/, "");
+  }
+
+  function getHoldingsData() {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const holdingsSheet = ss.getSheetByName("holdings");
+
+    if (!holdingsSheet) {
+      throw new Error('找不到 "holdings" 工作表');
+    }
+
+    const data = holdingsSheet.getDataRange().getValues();
+
+    if (data.length < 2) {
+      throw new Error('"holdings" 工作表沒有資料');
+    }
+
+    const headers = data[0].map(h => String(h).trim());
+    const rows = data.slice(1);
+
+    const colIndex = {};
+    headers.forEach((header, index) => {
+      colIndex[header] = index;
+    });
+
+    const requiredColumns = [
+      "symbol",
+      "buy_qty",
+      "buy_cost",
+      "sell_qty",
+      "sell_income"
+    ];
+
+    requiredColumns.forEach(col => {
+      if (colIndex[col] === undefined) {
+        throw new Error(`holdings 缺少欄位: ${col}`);
+      }
+    });
+
+    const holdings = rows
+      .map(row => ({
+        symbol: String(row[colIndex["symbol"]] || "").trim().toUpperCase(),
+        buy_qty: Number(formatNumber(row[colIndex["buy_qty"]] || 0, 8)),
+        buy_cost: Number(formatNumber(row[colIndex["buy_cost"]] || 0, 2)),
+        sell_qty: Number(formatNumber(row[colIndex["sell_qty"]] || 0, 8)),
+        sell_income: Number(formatNumber(row[colIndex["sell_income"]] || 0, 2))
+      }))
+      .filter(item => item.symbol);
+
+    return {
+      updated_at: new Date().toISOString(),
+      holdings
+    };
+  }
+
+  return {
+    getHoldingsData
+  };
+})();
+
+function debugGetHoldingsData() {
+  try {
+    const result = HoldingsService.getHoldingsData();
+
+    Logger.log("=== debugGetHoldingsData start ===");
+    Logger.log(JSON.stringify(result, null, 2));
+    Logger.log("=== debugGetHoldingsData end ===");
+
+    return result;
+  } catch (error) {
+    Logger.log("debugGetHoldingsData error: " + error.message);
+    Logger.log(error.stack);
+    throw error;
+  }
+}
+
+function doGet(e) {
+  const token = e?.parameter?.token;
+  if (token !== "0125") {
+    return ContentService
+      .createTextOutput(JSON.stringify({ error: "unauthorized" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify(HoldingsService.getHoldingsData()))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+

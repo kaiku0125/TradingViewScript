@@ -1,4 +1,4 @@
-//@version=5
+//@version=6
 
 // 1. Import library
 import kaiku0125/Debug/1 as debug
@@ -29,124 +29,137 @@ indicator(
 // # ========================================================================= #
 
 // 2. Preference inputs settings
+// ============================================================================
+// 配比設定
+// ============================================================================
 var float CASH_RATIO = 10
 var float SPECULATION_RATIO = 90
 var float CRYPTO_RATIO = 95
 var float TW_STOCKS_RATIO = 5
+var float _0050_RATIO = 100
 
-var float _006208_RATIO = 100
+// 加密貨幣配比
+var float BTC_CRYPTO_RATIO = 50
+var float ETH_CRYPTO_RATIO = 20
+var float ADA_CRYPTO_RATIO = 10
+var float BNB_CRYPTO_RATIO = 10
+var float CRO_CRYPTO_RATIO = 10
 
-var float BTC_CRYPTO_RATIO = 35
-var float ETH_CRYPTO_RATIO = 25
-var float ADA_CRYPTO_RATIO = 15
-var float BNB_CRYPTO_RATIO = 11
-var float CRO_CRYPTO_RATIO = 9
-var float POL_CRYPTO_RATIO = 2
-var float LINK_CRYPTO_RATIO = 1
-var float ARB_CRYPTO_RATIO = 1
-var float OP_CRYPTO_RATIO = 1
-//var float OTHER_CRYPTO_RATIO = 5
+// ============================================================================
+// 銀行現金設定
+// ============================================================================
+var float BANK1_AVAL = 2006 + 140000  // LineBank (TWD)
+var float BANK2_AVAL = 0 + 0         // Bankee (TWD)  
+var float BANK3_AVAL = 62792           // 台新 (TWD)
+var float BANK4_AVAL = 5335            // 樂天 (TWD)
+var float BITO_AVAL = 0                // 幣託 (USD)
 
-var float BANK1_AVAL = 15869 + 0                                                // LineBank (TWD)
-var float BANK2_AVAL = 0 + 225                                                  // Bankee (TWD)  
-var float BANK3_AVAL = 13462                                                    // 台新 (TWD)
-var float BANK4_AVAL = 137                                                    // 樂天 (TWD)
-var float BITO_AVAL = 0                                                          // 幣託 (USD)
+// ============================================================================
+// 交易所設定
+// ============================================================================
+var float PIONEX_OTHER_USD = 4000                       // 網格
+var float BYBIT_EXCHANGE_USD = (0 + 0) + 0 + 0        // bybit(主 + 副) + wulin
+var float BINANCE_EXCHANGE_USD = 122 + 0              // binance
+var float CRYPTO_DOT_COM_EXCHANGE_USD = 365            // EX.Crypto.com
+var float OKX_EXCHANGE_USD = (0 + 0)                    // OKX
+var float PIONEX_EXCHANGE_USD = (9840 + 0 + PIONEX_OTHER_USD)  // 派網 (期限套利+交易帳戶+其餘)
+var float KRAKEN_EXCHANGE_USD = 0                                // Kraken
+var float EXCHANGE_USD =
+      BYBIT_EXCHANGE_USD +
+      BINANCE_EXCHANGE_USD +
+      CRYPTO_DOT_COM_EXCHANGE_USD +
+      OKX_EXCHANGE_USD +
+      PIONEX_EXCHANGE_USD +
+      KRAKEN_EXCHANGE_USD
 
- // CHZ(100) + AXS(725) + SAND(200) + MANA(100) + ILV(200) + DYDX(200) + ALI(218) + UNI(100)
- // RDNT(100) + REEF(100) + UNFI(100) + SUSHI(202) + IOTA(100) ➔ 600
- // XLM(200) + IOTA(100) + CAKE(100) + FIL(100) + IOTX(100) ➔ 600
- // ATA(100) + BETA(100) + TROY(100) + HIGH(100) + FIS(100) + FIO(100) + VIB(100) ➔ 700
- // TLM(100) + OOKI(100) + APE(100) + OXT(200) + DOGE(150) + EOS(150) + SNX(100) ➔ 650
- // DCR(50) + APT(100) + DOCK(50) + ZIL(50) + CHZ(50) + OGN(50) ➔ 350
- // OMG(50) + POND(50) + ONE(50) + NYM(50) + KDA(50) + INCH(50) + ALPHA(50) + CFX(50) + ENJ(50) ➔ 450
- // REN(100) + WIN(50) + IQ(50) + WLD(50) + ATOM(50) + SUI(50) + PENDLE(50) ➔ 350
- // TRX(50) + GMT(100) + GRT(50) + LDO(50) + EDU(50) + YGG(100) ➔ 400
- // MEME(100) + DOGE(100)➔ 200 幣安持倉 
- // XTZ(50) + SAND(50) + PERP(50) + ALICE(150) + SHIB(50) + PLT(30) + KASTA(50) + MBOX(75) + WIF(25)
-// var float PIONEX_OTHER_USD = 700 + 700 + 700 + 650 + 350 + 450 + 450 + 400 + 200
-// var float PIONEX_OTHER_USD = 2256 + 3100
-var float PIONEX_OTHER_USD = 0
 
-var float BYBIT_EXCHANGE_USD =          (6000 + 668) + 85 + 1770                            // bybit(主 + 副) + wulin
-var float BINANCE_EXCHANGE_USD =        499                                                 // binance
-var float CRYPTO_DOT_COM_EXCHANGE_USD = 112                                              // EX.Crypto.com
-var float OKX_EXCHANGE_USD =            (0 + 1002)                                        // OKX
-var float PIONEX_EXCHANGE_USD =         (0 + 0 + PIONEX_OTHER_USD)                          // 派網
+// ============================================================================
+// 其他設定
+// ============================================================================
+var float VISA_AVAL = 24000        // Visa (USD) 出金
+var float DEBT = -675751 - 320101  // 負債(TWD)
 
-var float EXCHANGE_USD = BYBIT_EXCHANGE_USD + BINANCE_EXCHANGE_USD + CRYPTO_DOT_COM_EXCHANGE_USD + OKX_EXCHANGE_USD + PIONEX_EXCHANGE_USD
+// ============================================================================
+// 台股資產設定
+// ============================================================================
+var float _0050_POSITION_BOUGHT = 400 + 3000  // 0050 (股)
+var float _0050_COST = 27780 + 214179         // 0050總投入 (TWD)
+var float _0050_POSITION_SOLD = 3400
+var float _0050_INCOME = 344242
 
-var float VISA_AVAL = 8300                                                      // Visa (USD) 出金
+// ============================================================================
+// 加密貨幣資產設定
+// ============================================================================
 
-var float DEBT = -857097 - 386905                                                // 負債(TWD)
+// === AUTO-GENERATED START ===
+// updated_at: 2026-03-16T06:25:26.825Z
+var string[] symbols = array.from("BTC", "ETH", "ADA", "BNB", "CRO")
+var float[] buyQtys = array.from(0.5198, 8.61, 32448.8785, 16.54, 122800)
+var float[] buyCosts = array.from(24532, 19986, 10551.14, 7872.07, 14439.48)
+var float[] sellQtys = array.from(0.30588811, 0.272993, 5299, 4.71, 20178)
+var float[] sellIncomes = array.from(8286.55, 11714.68, 5299, 5579, 5959.89)
+// === AUTO-GENERATED END ===
 
-var float _006208_POSITION_BOUGHT = 400 + 3000                                   // 006208 (股)
-var float _006208_COST = 27780 + 214179                                          // 006208總投入 (TWD)
-var float _006208_POSITION_SOLD = 2700
-var float _006208_INCOME = 263563
+// symbols 對應 index
+var int IDX_BTC = 0
+var int IDX_ETH = 1
+var int IDX_ADA = 2
+var int IDX_BNB = 3
+var int IDX_CRO = 4
 
-var float PIONEX_BTC_POSITION = 0.003333                                         //網格 + 幣幣天地
-var float PIONEX_BTC_COST = 150 + 214
-var float MANUAL_BTC_POSITION = 0.4573                                           //倉位
-var float MANUAL_BTC_COST = 18030                                                //成本
-var float BTC_POSITION_BOUGHT = MANUAL_BTC_POSITION + PIONEX_BTC_POSITION       // btc (顆)
-var float BTC_COST = MANUAL_BTC_COST + PIONEX_BTC_COST                          // btc總投入 (USD)
-var float BTC_POSITION_SOLD = 0.20723
-var float BTC_INCOME = 2148.29
+// BTC
+var float PIONEX_BTC_POSITION = 0          // 網格 + 幣幣天地
+var float PIONEX_BTC_COST = 0
+var float MANUAL_BTC_POSITION = array.get(buyQtys, IDX_BTC)    // 倉位
+var float MANUAL_BTC_COST = array.get(buyCosts, IDX_BTC)          // 成本
+var float BTC_POSITION_BOUGHT = MANUAL_BTC_POSITION + PIONEX_BTC_POSITION  // btc (顆)
+var float BTC_COST = MANUAL_BTC_COST + PIONEX_BTC_COST                     // btc總投入 (USD)
+var float BTC_POSITION_SOLD = array.get(sellQtys, IDX_BTC)
+var float BTC_INCOME = array.get(sellIncomes, IDX_BTC)
 
-var float PIONEX_ETH_POSITION = 0.7625                                          //網格 + 幣幣天地
-var float PIONEX_ETH_COST = 150 + 480 
-var float MANUAL_ETH_POSITION = 4.801                                            //倉位
-var float MANUAL_ETH_COST = 8591                                                //成本       
-var float ETH_POSITION_BOUGHT = MANUAL_ETH_POSITION + PIONEX_ETH_POSITION       // eth (顆)         
-var float ETH_COST = MANUAL_ETH_COST + PIONEX_ETH_COST                          // eth總投入 (USD)
-var float ETH_POSITION_SOLD = 0.0431
-var float ETH_INCOME = 141.93
+// ETH
+var float PIONEX_ETH_POSITION = 0          // 網格 + 幣幣天地
+var float PIONEX_ETH_COST = 0 
+var float MANUAL_ETH_POSITION = array.get(buyQtys, IDX_ETH)    // 倉位
+var float MANUAL_ETH_COST = array.get(buyCosts, IDX_ETH)         // 成本       
+var float ETH_POSITION_BOUGHT = MANUAL_ETH_POSITION + PIONEX_ETH_POSITION  // eth (顆)         
+var float ETH_COST = MANUAL_ETH_COST + PIONEX_ETH_COST                   // eth總投入 (USD)
+var float ETH_POSITION_SOLD = array.get(sellQtys, IDX_ETH)
+var float ETH_INCOME = array.get(sellIncomes, IDX_ETH)
 
-var float CRO_POSITION = 21153 + 41077                              // cro (顆)
-var float CRO_COST = 6682                                           // cro總投入 (USD)
+// CRO
+var float CRO_POSITION_BOUGHT = array.get(buyQtys, IDX_CRO)       // cro (顆)
+var float CRO_COST = array.get(buyCosts, IDX_CRO)                // cro總投入 (USD)
+var float CRO_POSITION_SOLD = array.get(sellQtys, IDX_CRO)
+var float CRO_INCOME = array.get(sellIncomes, IDX_CRO)
 
-var float POL_POSITION = 2737                                     // pol (顆)
-var float POL_COST = 2120                                         // pol 總投入 (USD)
+// ADA
+var float ADA_POSITION_BOUGHT = array.get(buyQtys, IDX_ADA)  // ada (顆)
+var float ADA_COST = array.get(buyCosts, IDX_ADA)               // ada 總投入 (USD)
+var float ADA_POSITION_SOLD = array.get(sellQtys, IDX_ADA)
+var float ADA_INCOME = array.get(sellIncomes, IDX_ADA)
 
-var float ADA_POSITION_BOUGHT = 24773                                // ada (顆)
-var float ADA_COST = 5670                                            // ada 總投入 (USD)
-var float ADA_POSITION_SOLD = 2513
-var float ADA_INCOME = 2299
+// BNB
+var float BNB_POSITION_BOUGHT = array.get(buyQtys, IDX_BNB)  // BNB (顆)
+var float BNB_COST = array.get(buyCosts, IDX_BNB)               // BNB總投入 (USD)
+var float BNB_POSITION_SOLD = array.get(sellQtys, IDX_BNB)  
+var float BNB_INCOME = array.get(sellIncomes, IDX_BNB) 
 
-var float OP_POSITION_BOUGHT = 631                                   // op (顆)
-var float OP_COST = 1134                                              // op 總投入 (USD)
-var float OP_POSITION_SOLD = 91
-var float OP_INCOME = 261
+// ============================================================================
+// 總成本設定
+// ============================================================================
+var float ALL_STOCKS_COST = _0050_COST  // 台股成本
+var float ALL_CRYPTO_COST = 3000000      // 幣圈成本
 
-var float LINK_POSITION_BOUGHT = 79                                   // link (顆)
-var float LINK_COST = 1149                                            // link 總投入 (USD)
-var float LINK_POSITION_SOLD = 10.45 
-var float LINK_INCOME = 184.85
-
-var float ARB_POSITION_BOUGHT = 1251                                      // arb (顆)
-var float ARB_COST = 1560                                                // arb 總投入 (USD)
-var float ARB_POSITION_SOLD = 50  
-var float ARB_INCOME = 102        
-
-var float DOT_POSITION_BOUGHT = 176.6                                      // dot (顆)
-var float DOT_COST = 1342                                                // dot 總投入 (USD)
-var float DOT_POSITION_SOLD = 0  
-var float DOT_INCOME = 0    
-
-var float BNB_POSITION = 10.036                                          // BNB (顆)
-var float BNB_COST = 3735                                              // BNB總投入 (USD)
-var float STEPN_GMT = 2200 +  2 * 515 + 6 * 190 + 2778 + 207 + 2 * 243 // (藍 + 白 + 綠 + 寶石)GMT (顆)
-var float GMT_POSITION = STEPN_GMT                         
-var float GMT_COST = 4500 + 100 + 120.9 + 224 + 423 + 513             //GMT總投入(USD)
-
-var float ALL_STOCKS_COST = _006208_COST  //台股成本
-var float ALL_CRYPTO_COST = 2600000                                   //幣圈成本
-
+// ============================================================================
+// 字串常數 - 貨幣單位
+// ============================================================================
 var string USD = "美金"
 var string TWD = "台幣"
-var string SYMBOLL = "【】"
 
+// ============================================================================
+// 字串常數 - 顯示選項（表格大小和位置）
+// ============================================================================
 var string SIZE_TINY = "極小"
 var string SIZE_SMALL = "小"
 var string SIZE_NORMAL = "中"
@@ -154,47 +167,54 @@ var string SIZE_LARGE = "大"
 var string BOTTOM_CENTER = "中間靠下"
 var string MIDDLE_CENTER = "正中央"
 
+// ============================================================================
+// 字串常數 - 顯示選項（資產資訊顯示模式）
+// ============================================================================
 var string INFO_ALL_ASSETS = "資產 + 現金"
 var string INFO_UNSTEADY_ASSETS = "資產"
 var string INFO_PNL_ASSETS = "總資產 PNL"
+
+// ============================================================================
+// 字串常數 - 輸入欄位標題
+// ============================================================================
 var string POSITION_TITLE = "量體"
 var string STOCK_COST_TITLE = "股 ➔ 成本"
 var string CRYPTO_COST_TITLE = "顆 ➔ 成本"
 
-var string INLINE_006208 = "03"
-
-var string INLINE_BTC = "06"
-var string INLINE_ETH = "07"
-var string INLINE_CRO = "08"
-var string INLINE_POL = "09"
-var string INLINE_ADA = "10"
-var string INLINE_LINK = "11"
-var string INLINE_ARB = "12"
-var string INLINE_OP = "13"
-var string INLINE_DOT = "14"
-var string INLINE_BNB = "15"
-
-var string INLINE_ILV = "20"
-var string INLINE_GMT = "21"
-var string INLINE_OTHER = "22"
-var string INLINE_USDT = "23"
-
+// ============================================================================
+// 字串常數 - 輸入群組名稱
+// ============================================================================
 var string GROUP_SETTING = "⚙️ 設定"
 var string GROUP_RATIO = "📌 總配比"
 var string GROUP_ASSETS_RATIO = "📌 資產配比"
 var string GROUP_CASH = "💲 現金"
 var string GROUP_EXCHANGE = "💲 提領"
 var string GROUP_ASSETS = "💲 資產"
-
 var string GROUP_VERSION = "💬 關於   ©️"
+
+// ============================================================================
+// 字串常數 - Inline IDs（用於輸入欄位對齊）
+// ============================================================================
+var string INLINE_0050 = "03"
+var string INLINE_BTC = "06"
+var string INLINE_ETH = "07"
+var string INLINE_CRO = "08"
+var string INLINE_ADA = "10"
+var string INLINE_BNB = "15"
+var string INLINE_ILV = "20"
+var string INLINE_OTHER = "22"
+var string INLINE_USDT = "23"
+
+// ============================================================================
+// 字串常數 - 版本資訊
+// ============================================================================
 var string VERSION_NAME = "v1.0"
-var string RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + 
-                     "[1] First release."
+var string RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + "[1] First release."
 
 
 //Calculate default value
-var float INPUT_006208_POSITION = _006208_POSITION_BOUGHT - _006208_POSITION_SOLD
-var float INPUT_006208_COST = math.ceil(_006208_COST * (1 - (_006208_POSITION_SOLD / _006208_POSITION_BOUGHT))) 
+var float INPUT_0050_POSITION = _0050_POSITION_BOUGHT - _0050_POSITION_SOLD
+var float INPUT_0050_COST = math.ceil(_0050_COST * (1 - (_0050_POSITION_SOLD / _0050_POSITION_BOUGHT))) 
 
 var float INPUT_BTC_POSITION = BTC_POSITION_BOUGHT - BTC_POSITION_SOLD
 var float INPUT_BTC_COST = math.ceil(BTC_COST * (1 - (BTC_POSITION_SOLD / BTC_POSITION_BOUGHT))) 
@@ -202,132 +222,134 @@ var float INPUT_BTC_COST = math.ceil(BTC_COST * (1 - (BTC_POSITION_SOLD / BTC_PO
 var float INPUT_ETH_POSITION = ETH_POSITION_BOUGHT - ETH_POSITION_SOLD
 var float INPUT_ETH_COST = math.ceil(ETH_COST * (1 - (ETH_POSITION_SOLD / ETH_POSITION_BOUGHT))) 
 
+var float INPUT_CRO_POSITION = CRO_POSITION_BOUGHT - CRO_POSITION_SOLD
+var float INPUT_CRO_COST = math.ceil(CRO_COST * (1 - (CRO_POSITION_SOLD / CRO_POSITION_BOUGHT))) 
+
 var float INPUT_ADA_POSITION = ADA_POSITION_BOUGHT - ADA_POSITION_SOLD
 var float INPUT_ADA_COST = math.ceil(ADA_COST * (1 - (ADA_POSITION_SOLD / ADA_POSITION_BOUGHT))) 
 
-var float INPUT_ARB_POSITION = ARB_POSITION_BOUGHT - ARB_POSITION_SOLD
-var float INPUT_ARB_COST = math.ceil(ARB_COST * (1 - (ARB_POSITION_SOLD / ARB_POSITION_BOUGHT))) 
+var float INPUT_BNB_POSITION = BNB_POSITION_BOUGHT - BNB_POSITION_SOLD
+var float INPUT_BNB_COST = math.ceil(BNB_COST * (1 - (BNB_POSITION_SOLD / BNB_POSITION_BOUGHT))) 
 
-var float INPUT_OP_POSITION = OP_POSITION_BOUGHT - OP_POSITION_SOLD
-var float INPUT_OP_COST = math.ceil(OP_COST * (1 - (OP_POSITION_SOLD / OP_POSITION_BOUGHT))) 
-
-var float INPUT_LINK_POSITION = LINK_POSITION_BOUGHT - LINK_POSITION_SOLD
-var float INPUT_LINK_COST = math.ceil(LINK_COST * (1 - (LINK_POSITION_SOLD / LINK_POSITION_BOUGHT))) 
-
-var float INPUT_DOT_POSITION = DOT_POSITION_BOUGHT - DOT_POSITION_SOLD
-var float INPUT_DOT_COST = math.ceil(DOT_COST * (1 - (DOT_POSITION_SOLD / DOT_POSITION_BOUGHT))) 
-
+// ============================================================================
+// 輸入參數 - 顯示設定
+// ============================================================================
 INPUT_DISPLAY_TITLE = input.bool(defval = true, title = "標題", inline = "00", group = GROUP_SETTING)
 INPUT_DISPLAY_CASH = input.bool(defval = true, title = "現金", inline = "00", group = GROUP_SETTING)
 INPUT_DISPLAY_TWSTOCK = input.bool(defval = true, title = "台股", inline = "00", group = GROUP_SETTING)
 INPUT_DISPLAY_CRYPTO = input.bool(defval = true, title = "幣圈", inline = "00", group = GROUP_SETTING)
 INPUT_DISPLAY_ASSETS_CHART = input.bool(defval = true, title = "資產走勢線圖", group = GROUP_SETTING)
+INPUT_SMOOTHING_ENABLED = input.bool(defval = true, title = "平滑化", group = GROUP_SETTING)
+INPUT_SMOOTHING_PERIOD = input.int(defval = 10, title = "平滑化週期", minval = 1, maxval = 50, group = GROUP_SETTING)
 INPUT_DISPLAY_CURRENCY = input.string(defval = TWD, title = "貨幣顯示", options = [TWD, USD], group = GROUP_SETTING)
 INPUT_DISPLAY_SIZE = input.string(defval = SIZE_LARGE, title = "表格大小", options = [SIZE_TINY, SIZE_SMALL, SIZE_NORMAL, SIZE_LARGE], group = GROUP_SETTING)
 INPUT_DISPLAY_POSITION = input.string(defval = MIDDLE_CENTER, title = "表格位置", options = [MIDDLE_CENTER, BOTTOM_CENTER], group = GROUP_SETTING)
-
 INPUT_DISPLAY_INFO = input.string(defval = INFO_ALL_ASSETS, title = "資產資訊顯示", options = [INFO_ALL_ASSETS, INFO_UNSTEADY_ASSETS, INFO_PNL_ASSETS], group = GROUP_SETTING)
 
+// ============================================================================
+// 輸入參數 - 配比設定
+// ============================================================================
 INPUT_SPECULATION_RATIO = input.float(defval = SPECULATION_RATIO, title = "資產(%)", inline = "01", group = GROUP_RATIO) 
 INPUT_CASH_RATIO = input.float(defval = CASH_RATIO, title = "現金(%)", inline = "01", group = GROUP_RATIO) 
 INPUT_CRYPTO_RATIO = input.float(defval = CRYPTO_RATIO, title = "幣圈(%)", inline = "02", group = GROUP_ASSETS_RATIO)
 INPUT_TW_STOCKS_RATIO = input.float(defval = TW_STOCKS_RATIO, title = "台股(%)", inline = "02", group = GROUP_ASSETS_RATIO)
 
+// ============================================================================
+// 輸入參數 - 現金設定
+// ============================================================================
 INPUT_BANK1 = input.float(defval = BANK1_AVAL, title = "LineBank(TWD)", group = GROUP_CASH) 
 INPUT_BANK2 = input.float(defval = BANK2_AVAL, title = "Bankee(TWD)", group = GROUP_CASH) 
 INPUT_BANK3 = input.float(defval = BANK3_AVAL, title = "台新(TWD)", group = GROUP_CASH) 
 INPUT_BANK4 = input.float(defval = BANK4_AVAL, title = "樂天(TWD)", group = GROUP_CASH)
 INPUT_BITO = input.float(defval = BITO_AVAL, title = "幣託(U)", group = GROUP_CASH)
 
+// ============================================================================
+// 輸入參數 - 提領設定
+// ============================================================================
 INPUT_CRYPTO_COM_VISA = input.float(defval = VISA_AVAL, title = "幣圈Visa(U)", group = GROUP_EXCHANGE)
 
-IS_006208_DISPLAY = input.bool(defval = true, title = "006208 :", inline = INLINE_006208, group = GROUP_ASSETS) 
-MY_006208_POSITION = input.float(defval = INPUT_006208_POSITION, title = POSITION_TITLE, inline = INLINE_006208, group = GROUP_ASSETS)
-MY_006208_COST = input.float(defval = INPUT_006208_COST, title = STOCK_COST_TITLE, inline = INLINE_006208, group = GROUP_ASSETS)
+// ============================================================================
+// 輸入參數 - 資產設定
+// ============================================================================
+// 台股
+IS_0050_DISPLAY = input.bool(defval = true, title = "0050 :", inline = INLINE_0050, group = GROUP_ASSETS) 
+MY_0050_POSITION = input.float(defval = INPUT_0050_POSITION, title = POSITION_TITLE, inline = INLINE_0050, group = GROUP_ASSETS)
+MY_0050_COST = input.float(defval = INPUT_0050_COST, title = STOCK_COST_TITLE, inline = INLINE_0050, group = GROUP_ASSETS)
 
+// 加密貨幣 - 主要
 IS_BTC_DISPLAY = input.bool(defval = true, title = "BTC :", inline = INLINE_BTC, group = GROUP_ASSETS) 
-MY_BTC_POSITION = input.float(defval = INPUT_BTC_POSITION, title = POSITION_TITLE, inline = INLINE_BTC, group = GROUP_ASSETS) 
-MY_BTC_COST = input.float(defval = INPUT_BTC_COST, title = CRYPTO_COST_TITLE, inline = INLINE_BTC, group = GROUP_ASSETS) 
+// MY_BTC_POSITION = input.float(defval = INPUT_BTC_POSITION, title = POSITION_TITLE, inline = INLINE_BTC, group = GROUP_ASSETS) 
+// MY_BTC_COST = input.float(defval = INPUT_BTC_COST, title = CRYPTO_COST_TITLE, inline = INLINE_BTC, group = GROUP_ASSETS) 
+MY_BTC_POSITION = INPUT_BTC_POSITION
+MY_BTC_COST = INPUT_BTC_COST
 
 IS_ETH_DISPLAY = input.bool(defval = true, title = "ETH :", inline = INLINE_ETH, group = GROUP_ASSETS) 
-MY_ETH_POSITION = input.float(defval = INPUT_ETH_POSITION, title = POSITION_TITLE, inline = INLINE_ETH, group = GROUP_ASSETS) 
-MY_ETH_COST = input.float(defval = INPUT_ETH_COST, title = CRYPTO_COST_TITLE, inline = INLINE_ETH, group = GROUP_ASSETS) 
-
-IS_CRO_DISPLAY = input.bool(defval = true, title = "CRO :", inline = INLINE_CRO, group = GROUP_ASSETS) 
-MY_CRO_POSITION = input.float(defval = CRO_POSITION, title = POSITION_TITLE, inline = INLINE_CRO, group = GROUP_ASSETS) 
-MY_CRO_COST = input.float(defval = CRO_COST, title = CRYPTO_COST_TITLE, inline = INLINE_CRO, group = GROUP_ASSETS) 
-
-IS_POL_DISPLAY = input.bool(defval = true, title = "POL :", inline = INLINE_POL, group = GROUP_ASSETS) 
-MY_POL_POSITION = input.float(defval = POL_POSITION, title = POSITION_TITLE, inline = INLINE_POL, group = GROUP_ASSETS) 
-MY_POL_COST = input.float(defval = POL_COST, title = CRYPTO_COST_TITLE, inline = INLINE_POL, group = GROUP_ASSETS) 
+// MY_ETH_POSITION = input.float(defval = INPUT_ETH_POSITION, title = POSITION_TITLE, inline = INLINE_ETH, group = GROUP_ASSETS) 
+// MY_ETH_COST = input.float(defval = INPUT_ETH_COST, title = CRYPTO_COST_TITLE, inline = INLINE_ETH, group = GROUP_ASSETS) 
+MY_ETH_POSITION = INPUT_ETH_POSITION
+MY_ETH_COST = INPUT_ETH_COST
 
 IS_ADA_DISPLAY = input.bool(defval = true, title = "ADA :", inline = INLINE_ADA, group = GROUP_ASSETS) 
-MY_ADA_POSITION = input.float(defval = INPUT_ADA_POSITION, title = POSITION_TITLE, inline = INLINE_ADA, group = GROUP_ASSETS) 
-MY_ADA_COST = input.float(defval = ADA_COST, title = CRYPTO_COST_TITLE, inline = INLINE_ADA, group = GROUP_ASSETS) 
-
-IS_LINK_DISPLAY = input.bool(defval = true, title = "LINK :", inline = INLINE_LINK, group = GROUP_ASSETS) 
-MY_LINK_POSITION = input.float(defval = INPUT_LINK_POSITION, title = POSITION_TITLE, inline = INLINE_LINK, group = GROUP_ASSETS) 
-MY_LINK_COST = input.float(defval = INPUT_LINK_COST, title = CRYPTO_COST_TITLE, inline = INLINE_LINK, group = GROUP_ASSETS) 
-
-IS_ARB_DISPLAY = input.bool(defval = true, title = "ARB :", inline = INLINE_ARB, group = GROUP_ASSETS) 
-MY_ARB_POSITION = input.float(defval = INPUT_ARB_POSITION, title = POSITION_TITLE, inline = INLINE_ARB, group = GROUP_ASSETS) 
-MY_ARB_COST = input.float(defval = INPUT_ARB_COST, title = CRYPTO_COST_TITLE, inline = INLINE_ARB, group = GROUP_ASSETS) 
-
-IS_OP_DISPLAY = input.bool(defval = true, title = "OP :", inline = INLINE_OP, group = GROUP_ASSETS) 
-MY_OP_POSITION = input.float(defval = INPUT_OP_POSITION, title = POSITION_TITLE, inline = INLINE_OP, group = GROUP_ASSETS) 
-MY_OP_COST = input.float(defval = INPUT_OP_COST, title = CRYPTO_COST_TITLE, inline = INLINE_OP, group = GROUP_ASSETS) 
-
-IS_DOT_DISPLAY = input.bool(defval = true, title = "DOT :", inline = INLINE_DOT, group = GROUP_ASSETS) 
-MY_DOT_POSITION = input.float(defval = INPUT_DOT_POSITION, title = POSITION_TITLE, inline = INLINE_DOT, group = GROUP_ASSETS) 
-MY_DOT_COST = input.float(defval = INPUT_DOT_COST, title = CRYPTO_COST_TITLE, inline = INLINE_DOT, group = GROUP_ASSETS) 
+// MY_ADA_POSITION = input.float(defval = INPUT_ADA_POSITION, title = POSITION_TITLE, inline = INLINE_ADA, group = GROUP_ASSETS) 
+// MY_ADA_COST = input.float(defval = ADA_COST, title = CRYPTO_COST_TITLE, inline = INLINE_ADA, group = GROUP_ASSETS) 
+MY_ADA_POSITION = INPUT_ADA_POSITION
+MY_ADA_COST = INPUT_ADA_COST
 
 IS_BNB_DISPLAY = input.bool(defval = true, title = "BNB :", inline = INLINE_BNB, group = GROUP_ASSETS) 
-MY_BNB_POSITION = input.float(defval = BNB_POSITION, title = POSITION_TITLE, inline = INLINE_BNB, group = GROUP_ASSETS) 
-MY_BNB_COST = input.float(defval = BNB_COST, title = CRYPTO_COST_TITLE, inline = INLINE_BNB, group = GROUP_ASSETS) 
+// MY_BNB_POSITION = input.float(defval = INPUT_BNB_POSITION, title = POSITION_TITLE, inline = INLINE_BNB, group = GROUP_ASSETS) 
+// MY_BNB_COST = input.float(defval = INPUT_BNB_COST, title = CRYPTO_COST_TITLE, inline = INLINE_BNB, group = GROUP_ASSETS) 
+MY_BNB_POSITION = INPUT_BNB_POSITION
+MY_BNB_COST = INPUT_BNB_COST
 
-IS_GMT_DISPLAY = input.bool(defval = true, title = "GMT :", inline = INLINE_GMT, group = GROUP_ASSETS) 
-MY_GMT_POSITION = input.float(defval = GMT_POSITION, title = POSITION_TITLE, inline = INLINE_GMT, group = GROUP_ASSETS) 
-MY_GMT_COST = input.float(defval = GMT_COST, title = CRYPTO_COST_TITLE, inline = INLINE_GMT, group = GROUP_ASSETS) 
+IS_CRO_DISPLAY = input.bool(defval = true, title = "CRO :", inline = INLINE_CRO, group = GROUP_ASSETS) 
+// MY_CRO_POSITION = input.float(defval = INPUT_CRO_POSITION, title = POSITION_TITLE, inline = INLINE_CRO, group = GROUP_ASSETS) 
+// MY_CRO_COST = input.float(defval = INPUT_CRO_COST, title = CRYPTO_COST_TITLE, inline = INLINE_CRO, group = GROUP_ASSETS) 
+MY_CRO_POSITION = INPUT_CRO_POSITION
+MY_CRO_COST = INPUT_CRO_COST
 
+// 其他資產
 IS_OTHER_DISPLAY = input.bool(defval = false, title = "淨利(零)幣?", inline = INLINE_OTHER, group = GROUP_ASSETS) 
-MY_AXS_POSITION = 43.28 + 33
-MY_AXS_COST = 425 + 300
-MY_ATOM_POSITION = 31.19
-MY_ATOM_COST = 322
-
-MY_OTHER_CRYPTO_COST  = MY_AXS_COST
-MY_OTHER_CRYPTO_COST += MY_ATOM_COST
+MY_OTHER_CRYPTO_COST = 0
 
 IS_USDT_DISPLAY = input.bool(defval = true, title = "剩餘USDT", inline = INLINE_USDT, group = GROUP_ASSETS)
 
+// ============================================================================
+// 輸入參數 - 版本資訊
+// ============================================================================
 INPUT_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUP_VERSION) 
 
 // 3. Constant value initialization
+// ============================================================================
+// 字串常數 - 表格顯示標題和圖示
+// ============================================================================
 var string CASH_TITLE = "❶ 現金"
 var string TW_STOCKS_TITLE = "➋ 台股"
 var string CRYPTO_TITLE = "➌ 幣圈"
 var string ICON_MONEY = "💰 "
-var string ICON_DOT = "●"
 
+// ============================================================================
+// 字串常數 - TradingView 價格符號（匯率）
+// ============================================================================
 var string TIME_FRAME = ""
 var string USD_TWD_SYMBOL = "FX_IDC:USDTWD"
-var string STOCK_006208_SYMBOL = "TWSE_DLY:006208"
 
+// ============================================================================
+// 字串常數 - TradingView 價格符號（台股）
+// ============================================================================
+var string STOCK_0050_SYMBOL = "TWSE_DLY:0050"
+
+// ============================================================================
+// 字串常數 - TradingView 價格符號（主要加密貨幣）
+// ============================================================================
 var string BTC_SYMBOL = "COINBASE:BTCUSD"
 var string ETH_SYMBOL = "COINBASE:ETHUSD"
 var string CRO_SYMBOL = "COINBASE:CROUSD"
-var string POL_SYMBOL = "COINBASE:MATICUSD"
 var string ADA_SYMBOL = "BINANCE:ADAUSDT"
-var string LINK_SYMBOL = "BINANCE:LINKUSDT"
-var string ARB_SYMBOL = "BINANCE:ARBUSDT"
-var string OP_SYMBOL = "BINANCE:OPUSDT"
-var string GMT_SYMBOL = "BINANCE:GMTUSDT"
-var string AXS_SYMBOL = "BINANCE:AXSUSDT"
 var string BNB_SYMBOL = "BINANCE:BNBUSDT"
-var string DOT_SYMBOL = "BINANCE:DOTUSDT"
-var string ATOM_SYMBOL = "BINANCE:ATOMUSDT"
 
-
+// ============================================================================
+// 顏色常數 - 表格顯示顏色
+// ============================================================================
 var color COLOR_MY_WHITE = color.rgb(255, 255, 204, 30) 
 var color COLOR_BG = color.rgb(77, 77, 77, 30)
 var color DF_TEXT_COLOR = COLOR_MY_WHITE
@@ -336,49 +358,85 @@ var color DF_CELL_COLOR = COLOR_BG
 // var color DF_CELL_COLOR = colour.INDIGO(10)
 var color DF_ASSET_TITLE_COLOR = colour.LIGHT_CYAN(0)
 
-// 4. Variable declartion
+// 4. Variable declaration
+// ============================================================================
+// 資料結構 - 用於記錄歷史資產變化
+// ============================================================================
 type RecordData
     int mYear
     int mMonth
     int mDay
     float mNowTotal
 
-var array<RecordData> rdArray = array.new<RecordData>()
+// ============================================================================
+// 資料結構 - 用於動態排序加密貨幣資產
+// ============================================================================
+type CryptoAssetData
+    float remain              // 當前資產價值（用於排序）
+    string displayType       // 顯示類型："withIncome", "withoutIncome", "blank", "blankWithIncome"
+    string assetName         // 資產名稱
+    string titleRatio        // 配比標題文字
+    float nowRatio           // 當前配比
+    string rebalanceText     // 再平衡文字（可選，用於 withIncome 和 withoutIncome）
+    float diffRatio          // 配比差異（可選，用於 withIncome 和 withoutIncome）
+    float judgeRatio         // 判斷閾值（可選，用於 withIncome 和 withoutIncome）
+    float pnl                // 損益金額
+    float pnlPercent         // 損益百分比
+    float income             // 已實現收入（可選，用於 withIncome 和 blankWithIncome）
+    float cost               // 原始總成本（可選，用於 withIncome 和 blankWithIncome）
+    float inputCost          // 當前持有資產成本（可選，用於 withIncome 和 blankWithIncome）
 
+// ============================================================================
+// 價格變數 - 從 TradingView 獲取的即時價格
+// ============================================================================
+// 匯率
 var float pUsd_Twd = na
-var float p006208 = na
-
+// 台股
+var float p0050 = na
+// 主要加密貨幣
 var float pBTC = na
 var float pETH = na
 var float pCRO = na
-var float pPOL = na
 var float pADA = na
-var float pLINK = na
-var float pARB = na
-var float pOP = na
 var float pBNB = na
+// 其他加密貨幣
 
-var float pGMT = na
-var float pAXS = na
-var float pDOT = na
-var float pATOM = na
+// ============================================================================
+// 計算變數 - 用於存儲計算結果
+// ============================================================================
+var float totalAssets = 0              // 總資產
+var float recordAssetsVariation = 0    // 記錄的資產變化（用於圖表）
+var float filledVariation = na         // 前向填充後的資產變化（用於平滑化）
+var float smoothedVariation = na       // 平滑化後的資產變化（用於圖表）
 
-var float totalAssets = 0
-
-var float recordAssetsVariation = 0
-
-var table displayTabel = na
-var table ratioTabel = na
+// ============================================================================
+// 表格變數 - 用於顯示資訊的表格
+// ============================================================================
+var table displayTabel = na            // 主要顯示表格
+var table ratioTabel = na              // 配比表格（目前未使用）
+var array<RecordData> rdArray = array.new<RecordData>()  // 歷史記錄陣列
 
 // 5. Define functions
+// ============================================================================
+// 表格渲染函數
+// ============================================================================
+
+// 格式化 PNL 文字顯示
+// _stateIcon : 狀態圖示（如 🚀、😀 等）
+// _pnlText : 損益金額文字
+// _pnlPercentText : 損益百分比文字
 getPNLText(string _stateIcon, string _pnlText, string _pnlPercentText) =>
     string output = lib.DISPLAY_NONE()
-
     if _stateIcon != lib.DISPLAY_NONE() 
         output := "\t" + _pnlText + "\t【" + _pnlPercentText + "】" + _stateIcon
-    
     output
 
+// 渲染表格單元格（主要顯示表格）
+// columnID : 欄位編號
+// rowID : 行編號
+// displayText : 顯示文字
+// textColor : 文字顏色
+// background : 背景顏色
 cell(int columnID, int rowID, string displayText, color textColor, color background) =>
     table.cell(
      table_id       =  displayTabel, 
@@ -390,6 +448,12 @@ cell(int columnID, int rowID, string displayText, color textColor, color backgro
      bgcolor        =  background
      )
 
+// 渲染表格單元格（配比表格，目前未使用）
+// columnID : 欄位編號
+// rowID : 行編號
+// displayText : 顯示文字
+// textColor : 文字顏色
+// background : 背景顏色
 cellRatio(int columnID, int rowID, string displayText, color textColor, color background) =>
     table.cell(
      table_id       =  ratioTabel, 
@@ -401,30 +465,49 @@ cellRatio(int columnID, int rowID, string displayText, color textColor, color ba
      bgcolor        =  background
      )
 
-cellBlankRebalance(int rowID, string targetSymbol, nowRatio) =>
+// 渲染空白再平衡行（無再平衡資訊）
+// rowID : 行編號
+// targetSymbol : 目標資產符號名稱
+// nowRatio : 當前配比（小數，如 0.15 表示 15%）
+cellBlankRebalance(int rowID, string targetSymbol, float nowRatio) =>
     cell(0, rowID, targetSymbol, DF_ASSET_TITLE_COLOR, DF_CELL_COLOR)
     cell(1, rowID, fm.ratioString(nowRatio), DF_TEXT_COLOR, DF_CELL_COLOR)
     cell(2, rowID, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
 
-cellRebalance(int rowID, string targetSymbol, nowRatio, string rebalanceText) =>
+// 渲染再平衡行（無通知顏色）
+// rowID : 行編號
+// targetSymbol : 目標資產符號名稱
+// nowRatio : 當前配比（小數，如 0.15 表示 15%）
+// rebalanceText : 再平衡文字（包含金額和百分比差異）
+cellRebalance(int rowID, string targetSymbol, float nowRatio, string rebalanceText) =>
     cell(0, rowID, targetSymbol, DF_ASSET_TITLE_COLOR, DF_CELL_COLOR)
     cell(1, rowID, fm.ratioString(nowRatio), DF_TEXT_COLOR, DF_CELL_COLOR)
     cell(2, rowID, rebalanceText, DF_TEXT_COLOR, DF_CELL_COLOR)
 
-cellRebalanceWithNotify(int rowID, string targetSymbol, nowRatio, string rebalanceText, float diffRatio, float judgeRatio) =>
-    // 若再平衡的%數 > 10% 必須優先進行再平衡
+// 渲染再平衡行（帶通知顏色，當偏差超過閾值時顯示紫色）
+// rowID : 行編號
+// targetSymbol : 目標資產符號名稱
+// nowRatio : 當前配比（小數，如 0.15 表示 15%）
+// rebalanceText : 再平衡文字（包含金額和百分比差異）
+// diffRatio : 配比差異（當前配比 - 目標配比）
+// judgeRatio : 判斷閾值（當偏差比例超過此值時顯示紫色警告）
+cellRebalanceWithNotify(int rowID, string targetSymbol, float nowRatio, string rebalanceText, float diffRatio, float judgeRatio) =>
+    // 若再平衡的%數 > judgeRatio 必須優先進行再平衡
     mRatio = diffRatio / nowRatio
-    
     color ratioDiffColor = if math.abs(number = mRatio) > judgeRatio
         colour.VIOLET(0)
     else
         DF_TEXT_COLOR 
-
     cell(0, rowID, targetSymbol, DF_ASSET_TITLE_COLOR, DF_CELL_COLOR)
     cell(1, rowID, fm.ratioString(nowRatio), DF_TEXT_COLOR, DF_CELL_COLOR)
     cell(2, rowID, rebalanceText, ratioDiffColor, DF_CELL_COLOR)
 
-cellPNL(rowID, remain, pnl, pnlPercent) =>
+// 渲染 PNL 行（價值、損益、損益百分比）
+// rowID : 行編號
+// remain : 當前資產價值（剩餘價值）
+// pnl : 損益金額
+// pnlPercent : 損益百分比（小數，如 0.15 表示 15%）
+cellPNL(int rowID, float remain, float pnl, float pnlPercent) =>
     float mPnlPercent = na(pnlPercent) ? 0 : pnlPercent
     string remainText = fm.fString(remain, 0)
     cell(3, rowID, remainText, DF_TEXT_COLOR, DF_CELL_COLOR)
@@ -442,21 +525,29 @@ cellPNL(rowID, remain, pnl, pnlPercent) =>
     int nextRow = rowID + 1
     nextRow
 
-//已結盈虧
-cellIncome(rowID, _income, _cost, input_symbol_cost) =>
+// 渲染已結盈虧行
+// rowID : 行編號
+// _income : 已實現收入（賣出獲得的金額）
+// _cost : 原始總成本
+// input_symbol_cost : 當前持有資產的成本
+cellIncome(int rowID, float _income, float _cost, float input_symbol_cost) =>
     float settlement = _income - (_cost - input_symbol_cost)
     string settleText = fm.fString(settlement, 0)
-    // color textColor = settlement >= 0 ? colour.LIME_GREEN(0) : color.red
     color textColor = if settlement < 0
         color.red
     else if settlement > 0
         colour.LIME_GREEN(0)
     else 
         DF_TEXT_COLOR
-
     cell(5, rowID, settleText, textColor, DF_CELL_COLOR)
 
-cellIncome2(rowID, income, cost, sold, bought) =>
+// 渲染已結盈虧行（使用買賣價格計算）
+// rowID : 行編號
+// income : 賣出獲得的總收入
+// cost : 買入的總成本
+// sold : 已賣出的數量
+// bought : 總買入數量
+cellIncome2(int rowID, float income, float cost, float sold, float bought) =>
     float buy_price = cost / bought
     float sell_price = income / sold
     float realized = (sell_price - buy_price) * sold
@@ -464,12 +555,22 @@ cellIncome2(rowID, income, cost, sold, bought) =>
     color textColor = realized >= 0 ? colour.LIME_GREEN(0) : colour.FIRE_BRICK(0)
     cell(5, rowID, settleText, textColor, DF_CELL_COLOR)
 
+// 渲染空白行（用於分隔）
+// rowID : 行編號
 cellBlank(int rowID) => 
     for i = 0 to 4
         table.cell(displayTabel, column = i, row = rowID,  text = "", height = 1)
     int nextRow = rowID + 1
     nextRow
 
+// ============================================================================
+// 計算輔助函數
+// ============================================================================
+
+// 生成再平衡文字（顯示需要入金或提領的金額）
+// bankName : 銀行名稱
+// bankAval : 銀行可用餘額
+// rebalance : 再平衡金額
 getRebalanceText(string bankName, float bankAval, float rebalance) =>
     float _rebalance = INPUT_DISPLAY_CURRENCY == TWD ? rebalance : rebalance * pUsd_Twd
     float diff = _rebalance - bankAval
@@ -477,15 +578,20 @@ getRebalanceText(string bankName, float bankAval, float rebalance) =>
     string output = bankName + action + fm.fString(math.abs(diff), 0) + "\t" + TWD
     output
 
-getDisplayInfo(float _totalAssets, float _totalSpecultaionAssets, float _speculationPNL, float _speculaionPNLRatio) =>
+// 獲取顯示資訊文字和顏色（根據顯示模式）
+// _totalAssets : 總資產
+// _totalSpeculationAssets : 總投機資產（台股+幣圈）
+// _speculationPNL : 投機損益金額
+// _speculationPNLRatio : 投機損益百分比（小數，如 0.15 表示 15%）
+getDisplayInfo(float _totalAssets, float _totalSpeculationAssets, float _speculationPNL, float _speculationPNLRatio) =>
     string opText = if INPUT_DISPLAY_INFO == INFO_UNSTEADY_ASSETS
-        ICON_MONEY + fm.fString(_totalSpecultaionAssets, 0)
+        ICON_MONEY + fm.fString(_totalSpeculationAssets, 0)
     else if INPUT_DISPLAY_INFO == INFO_PNL_ASSETS
-        ICON_MONEY + fm.fString(_speculationPNL, 0) + "\t【" + fm.ratioString(_speculaionPNLRatio) + "】\t"
+        ICON_MONEY + fm.fString(_speculationPNL, 0) + "\t【" + fm.ratioString(_speculationPNLRatio) + "】\t"
     else 
         ICON_MONEY + fm.fString(totalAssets, 0)
     
-    [mIcon, mColor] = lib.ratioStateJudge(_speculaionPNLRatio * 100, colour.LIME_GREEN(0))
+    [mIcon, mColor] = lib.ratioStateJudge(_speculationPNLRatio * 100, colour.LIME_GREEN(0))
     color opColor = if INPUT_DISPLAY_INFO == INFO_UNSTEADY_ASSETS
         colour.GOLDER_ROD(0)
     else if INPUT_DISPLAY_INFO == INFO_PNL_ASSETS
@@ -494,212 +600,481 @@ getDisplayInfo(float _totalAssets, float _totalSpecultaionAssets, float _specula
         colour.GOLD(0)
     [opText, opColor]
 
+// 創建新的記錄資料
+// _year : 年份
+// _month : 月份
+// _day : 日期
+// _nowTotal : 當時的總資產價值
 newData(int _year, int _month, int _day, float _nowTotal) =>
     RecordData data = RecordData.new(_year, _month, _day, _nowTotal)
     data
 
+// 調試函數：顯示當前符號價格
+// value : 要顯示的數值
 getCurrentSymbol(float value) =>
     string mOutput = fm.fString(value, 4)
     label debugLabel = debug.printLabel("圖表ID : " + syminfo.tickerid + ", 價格 : " + mOutput)
     // label.delete(id = debugLabel[1])
 
+// 調試函數：顯示調試值
+// value : 要顯示的調試值
 getDebugValue(value) =>
     string ddd = str.format("{0,time,HH:mm:ss.SSS}", timenow)
     string mOutput = str.tostring(value = value) 
     label debugLabel = debug.printLabel(mOutput)
     // label.delete(id = debugLabel[1])
 
+// ============================================================================
+// 資產計算函數
+// ============================================================================
+
+// 計算資產價值和損益（根據當前價格、倉位、成本和總資產）
+// currentPrice : 當前價格
+// position : 持有倉位（股數或顆數）
+// cost : 總成本
+// totalAssets : 總資產
+// exchangeRate : 匯率轉換係數
+calculateAssetValue(float currentPrice, float position, float cost, float totalAssets, float exchangeRate) =>
+    float adjustedPrice = currentPrice * exchangeRate
+    float adjustedCost = cost * exchangeRate
+    [remain, pnl, pnlPercent, nowRatio] = lib.calDefault(adjustedPrice, position, adjustedCost, totalAssets)
+    [remain, pnl, pnlPercent, nowRatio]
+
+// 計算資產再平衡資訊（目標配比與當前配比的差異）
+// nowRatio : 當前配比（小數，如 0.15 表示 15%）
+// targetRatio : 目標配比（百分比，如 15 表示 15%）
+// remain : 當前資產價值
+// totalAssets : 總資產
+calculateRebalanceInfo(float nowRatio, float targetRatio, float remain, float totalAssets) =>
+    float diffRatio = lib.getRatioDiff(nowRatio, targetRatio / 100)
+    float rebalanceValue = totalAssets * targetRatio / 100 - remain
+    string rebalanceText = fm.fString(rebalanceValue, 0) + "\t【" + fm.ratioString(diffRatio) + "】"
+    [diffRatio, rebalanceValue, rebalanceText]
+
+// ============================================================================
+// 資產顯示函數
+// ============================================================================
+
+// 顯示加密貨幣資產行（帶已結盈虧）
+// rowID : 行編號
+// assetName : 資產名稱
+// titleRatio : 標題中的配比文字（如 "\t【15%】"）
+// nowRatio : 當前配比（小數，如 0.15 表示 15%）
+// rebalanceText : 再平衡文字（包含金額和百分比差異）
+// diffRatio : 配比差異（當前配比 - 目標配比）
+// judgeRatio : 判斷閾值（當偏差比例超過此值時顯示紫色警告）
+// remain : 當前資產價值（剩餘價值）
+// pnl : 損益金額
+// pnlPercent : 損益百分比（小數，如 0.15 表示 15%）
+// income : 已實現收入（賣出獲得的金額，USD）
+// cost : 原始總成本（USD）
+// inputCost : 當前持有資產的成本（USD）
+// usdEx : 美元匯率轉換係數
+displayCryptoAssetWithIncome(int rowID, string assetName, string titleRatio, float nowRatio, string rebalanceText, float diffRatio, float judgeRatio, float remain, float pnl, float pnlPercent, float income, float cost, float inputCost, float usdEx) =>
+    cellRebalanceWithNotify(rowID, assetName + titleRatio, nowRatio, rebalanceText, diffRatio, judgeRatio)
+    cellIncome(rowID, income * usdEx, cost * usdEx, inputCost * usdEx)
+    int nextRow = cellPNL(rowID, remain, pnl, pnlPercent)
+    nextRow
+
+// 顯示加密貨幣資產行（無已結盈虧）
+// rowID : 行編號
+// assetName : 資產名稱
+// titleRatio : 標題中的配比文字（如 "\t【15%】"）
+// nowRatio : 當前配比（小數，如 0.15 表示 15%）
+// rebalanceText : 再平衡文字（包含金額和百分比差異）
+// diffRatio : 配比差異（當前配比 - 目標配比）
+// judgeRatio : 判斷閾值（當偏差比例超過此值時顯示紫色警告）
+// remain : 當前資產價值（剩餘價值）
+// pnl : 損益金額
+// pnlPercent : 損益百分比（小數，如 0.15 表示 15%）
+displayCryptoAssetWithoutIncome(int rowID, string assetName, string titleRatio, float nowRatio, string rebalanceText, float diffRatio, float judgeRatio, float remain, float pnl, float pnlPercent) =>
+    cellRebalanceWithNotify(rowID, assetName + titleRatio, nowRatio, rebalanceText, diffRatio, judgeRatio)
+    cell(5, rowID, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
+    int nextRow = cellPNL(rowID, remain, pnl, pnlPercent)
+    nextRow
+
+// 顯示加密貨幣資產行（僅顯示，無再平衡）
+// rowID : 行編號
+// assetName : 資產名稱
+// nowRatio : 當前配比（小數，如 0.15 表示 15%）
+// remain : 當前資產價值（剩餘價值）
+// pnl : 損益金額
+// pnlPercent : 損益百分比（小數，如 0.15 表示 15%）
+displayCryptoAssetBlank(int rowID, string assetName, float nowRatio, float remain, float pnl, float pnlPercent) =>
+    cellBlankRebalance(rowID, assetName, nowRatio)
+    cell(5, rowID, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
+    int nextRow = cellPNL(rowID, remain, pnl, pnlPercent)
+    nextRow
+
+// 顯示加密貨幣資產行（僅顯示，無再平衡，但有已結盈虧）
+// rowID : 行編號
+// assetName : 資產名稱
+// nowRatio : 當前配比（小數，如 0.15 表示 15%）
+// remain : 當前資產價值（剩餘價值）
+// pnl : 損益金額
+// pnlPercent : 損益百分比（小數，如 0.15 表示 15%）
+// income : 已實現收入（賣出獲得的金額，USD）
+// cost : 原始總成本（USD）
+// inputCost : 當前持有資產的成本（USD）
+// usdEx : 美元匯率轉換係數
+displayCryptoAssetBlankWithIncome(int rowID, string assetName, float nowRatio, float remain, float pnl, float pnlPercent, float income, float cost, float inputCost, float usdEx) =>
+    cellBlankRebalance(rowID, assetName, nowRatio)
+    cellIncome(rowID, income * usdEx, cost * usdEx, inputCost * usdEx)
+    int nextRow = cellPNL(rowID, remain, pnl, pnlPercent)
+    nextRow
+
+// ============================================================================
+// 動態排序相關函數
+// ============================================================================
+
+// 收集所有要顯示的加密貨幣資產
+// 返回包含所有要顯示資產的數組
+// 所有參數都是 runtime 計算的值，需要作為參數傳入
+collectCryptoAssets(
+ float remainBTC, float pnlBTC, float pnlPercentBTC, float nowBTCRatio, string btcRebalaneText, float btcDiffRatio, string titleBTCRatio,
+ float remainETH, float pnlETH, float pnlPercentETH, float nowETHRatio, string ethRebalaneText, float ethDiffRatio, string titleETHRatio,
+ float remainADA, float pnlADA, float pnlPercentADA, float nowADARatio, string adaRebalaneText, float adaDiffRatio, string titleADARatio,
+ float remainBNB, float pnlBNB, float pnlPercentBNB, float nowBNBRatio, string bnbRebalaneText, float bnbDiffRatio, string titleBNBRatio,
+ float remainCRO, float pnlCRO, float pnlPercentCRO, float nowCRORatio, string croRebalaneText, float croDiffRatio, string titleCRORatio,
+ float remainUSDT, float pnlUSDT, float pnlPercentUSDT, float nowUSDTRatio
+ ) =>
+    array<CryptoAssetData> assets = array.new<CryptoAssetData>()
+    
+    // BTC - withIncome
+    if IS_BTC_DISPLAY
+        asset = CryptoAssetData.new(
+         remain = remainBTC,
+         displayType = "withIncome",
+         assetName = "₿\tBTC",
+         titleRatio = titleBTCRatio,
+         nowRatio = nowBTCRatio,
+         rebalanceText = btcRebalaneText,
+         diffRatio = btcDiffRatio,
+         judgeRatio = 0.15,
+         pnl = pnlBTC,
+         pnlPercent = pnlPercentBTC,
+         income = BTC_INCOME,
+         cost = BTC_COST,
+         inputCost = INPUT_BTC_COST
+         )
+        array.push(assets, asset)
+    
+    // ETH - withIncome
+    if IS_ETH_DISPLAY
+        asset = CryptoAssetData.new(
+         remain = remainETH,
+         displayType = "withIncome",
+         assetName = "⟠\tETH",
+         titleRatio = titleETHRatio,
+         nowRatio = nowETHRatio,
+         rebalanceText = ethRebalaneText,
+         diffRatio = ethDiffRatio,
+         judgeRatio = 0.15,
+         pnl = pnlETH,
+         pnlPercent = pnlPercentETH,
+         income = ETH_INCOME,
+         cost = ETH_COST,
+         inputCost = INPUT_ETH_COST
+         )
+        array.push(assets, asset)
+    
+    // ADA - withIncome
+    if IS_ADA_DISPLAY
+        asset = CryptoAssetData.new(
+         remain = remainADA,
+         displayType = "withIncome",
+         assetName = "ADA",
+         titleRatio = titleADARatio,
+         nowRatio = nowADARatio,
+         rebalanceText = adaRebalaneText,
+         diffRatio = adaDiffRatio,
+         judgeRatio = 0.15,
+         pnl = pnlADA,
+         pnlPercent = pnlPercentADA,
+         income = ADA_INCOME,
+         cost = ADA_COST,
+         inputCost = INPUT_ADA_COST
+         )
+        array.push(assets, asset)
+    
+    // BNB - withoutIncome
+    if IS_BNB_DISPLAY
+        asset = CryptoAssetData.new(
+         remain = remainBNB,
+         displayType = "withIncome",
+         assetName = "BNB",
+         titleRatio = titleBNBRatio,
+         nowRatio = nowBNBRatio,
+         rebalanceText = bnbRebalaneText,
+         diffRatio = bnbDiffRatio,
+         judgeRatio = 0.15,
+         pnl = pnlBNB,
+         pnlPercent = pnlPercentBNB,
+         income = BNB_INCOME,
+         cost = BNB_COST,
+         inputCost = INPUT_BNB_COST
+         )
+        array.push(assets, asset)
+    
+    // CRO - withIncome
+    if IS_CRO_DISPLAY
+        asset = CryptoAssetData.new(
+         remain = remainCRO,
+         displayType = "withIncome",
+         assetName = "CRO",
+         titleRatio = titleCRORatio,
+         nowRatio = nowCRORatio,
+         rebalanceText = croRebalaneText,
+         diffRatio = croDiffRatio,
+         judgeRatio = 0.15,
+         pnl = pnlCRO,
+         pnlPercent = pnlPercentCRO,
+         income = CRO_INCOME,
+         cost = CRO_COST,
+         inputCost = INPUT_CRO_COST
+         )
+        array.push(assets, asset)
+    
+    // USDT - blank
+    if IS_USDT_DISPLAY
+        asset = CryptoAssetData.new(
+         remain = remainUSDT,
+         displayType = "blank",
+         assetName = "USDT",
+         titleRatio = "",
+         nowRatio = nowUSDTRatio,
+         rebalanceText = "",
+         diffRatio = 0,
+         judgeRatio = 0,
+         pnl = pnlUSDT,
+         pnlPercent = pnlPercentUSDT,
+         income = 0,
+         cost = 0,
+         inputCost = 0
+         )
+        array.push(assets, asset)
+    
+    assets
+
+// 根據 remain 值對資產數組進行降序排序（冒泡排序）
+// assets : 要排序的資產數組
+sortAssetsByRemain(array<CryptoAssetData> assets) =>
+    int size = array.size(assets)
+    if size > 1
+        for i = 0 to size - 2
+            for j = 0 to size - 2 - i
+                asset1 = array.get(assets, j)
+                asset2 = array.get(assets, j + 1)
+                if asset1.remain < asset2.remain
+                    array.set(assets, j, asset2)
+                    array.set(assets, j + 1, asset1)
+    assets
+
+// 根據資產類型動態調用對應的顯示函數
+// rowID : 行編號
+// asset : 資產數據對象
+// usdEx : 美元匯率轉換係數
+renderCryptoAsset(int rowID, CryptoAssetData asset, float usdEx) =>
+    int nextRow = rowID
+    if asset.displayType == "withIncome"
+        nextRow := displayCryptoAssetWithIncome(rowID, asset.assetName, asset.titleRatio, asset.nowRatio, asset.rebalanceText, asset.diffRatio, asset.judgeRatio, asset.remain, asset.pnl, asset.pnlPercent, asset.income, asset.cost, asset.inputCost, usdEx)
+    else if asset.displayType == "withoutIncome"
+        nextRow := displayCryptoAssetWithoutIncome(rowID, asset.assetName, asset.titleRatio, asset.nowRatio, asset.rebalanceText, asset.diffRatio, asset.judgeRatio, asset.remain, asset.pnl, asset.pnlPercent)
+    else if asset.displayType == "blank"
+        nextRow := displayCryptoAssetBlank(rowID, asset.assetName, asset.nowRatio, asset.remain, asset.pnl, asset.pnlPercent)
+    else if asset.displayType == "blankWithIncome"
+        nextRow := displayCryptoAssetBlankWithIncome(rowID, asset.assetName, asset.nowRatio, asset.remain, asset.pnl, asset.pnlPercent, asset.income, asset.cost, asset.inputCost, usdEx)
+    nextRow
+
 // 6. Code logic start
+// ============================================================================
+// 步驟 1：驗證配比設定
+// ============================================================================
 if INPUT_CASH_RATIO + INPUT_SPECULATION_RATIO != 100
     runtime.error(message = "現金資產配比問題") 
 
 if INPUT_CRYPTO_RATIO + INPUT_TW_STOCKS_RATIO != 100
     runtime.error(message = "加密資產與股票配比問題") 
 
+// 驗證加密貨幣內部配比總和
 checkCryptoRatio  = BTC_CRYPTO_RATIO
 checkCryptoRatio += ETH_CRYPTO_RATIO
 checkCryptoRatio += CRO_CRYPTO_RATIO
 checkCryptoRatio += ADA_CRYPTO_RATIO
 checkCryptoRatio += BNB_CRYPTO_RATIO
-checkCryptoRatio += POL_CRYPTO_RATIO
-checkCryptoRatio += LINK_CRYPTO_RATIO
-checkCryptoRatio += ARB_CRYPTO_RATIO
-checkCryptoRatio += OP_CRYPTO_RATIO
-//checkCryptoRatio += OTHER_CRYPTO_RATIO
 
 if checkCryptoRatio != 100
     runtime.error(message = "加密資產配比問題") 
 
+// ============================================================================
+// 步驟 2：獲取即時價格數據
+// ============================================================================
+// 匯率
 pUsd_Twd := request.security(symbol = USD_TWD_SYMBOL, timeframe = TIME_FRAME, expression = close)
-p006208 := request.security(symbol =  STOCK_006208_SYMBOL, timeframe = TIME_FRAME, expression = close)
+// 台股
+p0050 := request.security(symbol =  STOCK_0050_SYMBOL, timeframe = TIME_FRAME, expression = close)
+// 主要加密貨幣
 pBTC := request.security(symbol =  BTC_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pETH := request.security(symbol =  ETH_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pCRO := request.security(symbol =  CRO_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pPOL := request.security(symbol =  POL_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pADA := request.security(symbol =  ADA_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pLINK := request.security(symbol =  LINK_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pARB := request.security(symbol =  ARB_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pOP := request.security(symbol =  OP_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pBNB := request.security(symbol = BNB_SYMBOL, timeframe = TIME_FRAME, expression = close)
 
-pGMT := request.security(symbol = GMT_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pAXS := request.security(symbol = AXS_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pDOT := request.security(symbol = DOT_SYMBOL, timeframe = TIME_FRAME, expression = close)
-pATOM := request.security(symbol = ATOM_SYMBOL, timeframe = TIME_FRAME, expression = close)
-
-
+// ============================================================================
+// 步驟 3：計算匯率轉換係數
+// ============================================================================
 usdEx = INPUT_DISPLAY_CURRENCY == TWD ? 1 * pUsd_Twd : 1
 twdEx = INPUT_DISPLAY_CURRENCY == TWD ? 1 : 1 / pUsd_Twd
 
+// ============================================================================
+// 步驟 4：計算目標配比（轉換為小數）
+// ============================================================================
+// 總體配比
 cashRatio = INPUT_CASH_RATIO / 100
-specultaionRatio = INPUT_SPECULATION_RATIO / 100
-cryptoRatio = INPUT_CRYPTO_RATIO / 100 * specultaionRatio
-twStocksRatio = INPUT_TW_STOCKS_RATIO / 100 * specultaionRatio
-
-_006208Ratio = twStocksRatio * _006208_RATIO
-
+speculationRatio = INPUT_SPECULATION_RATIO / 100
+// 資產內部配比
+cryptoRatio = INPUT_CRYPTO_RATIO / 100 * speculationRatio
+twStocksRatio = INPUT_TW_STOCKS_RATIO / 100 * speculationRatio
+// 台股內部配比
+_0050Ratio = twStocksRatio * _0050_RATIO
+// 加密貨幣內部配比
 btcRatio = cryptoRatio * BTC_CRYPTO_RATIO
 ethRatio = cryptoRatio * ETH_CRYPTO_RATIO
 croRatio = cryptoRatio * CRO_CRYPTO_RATIO
 adaRatio = cryptoRatio * ADA_CRYPTO_RATIO
 bnbRatio = cryptoRatio * BNB_CRYPTO_RATIO
-polRatio = cryptoRatio * POL_CRYPTO_RATIO
-linkRatio = cryptoRatio * LINK_CRYPTO_RATIO
-arbRatio = cryptoRatio * ARB_CRYPTO_RATIO
-opRatio = cryptoRatio * OP_CRYPTO_RATIO
-//otherRatio = cryptoRatio * OTHER_CRYPTO_RATIO
 
+// ============================================================================
+// 步驟 5：計算各類資產總價值
+// ============================================================================
+// 現金總額
 totalCash = (INPUT_BANK1 + INPUT_BANK2 + INPUT_BANK3 + INPUT_BANK4) * twdEx + INPUT_BITO * usdEx
-totalStocksAssets = (p006208 * MY_006208_POSITION) * twdEx
-
+// 台股總價值
+totalStocksAssets = (p0050 * MY_0050_POSITION) * twdEx
+// 主要加密貨幣總價值
 mainCryptoAssets  = pBTC * MY_BTC_POSITION
 mainCryptoAssets += pETH * MY_ETH_POSITION
 mainCryptoAssets += pCRO * MY_CRO_POSITION
-mainCryptoAssets += pPOL * MY_POL_POSITION 
 mainCryptoAssets += pADA * MY_ADA_POSITION 
-mainCryptoAssets += pLINK * MY_LINK_POSITION 
-mainCryptoAssets += pARB * MY_ARB_POSITION 
-mainCryptoAssets += pOP * MY_OP_POSITION
-mainCryptoAssets += pDOT * MY_DOT_POSITION
 mainCryptoAssets += pBNB * MY_BNB_POSITION
-mainCryptoAssets += pGMT * MY_GMT_POSITION
+// 其他加密貨幣總價值
+otherCryptoASssets  = 0 
+// 加密貨幣總價值（主要部位 + 其他 + 交易所餘額）
+totalCryptoAssets = (mainCryptoAssets + otherCryptoASssets) * usdEx + EXCHANGE_USD * usdEx
+// 總投機資產（台股 + 加密貨幣）
+totalSpeculationAssets = totalStocksAssets + totalCryptoAssets
+// 總資產（現金 + 投機）
+totalAssets := totalCash + totalSpeculationAssets
 
-otherCryptoASssets  = pAXS * MY_AXS_POSITION
-otherCryptoASssets += pATOM * MY_ATOM_POSITION 
+// ============================================================================
+// 步驟 6：計算成本和負債
+// ============================================================================
+// 總投入成本（股票+幣圈）- 幣託U
+allCost = (ALL_STOCKS_COST + ALL_CRYPTO_COST) * twdEx - INPUT_BITO * usdEx
+//allCost = (ALL_STOCKS_COST + ALL_CRYPTO_COST) * twdEx - INPUT_BITO * usdEx - INPUT_CRYPTO_COM_VISA * usdEx  // 總投入成本（股票+幣圈）- 幣託U - CRO卡
+// 總負債
+allDebt = DEBT * twdEx
 
-totalCryptoAssets = (mainCryptoAssets + otherCryptoASssets) * usdEx + EXCHANGE_USD * usdEx      // (主要部位 + 雜魚) + 交易所的U
-totalSpecultaionAssets = totalStocksAssets + totalCryptoAssets                                  //總投機資產
-totalAssets := totalCash + totalSpecultaionAssets                                               //總資產(現金 + 投機)
-allCost = (ALL_STOCKS_COST + ALL_CRYPTO_COST) * twdEx - INPUT_BITO * usdEx                       //總投入成本
-allDedt= DEBT * twdEx
-
-cashRatioNow = totalCash / totalAssets                                                          //當下現金比例
+// ============================================================================
+// 步驟 7：計算當前配比和損益
+// ============================================================================
+// 當前配比
+cashRatioNow = totalCash / totalAssets
 twStocksRatioNow = totalStocksAssets / totalAssets
 cryptoRatioNow = totalCryptoAssets / totalAssets
-speculationPNL = totalSpecultaionAssets - allCost + INPUT_CRYPTO_COM_VISA * usdEx
-speculaionPNLRatio = speculationPNL / allCost
+// 投機損益
+speculationPNL = totalSpeculationAssets - allCost + INPUT_CRYPTO_COM_VISA * usdEx
+//speculationPNL = totalSpeculationAssets - allCost  // 投機損益（不含刷卡金額）
+speculationPNLRatio = speculationPNL / allCost
 
+// ============================================================================
+// 步驟 8：計算再平衡金額
+// ============================================================================
 cashRebalance = totalAssets * cashRatio - totalCash
 stockRebalance = totalAssets * twStocksRatio - totalStocksAssets
 cryptoRebalance = totalAssets * cryptoRatio - totalCryptoAssets
 
-[remain006208, pnl006208, pnlPercent006208, now006208Ratio] = lib.calDefault(p006208 * twdEx, MY_006208_POSITION, MY_006208_COST * twdEx, totalAssets)
-[remainBTC, pnlBTC, pnlPercentBTC, nowBTCRatio] = lib.calDefault(pBTC * usdEx, MY_BTC_POSITION, MY_BTC_COST * usdEx, totalAssets)
-[remainETH, pnlETH, pnlPercentETH, nowETHRatio] = lib.calDefault(pETH * usdEx, MY_ETH_POSITION, MY_ETH_COST * usdEx, totalAssets)
-[remainCRO, pnlCRO, pnlPercentCRO, nowCRORatio] = lib.calDefault(pCRO * usdEx, MY_CRO_POSITION, MY_CRO_COST * usdEx, totalAssets)
-[remainPOL, pnlPOL, pnlPercentPOL, nowPOLRatio] = lib.calDefault(pPOL * usdEx, MY_POL_POSITION, MY_POL_COST * usdEx, totalAssets)
-[remainADA, pnlADA, pnlPercentADA, nowADARatio] = lib.calDefault(pADA * usdEx, MY_ADA_POSITION, MY_ADA_COST * usdEx, totalAssets)
-[remainLINK, pnlLINK, pnlPercentLINK, nowLINKRatio] = lib.calDefault(pLINK * usdEx, MY_LINK_POSITION, MY_LINK_COST * usdEx, totalAssets)
-[remainARB, pnlARB, pnlPercentARB, nowARBRatio] = lib.calDefault(pARB * usdEx, MY_ARB_POSITION, MY_ARB_COST * usdEx, totalAssets)
-[remainOP, pnlOP, pnlPercentOP, nowOPRatio] = lib.calDefault(pOP * usdEx, MY_OP_POSITION, MY_OP_COST * usdEx, totalAssets)
-[remainDOT, pnlDOT, pnlPercentDOT, nowDOTRatio] = lib.calDefault(pDOT * usdEx, MY_DOT_POSITION, MY_DOT_COST * usdEx, totalAssets)
-[remainBNB, pnlBNB, pnlPercentBNB, nowBNBRatio] = lib.calDefault(pBNB * usdEx, MY_BNB_POSITION, MY_BNB_COST * usdEx, totalAssets)
-[remainGMT, pnlGMT, pnlPercentGMT, nowGMTRatio] = lib.calDefault(pGMT * usdEx, MY_GMT_POSITION, MY_GMT_COST * usdEx, totalAssets)
+// ============================================================================
+// 步驟 9：計算各資產價值和損益
+// ============================================================================
+// 台股
+[remain0050, pnl0050, pnlPercent0050, now0050Ratio] = calculateAssetValue(p0050, MY_0050_POSITION, MY_0050_COST, totalAssets, twdEx)
+// 主要加密貨幣
+[remainBTC, pnlBTC, pnlPercentBTC, nowBTCRatio] = calculateAssetValue(pBTC, MY_BTC_POSITION, MY_BTC_COST, totalAssets, usdEx)
+[remainETH, pnlETH, pnlPercentETH, nowETHRatio] = calculateAssetValue(pETH, MY_ETH_POSITION, MY_ETH_COST, totalAssets, usdEx)
+[remainCRO, pnlCRO, pnlPercentCRO, nowCRORatio] = calculateAssetValue(pCRO, MY_CRO_POSITION, MY_CRO_COST, totalAssets, usdEx)
+[remainADA, pnlADA, pnlPercentADA, nowADARatio] = calculateAssetValue(pADA, MY_ADA_POSITION, MY_ADA_COST, totalAssets, usdEx)
+[remainBNB, pnlBNB, pnlPercentBNB, nowBNBRatio] = calculateAssetValue(pBNB, MY_BNB_POSITION, MY_BNB_COST, totalAssets, usdEx)
+// 其他資產
 //[remainOther, pnlOther, pnlPercentOther, nowOthersRatio] = lib.calByRemain(otherCryptoASssets * usdEx, MY_OTHER_CRYPTO_COST * usdEx, totalAssets)
 [remainUSDT, pnlUSDT, pnlPercentUSDT, nowUSDTRatio] = lib.calByRemain(EXCHANGE_USD * usdEx, EXCHANGE_USD * usdEx, totalAssets)
 
-//Calcultion and judgement variable before display
-[infoText, infoColor] = getDisplayInfo(totalAssets, totalSpecultaionAssets, speculationPNL, speculaionPNLRatio)
+// ============================================================================
+// 步驟 10：準備顯示資訊
+// ============================================================================
+// 獲取顯示資訊文字和顏色（根據顯示模式）
+[infoText, infoColor] = getDisplayInfo(totalAssets, totalSpeculationAssets, speculationPNL, speculationPNLRatio)
+// 獲取當前日期和時間
+string currentDate = str.format_time(timenow, "yyyy/MM/dd", "Asia/Taipei")
+string currentTime = str.format_time(timenow, "HH:mm:ss", "Asia/Taipei")
 
-//計算各項目"再平衡"數值
+// ============================================================================
+// 步驟 11：計算大類資產再平衡資訊（現金、台股、幣圈）
+// ============================================================================
+// 現金再平衡
 float cashDiffRatio = lib.getRatioDiff(cashRatioNow, cashRatio)
 string cashDiffText = fm.fString(cashRebalance, 0) + "\t【" + fm.ratioString(cashDiffRatio) + "】"  
 color cashColor = math.abs(cashDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_TEXT_COLOR
 
+// 台股再平衡
 float twStockDiffRatio = lib.getRatioDiff(twStocksRatioNow, twStocksRatio)
 string twStockDiffText = fm.fString(stockRebalance, 0) + "\t【" + fm.ratioString(twStockDiffRatio) + "】"
 string twStockPNLText = getRebalanceText("口袋 ", BANK3_AVAL, stockRebalance)
 color stockColor = math.abs(twStockDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_TEXT_COLOR
 
+// 幣圈再平衡
 float cryptoDiffRatio = lib.getRatioDiff(cryptoRatioNow, cryptoRatio)
 string cryptoDiffText = fm.fString(cryptoRebalance, 0) + "\t【" + fm.ratioString(cryptoDiffRatio) + "】"
 string cryptoPNLText = getRebalanceText("MAX ", BITO_AVAL * usdEx, cryptoRebalance)
 color cryptoColor = math.abs(cryptoDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_TEXT_COLOR
-string currentDate = str.format_time(timenow, "yyyy/MM/dd", "Asia/Taipei")
-string currentTime = str.format_time(timenow, "HH:mm:ss", "Asia/Taipei")
 
+// ============================================================================
+// 步驟 12：計算個別資產再平衡資訊
+// ============================================================================
 // 台股資產再平衡
-float _006208DiffRatio = lib.getRatioDiff(now006208Ratio, _006208Ratio / 100)
-float _006208RebalanceValue = totalAssets * _006208Ratio / 100 - remain006208
-string _006208RebalanceText = fm.fString(_006208RebalanceValue, 0) + "\t【" + fm.ratioString(_006208DiffRatio) + "】"  
+[_0050DiffRatio, _0050RebalanceValue, _0050RebalanceText] = calculateRebalanceInfo(now0050Ratio, _0050Ratio, remain0050, totalAssets)
 
 // 加密資產再平衡
-float btcDiffRatio = lib.getRatioDiff(nowBTCRatio, btcRatio / 100)
-float btcRebalanceValue = totalAssets * btcRatio / 100 - remainBTC
-string btcRebalaneText = fm.fString(btcRebalanceValue, 0) + "\t【" + fm.ratioString(btcDiffRatio) + "】"  
+[btcDiffRatio, btcRebalanceValue, btcRebalaneText] = calculateRebalanceInfo(nowBTCRatio, btcRatio, remainBTC, totalAssets)
+[ethDiffRatio, ethRebalanceValue, ethRebalaneText] = calculateRebalanceInfo(nowETHRatio, ethRatio, remainETH, totalAssets)
+[adaDiffRatio, adaRebalanceValue, adaRebalaneText] = calculateRebalanceInfo(nowADARatio, adaRatio, remainADA, totalAssets)
+[bnbDiffRatio, bnbRebalanceValue, bnbRebalaneText] = calculateRebalanceInfo(nowBNBRatio, bnbRatio, remainBNB, totalAssets)
+[croDiffRatio, croRebalanceValue, croRebalaneText] = calculateRebalanceInfo(nowCRORatio, croRatio, remainCRO, totalAssets)
+// [arbDiffRatio, arbRebalanceValue, arbRebalaneText] = calculateRebalanceInfo(nowARBRatio, arbRatio, remainARB, totalAssets)
+// [opDiffRatio, opRebalanceValue, opRebalaneText] = calculateRebalanceInfo(nowOPRatio, opRatio, remainOP, totalAssets)
 
-float ethDiffRatio = lib.getRatioDiff(nowETHRatio, ethRatio / 100)
-float ethRebalanceValue = totalAssets * ethRatio / 100 - remainETH
-string ethRebalaneText = fm.fString(ethRebalanceValue, 0) + "\t【" + fm.ratioString(ethDiffRatio) + "】"  
-
-float croDiffRatio = lib.getRatioDiff(nowCRORatio, croRatio / 100)
-float croRebalanceValue = totalAssets * croRatio / 100 - remainCRO
-string croRebalaneText = fm.fString(croRebalanceValue, 0) + "\t【" + fm.ratioString(croDiffRatio) + "】"  
-
-float polDiffRatio = lib.getRatioDiff(nowPOLRatio, polRatio / 100)
-float polRebalanceValue = totalAssets * polRatio / 100 - remainPOL
-string polRebalaneText = fm.fString(polRebalanceValue, 0) + "\t【" + fm.ratioString(polDiffRatio) + "】"  
-
-float adaDiffRatio = lib.getRatioDiff(nowADARatio, adaRatio / 100)
-float adaRebalanceValue = totalAssets * adaRatio / 100 - remainADA
-string adaRebalaneText = fm.fString(adaRebalanceValue, 0) + "\t【" + fm.ratioString(adaDiffRatio) + "】"  
-
-float bnbDiffRatio = lib.getRatioDiff(nowBNBRatio, bnbRatio / 100)
-float bnbRebalanceValue = totalAssets * bnbRatio / 100 - remainBNB
-string bnbRebalaneText = fm.fString(bnbRebalanceValue, 0) + "\t【" + fm.ratioString(bnbDiffRatio) + "】"  
-
-float linkDiffRatio = lib.getRatioDiff(nowLINKRatio, linkRatio / 100)
-float linkRebalanceValue = totalAssets * linkRatio / 100 - remainLINK
-string linkRebalaneText = fm.fString(linkRebalanceValue, 0) + "\t【" + fm.ratioString(linkDiffRatio) + "】"  
-
-float arbDiffRatio = lib.getRatioDiff(nowARBRatio, arbRatio / 100)
-float arbRebalanceValue = totalAssets * arbRatio / 100 - remainARB
-string arbRebalaneText = fm.fString(arbRebalanceValue, 0) + "\t【" + fm.ratioString(arbDiffRatio) + "】"  
-
-float opDiffRatio = lib.getRatioDiff(nowOPRatio, opRatio / 100)
-float opRebalanceValue = totalAssets * opRatio / 100 - remainOP
-string opRebalaneText = fm.fString(opRebalanceValue, 0) + "\t【" + fm.ratioString(opDiffRatio) + "】"  
-
+// 其他資產再平衡（目前註釋）
 //float otherDiffRatio = lib.getRatioDiff(nowOthersRatio, otherRatio / 100)
 //float otherRebalanceValue = totalAssets * otherRatio / 100 - remainOther
 //string otherRebalaneText = fm.fString(otherRebalanceValue, 0) + "\t【" + fm.ratioString(otherDiffRatio) + "】"  
 
-//計算個項目"預設配比"數值
+// ============================================================================
+// 步驟 13：生成表格標題中的配比文字
+// ============================================================================
+// 大類配比標題
 string titleCashRatio = "\t【" + fm.fString(INPUT_CASH_RATIO, 0) + "%】"
 string titleStockRatio = "\t【" + fm.fString(INPUT_SPECULATION_RATIO * INPUT_TW_STOCKS_RATIO / 100, 0) + "%】"
 string titleCryptoRatio = "\t【" + fm.fString(INPUT_SPECULATION_RATIO * INPUT_CRYPTO_RATIO / 100, 0) + "%】"
-
-string title006208Ratio = "\t【" + fm.fString(_006208Ratio , 0) + "%】"
-
+// 台股配比標題
+string title0050Ratio = "\t【" + fm.fString(_0050Ratio , 0) + "%】"
+// 加密貨幣配比標題
 string titleBTCRatio = "\t【" + fm.fString(btcRatio , 0) + "%】"
 string titleETHRatio = "\t【" + fm.fString(ethRatio , 0) + "%】"
 string titleCRORatio = "\t【" + fm.fString(croRatio , 0) + "%】"
 string titleADARatio = "\t【" + fm.fString(adaRatio , 0) + "%】"
 string titleBNBRatio = "\t【" + fm.fString(bnbRatio , 0) + "%】"
-string titlePOLRatio = "\t【" + fm.fString(polRatio , 0) + "%】"
-string titleLINKRatio = "\t【" + fm.fString(linkRatio , 0) + "%】"
-string titleARBRatio = "\t【" + fm.fString(arbRatio , 0) + "%】"
-string titleOPRatio = "\t【" + fm.fString(opRatio , 0) + "%】"
+// string titleARBRatio = "\t【" + fm.fString(arbRatio , 0) + "%】"
+// string titleOPRatio = "\t【" + fm.fString(opRatio , 0) + "%】"
 //string titleOtherRatio = "\t【" + fm.fString(otherRatio , 0) + "%】"
 
 if barstate.islast
@@ -752,7 +1127,7 @@ if barstate.islast
     // cell(4, nextRow, "總投入\t👉", DF_TEXT_COLOR, DF_CELL_COLOR)
     // cell(5, nextRow, fm.fString(allCost, 0) + "(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR)
     cell(4, nextRow, "總負債\t👉", DF_TEXT_COLOR, DF_CELL_COLOR)
-    cell(5, nextRow, fm.fString(allDedt, 0) + "(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR)
+    cell(5, nextRow, fm.fString(allDebt, 0) + "(" + INPUT_DISPLAY_CURRENCY + ")", DF_TEXT_COLOR, DF_CELL_COLOR)
     nextRow := nextRow + 1
     nextRow := cellBlank(nextRow) // 空行
 
@@ -787,10 +1162,10 @@ if barstate.islast
         cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
         nextRow := nextRow + 1
 
-        if IS_006208_DISPLAY
-            cellRebalanceWithNotify(nextRow, "富邦50" + title006208Ratio, now006208Ratio, _006208RebalanceText, _006208DiffRatio, 0.3)
-            cellIncome(nextRow, _006208_INCOME * twdEx, _006208_COST * twdEx, INPUT_006208_COST * twdEx)
-            nextRow := cellPNL(nextRow, remain006208, pnl006208, pnlPercent006208)
+        if IS_0050_DISPLAY
+            cellRebalanceWithNotify(nextRow, "台灣50" + title0050Ratio, now0050Ratio, _0050RebalanceText, _0050DiffRatio, 0.3)
+            cellIncome(nextRow, _0050_INCOME * twdEx, _0050_COST * twdEx, INPUT_0050_COST * twdEx)
+            nextRow := cellPNL(nextRow, remain0050, pnl0050, pnlPercent0050)
 
         nextRow := cellBlank(nextRow)
 
@@ -804,88 +1179,57 @@ if barstate.islast
         cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
         nextRow := nextRow + 1
 
-        if IS_BTC_DISPLAY
-            cellRebalanceWithNotify(nextRow, "₿\tBTC" + titleBTCRatio, nowBTCRatio, btcRebalaneText, btcDiffRatio, 0.15)
-            cellIncome(nextRow, BTC_INCOME * usdEx, BTC_COST * usdEx, INPUT_BTC_COST * usdEx)
-            nextRow := cellPNL(nextRow, remainBTC, pnlBTC, pnlPercentBTC)
+        // 收集、排序並動態顯示加密貨幣資產
+        array<CryptoAssetData> cryptoAssets = collectCryptoAssets(
+         remainBTC, pnlBTC, pnlPercentBTC, nowBTCRatio, btcRebalaneText, btcDiffRatio, titleBTCRatio,
+         remainETH, pnlETH, pnlPercentETH, nowETHRatio, ethRebalaneText, ethDiffRatio, titleETHRatio,
+         remainADA, pnlADA, pnlPercentADA, nowADARatio, adaRebalaneText, adaDiffRatio, titleADARatio,
+         remainBNB, pnlBNB, pnlPercentBNB, nowBNBRatio, bnbRebalaneText, bnbDiffRatio, titleBNBRatio,
+         remainCRO, pnlCRO, pnlPercentCRO, nowCRORatio, croRebalaneText, croDiffRatio, titleCRORatio,
+         remainUSDT, pnlUSDT, pnlPercentUSDT, nowUSDTRatio
+         )
+        sortedAssets = sortAssetsByRemain(cryptoAssets)
         
-        if IS_ETH_DISPLAY
-            cellRebalanceWithNotify(nextRow, "⟠\tETH" + titleETHRatio, nowETHRatio, ethRebalaneText, ethDiffRatio, 0.15)
-            cellIncome(nextRow, ETH_INCOME * usdEx, ETH_COST * usdEx, INPUT_ETH_COST * usdEx)
-            nextRow := cellPNL(nextRow, remainETH, pnlETH, pnlPercentETH)
-
-        if IS_ADA_DISPLAY
-            cellRebalanceWithNotify(nextRow, "ADA" + titleADARatio, nowADARatio, adaRebalaneText, adaDiffRatio, 0.15)
-            cellIncome(nextRow, ADA_INCOME * usdEx, ADA_COST * usdEx, INPUT_ADA_COST * usdEx)
-            nextRow := cellPNL(nextRow, remainADA, pnlADA, pnlPercentADA)
-
-        if IS_BNB_DISPLAY
-            cellRebalanceWithNotify(nextRow, "BNB" + titleBNBRatio, nowBNBRatio, bnbRebalaneText, bnbDiffRatio, 0.15)
-            cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
-            nextRow := cellPNL(nextRow, remainBNB, pnlBNB, pnlPercentBNB)
-        
-        if IS_CRO_DISPLAY
-            cellRebalanceWithNotify(nextRow, "CRO" + titleCRORatio, nowCRORatio, croRebalaneText, croDiffRatio, 0.15)
-            cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
-            nextRow := cellPNL(nextRow, remainCRO, pnlCRO, pnlPercentCRO)
-        
-        if IS_POL_DISPLAY
-            cellRebalanceWithNotify(nextRow, "POL" + titlePOLRatio, nowPOLRatio, polRebalaneText, polDiffRatio, 0.15)
-            cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
-            nextRow := cellPNL(nextRow, remainPOL, pnlPOL, pnlPercentPOL)
-
-        if IS_LINK_DISPLAY
-            cellRebalanceWithNotify(nextRow, "LINK" + titleLINKRatio, nowLINKRatio, linkRebalaneText, linkDiffRatio, 0.15)
-            cellIncome(nextRow, LINK_INCOME * usdEx, LINK_COST * usdEx, INPUT_LINK_COST * usdEx)
-            nextRow := cellPNL(nextRow, remainLINK, pnlLINK, pnlPercentLINK)
-  
-        if IS_ARB_DISPLAY
-            cellRebalanceWithNotify(nextRow, "ARB" + titleARBRatio, nowARBRatio, arbRebalaneText, arbDiffRatio, 0.15)
-            cellIncome(nextRow, ARB_INCOME * usdEx, ARB_COST * usdEx, INPUT_ARB_COST * usdEx)
-            nextRow := cellPNL(nextRow, remainARB, pnlARB, pnlPercentARB)
-
-        if IS_OP_DISPLAY
-            cellRebalanceWithNotify(nextRow, "OP" + titleOPRatio, nowOPRatio, opRebalaneText, opDiffRatio, 0.15)
-            cellIncome(nextRow, OP_INCOME * usdEx, OP_COST * usdEx, INPUT_OP_COST * usdEx)
-            nextRow := cellPNL(nextRow, remainOP, pnlOP, pnlPercentOP)
-
-        if IS_DOT_DISPLAY
-            cellBlankRebalance(nextRow, "DOT", nowDOTRatio)
-            cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
-            nextRow := cellPNL(nextRow, remainDOT, pnlDOT, pnlPercentDOT)
-        
-        if IS_GMT_DISPLAY
-            cellBlankRebalance(nextRow, "GMT", nowGMTRatio)
-            cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
-            nextRow := cellPNL(nextRow, remainGMT, pnlGMT, pnlPercentGMT)
-
-        //if IS_OTHER_DISPLAY
-            //cellRebalanceWithNotify(nextRow, "淨利(零)幣?" + titleOtherRatio, nowOthersRatio, otherRebalaneText, otherDiffRatio, 1)
-            //cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
-            //nextRow := cellPNL(nextRow, remainOther, pnlOther, pnlPercentOther)
-
-        if IS_USDT_DISPLAY
-            cellBlankRebalance(nextRow, "USDT", nowUSDTRatio)
-            cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
-            nextRow := cellPNL(nextRow, remainUSDT, pnlUSDT, pnlPercentUSDT)
+        // 按照排序後的順序顯示資產
+        for i = 0 to array.size(sortedAssets) - 1
+            asset = array.get(sortedAssets, i)
+            nextRow := renderCryptoAsset(nextRow, asset, usdEx)
 
         if DEBUG
             getCurrentSymbol(speculationPNL)
 
+// ============================================================================
+// 步驟 15：繪製資產走勢圖表
+// ============================================================================
+// 處理歷史記錄數據（前向填充）
+if array.size(rdArray) != 0
+    temp = array.get(rdArray, index = 0)
+    if lib.isDate(temp.mYear, temp.mMonth, temp.mDay)
+        // 遇到新的有效數據點，更新值
+        recordAssetsVariation := temp.mNowTotal
+        filledVariation := temp.mNowTotal
+        if array.size(rdArray) != 1
+            array.shift(rdArray)
+    // 如果沒有新數據點，filledVariation 會自動保持上一個值（var 變數的特性）
+else
+    // 初始化時也需要設置 filledVariation
+    if na(filledVariation) and recordAssetsVariation != 0
+        filledVariation := recordAssetsVariation
+
+// 計算移動平均平滑化（需要在條件塊外調用以保持一致性）
+smoothedVariationCalc = ta.sma(filledVariation, INPUT_SMOOTHING_PERIOD)
+if INPUT_SMOOTHING_ENABLED and not na(filledVariation)
+    smoothedVariation := smoothedVariationCalc
+else
+    smoothedVariation := na
+
 if INPUT_DISPLAY_ASSETS_CHART
+    // 初始化基準線
     if bar_index == 1
-        line.new(x1 = bar_index, y1 = 0, x2 = bar_index + 1, y2 = 0, extend = extend.both, color = colour.ANTIQUE_WHITE(70), width = 4) 
-
-
-
-    if array.size(rdArray) != 0
-        temp = array.get(rdArray, index = 0)
-        if lib.isDate(temp.mYear, temp.mMonth, temp.mDay)
-            recordAssetsVariation := temp.mNowTotal
-            if array.size(rdArray) != 1
-                array.shift(rdArray)  
-    else
-//fake
+        line.new(x1 = bar_index, y1 = 0, x2 = bar_index + 1, y2 = 0, extend = extend.both, color = colour.ANTIQUE_WHITE(70), width = 4)
+    
+    // 初始化歷史數據（測試用數據，僅在 rdArray 為空時執行）
+    if array.size(rdArray) == 0
         array.push(rdArray, newData(2022, 5, 28, 5161))
         array.push(rdArray, newData(2022, 6, 1, 7161))
         array.push(rdArray, newData(2022, 6, 6, -5161))
@@ -908,7 +1252,7 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2022, 8, 15, -184161))
         array.push(rdArray, newData(2022, 8, 17, -192161))
         array.push(rdArray, newData(2022, 8, 20, -204161))
-//fake
+        // 繼續添加歷史數據
         array.push(rdArray, newData(2022, 8, 22, -224161)) 
         array.push(rdArray, newData(2022, 8, 29, -244077))
         array.push(rdArray, newData(2022, 9, 5, -244682))
@@ -1005,14 +1349,35 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2024, 11, 11, 192539)) //6.9%
         array.push(rdArray, newData(2024, 11, 16, 439049)) //15.4%
         array.push(rdArray, newData(2024, 11, 23, 947223)) //33.3%
+        array.push(rdArray, newData(2024, 12, 5, 1349393)) //47.5%
+        array.push(rdArray, newData(2024, 12, 27, 762512)) //26.8%
+        array.push(rdArray, newData(2025, 1, 12, 839870)) //29.2%
+        array.push(rdArray, newData(2025, 1, 19, 1008707)) //35.1%
+        array.push(rdArray, newData(2025, 2, 5, 339581)) //11.5%
+        array.push(rdArray, newData(2025, 2, 23, 243478)) //8.1%
+        array.push(rdArray, newData(2025, 2, 25, -127805)) //-4.3%
+        array.push(rdArray, newData(2025, 3, 30, -116584)) //-3.8%
+        array.push(rdArray, newData(2025, 4, 12, -373100)) //-3.8%
+        array.push(rdArray, newData(2025, 5, 23, 171285)) //5.6%
+        array.push(rdArray, newData(2025, 7, 16, 359417)) //11.7%
+        array.push(rdArray, newData(2025, 8, 9, 961097)) //31.6%
+        array.push(rdArray, newData(2025, 8, 30, 1545152)) //50.8%
+        array.push(rdArray, newData(2025, 11, 15, 485221)) //16%
+        array.push(rdArray, newData(2025, 11, 22, 139468)) //4.6%
+        array.push(rdArray, newData(2025, 12, 7, 311564)) //10.2%
+        array.push(rdArray, newData(2026, 2, 1, -111152)) //-3.6%
+        array.push(rdArray, newData(2026, 2, 7, -347825)) //-11.3%
+        array.push(rdArray, newData(2026, 3, 8, -341457)) //-10.5%
 
+// 選擇要繪製的值（平滑化或原始值）
+plotValue = INPUT_SMOOTHING_ENABLED and not na(smoothedVariation) ? smoothedVariation : (not na(filledVariation) ? filledVariation : recordAssetsVariation)
 
 plot(
- series       =  recordAssetsVariation,
- color        =  recordAssetsVariation > 0 ? colour.LIME_GREEN(70) : colour.FIRE_BRICK(70),
+ series       =  plotValue,
+ color        =  plotValue > 0 ? colour.LIME_GREEN(70) : colour.FIRE_BRICK(70),
  style        =  plot.style_area,
  linewidth    =  3,
- display      =  INPUT_DISPLAY_ASSETS_CHART ? display.all : display.none
+ display      =  display.all
  )
 
 // getDebugValue(str.format_time(timenow, "yyyy/MM/dd HH:mm:ss", "Asia/Taipei") )
