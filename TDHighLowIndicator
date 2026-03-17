@@ -12,6 +12,10 @@ showLabels = input.bool(true, "顯示高低點標籤")
 showAllHL = input.bool(false, "顯示歷史高低點", tooltip="開啟後顯示最近一批歷史高低點，關閉則只顯示最新高低點")
 showTD = input.bool(true, "顯示 TD 序列", tooltip="顯示 TD Setup 的關鍵計數")
 tdLength = input.int(9, "TD 序列長度", minval=1, tooltip="TD Setup 的目標計數長度")
+showInfoPanel = input.bool(false, "顯示資訊面板", tooltip="顯示右上角 TD 與 HL 距離資訊")
+useAutoHlLabelDistance = input.bool(true, "自動 HL 標籤距離", tooltip="依照常用週期自動套用 High/Low 標籤距離")
+hlLabelAtrLength = input.int(14, "HL 標籤波動週期", minval=1, tooltip="用 ATR 計算 High/Low 標籤與 K 棒的基礎距離")
+hlLabelDistance = input.float(0.30, "HL 標籤距離倍率", minval=0.05, step=0.05, tooltip="關閉自動 HL 標籤距離時使用的預設倍率")
 showFib = input.bool(true, "顯示斐波那契", tooltip="顯示最近一組高低點推導出的斐波那契水平")
 
 // Pivot 計算
@@ -30,12 +34,6 @@ var array<float> allLows = array.new_float()
 var array<int> allHighBars = array.new_int()
 var array<int> allLowBars = array.new_int()
 
-// 歷史標籤
-var array<label> highHistoryLabels = array.new_label()
-var array<label> lowHistoryLabels = array.new_label()
-var label latestHighLabel = na
-var label latestLowLabel = na
-
 // 斐波那契物件
 var line fib618Line = na
 var line fib1618Line = na
@@ -49,6 +47,15 @@ var float fib618Value = na
 var float fib1618Value = na
 var float fib66Value = na
 var float fib1382Value = na
+var table tdInfoTable = table.new(position.top_right, 1, 1)
+var float highPlotY = na
+var float lowPlotY = na
+var float latestHighPlotY = na
+var float latestLowPlotY = na
+
+// TD Setup 計數
+var int tdBullishSetupCount = 0
+var int tdBearishSetupCount = 0
 
 // 輔助函式
 isValidPivotDistance(int previousBar, int currentBar, int minBars) =>
@@ -59,11 +66,6 @@ trimPivotData(array<float> prices, array<int> bars) =>
         array.shift(prices)
         array.shift(bars)
 
-trimLabels(array<label> labels) =>
-    if array.size(labels) > MAX_HISTORY_LABELS
-        label.delete(array.get(labels, 0))
-        array.shift(labels)
-
 isTdMarker(int count, int maxCount) =>
     ((count >= 7 and count <= 9) or (count >= 11 and count <= 13)) and count <= maxCount
 
@@ -73,24 +75,57 @@ getBearTdLabelColor(int count) =>
 getBearTdTextColor(int count) =>
     count == 11 or count == 12 ? color.new(color.white, 20) : color.white
 
-getBearTdLabelY(int count) =>
-    count == 13 ? high * 1.06 : high * 1.02
-
 getBullTdLabelColor(int count) =>
     count == 9 or count == 13 ? color.rgb(76, 175, 80) : color.new(color.rgb(44, 84, 52), 10)
 
 getBullTdTextColor(int count) =>
     count == 11 or count == 12 ? color.new(color.white, 20) : color.white
 
-getBullTdLabelY(int count) =>
-    count == 13 ? low * 0.94 : low * 0.98
+getAutoHlLabelDistance() =>
+    string currentPeriod = timeframe.period
+    float autoDistance = 0.30
 
-// TD Setup 計數
-var int tdBullishSetupCount = 0
-var int tdBearishSetupCount = 0
+    if currentPeriod == "15"
+        autoDistance := 0.22
+    else if currentPeriod == "60"
+        autoDistance := 0.26
+    else if currentPeriod == "240"
+        autoDistance := 0.32
+    else if currentPeriod == "D"
+        autoDistance := 0.38
+    else if currentPeriod == "3D"
+        autoDistance := 0.46
+    else if currentPeriod == "W"
+        autoDistance := 0.58
+    else if currentPeriod == "M"
+        autoDistance := 0.72
+
+    autoDistance
+
+getEffectiveHlLabelDistance() =>
+    useAutoHlLabelDistance ? getAutoHlLabelDistance() : hlLabelDistance
+
+getHlLabelOffset() =>
+    math.max(ta.atr(hlLabelAtrLength) * getEffectiveHlLabelDistance(), syminfo.mintick * 40)
+
+getHighLabelY(float pivotPrice, int barsAgo) =>
+    int tdMarkerLimit = math.max(tdLength, 13)
+    int pastBearTdCount = int(nz(tdBullishSetupCount[barsAgo]))
+    bool hasTdMarkerConflict = isTdMarker(pastBearTdCount, tdMarkerLimit)
+    float hlOffset = getHlLabelOffset()
+    pivotPrice + hlOffset * (hasTdMarkerConflict ? 4.2 : 2.4)
+
+getLowLabelY(float pivotPrice, int barsAgo) =>
+    int tdMarkerLimit = math.max(tdLength, 13)
+    int pastBullTdCount = int(nz(tdBearishSetupCount[barsAgo]))
+    bool hasTdMarkerConflict = isTdMarker(pastBullTdCount, tdMarkerLimit)
+    float hlOffset = getHlLabelOffset()
+    pivotPrice - hlOffset * (hasTdMarkerConflict ? 4.2 : 2.4)
 
 if barstate.isconfirmed
     bool hasNewPivot = false
+    highPlotY := na
+    lowPlotY := na
 
     if not na(highPoint)
         int pivotBar = bar_index - lookbackPeriod
@@ -103,17 +138,9 @@ if barstate.isconfirmed
             hasNewPivot := true
 
             if showLabels
-                float labelY = highPoint * 1.02
-                if showAllHL
-                    string highTooltip = "高點價位: " + str.tostring(highPoint, format.mintick)
-                    label historyLabel = label.new(pivotBar, labelY, "H", color=color.red, style=label.style_label_down, textcolor=color.white, size=size.tiny, tooltip=highTooltip)
-                    array.push(highHistoryLabels, historyLabel)
-                    trimLabels(highHistoryLabels)
-                else
-                    if not na(latestHighLabel)
-                        label.delete(latestHighLabel)
-                    string highTooltip = "高點價位: " + str.tostring(highPoint, format.mintick)
-                    latestHighLabel := label.new(pivotBar, labelY, "H", color=color.red, style=label.style_label_down, textcolor=color.white, size=size.tiny, tooltip=highTooltip)
+                float labelY = getHighLabelY(highPoint, lookbackPeriod)
+                highPlotY := labelY
+                latestHighPlotY := labelY
 
     if not na(lowPoint)
         int pivotBar = bar_index - lookbackPeriod
@@ -126,17 +153,9 @@ if barstate.isconfirmed
             hasNewPivot := true
 
             if showLabels
-                float labelY = lowPoint * 0.98
-                if showAllHL
-                    string lowTooltip = "低點價位: " + str.tostring(lowPoint, format.mintick)
-                    label historyLabel = label.new(pivotBar, labelY, "L", color=color.green, style=label.style_label_up, textcolor=color.white, size=size.tiny, tooltip=lowTooltip)
-                    array.push(lowHistoryLabels, historyLabel)
-                    trimLabels(lowHistoryLabels)
-                else
-                    if not na(latestLowLabel)
-                        label.delete(latestLowLabel)
-                    string lowTooltip = "低點價位: " + str.tostring(lowPoint, format.mintick)
-                    latestLowLabel := label.new(pivotBar, labelY, "L", color=color.green, style=label.style_label_up, textcolor=color.white, size=size.tiny, tooltip=lowTooltip)
+                float labelY = getLowLabelY(lowPoint, lookbackPeriod)
+                lowPlotY := labelY
+                latestLowPlotY := labelY
 
     if hasNewPivot
         fib618Value := na
@@ -208,25 +227,27 @@ if barstate.isconfirmed
     if showTD and isTdMarker(tdBullishSetupCount, tdMarkerLimit)
         label.new(
              bar_index,
-             getBearTdLabelY(tdBullishSetupCount),
+             na,
              str.tostring(tdBullishSetupCount),
              color=getBearTdLabelColor(tdBullishSetupCount),
-             style=label.style_label_down,
+             style=label.style_text_outline,
              textcolor=getBearTdTextColor(tdBullishSetupCount),
-             size=size.small,
-             tooltip="TD 空方計數: " + str.tostring(tdBullishSetupCount)
+             size=size.large,
+             tooltip="TD 空方計數: " + str.tostring(tdBullishSetupCount),
+             yloc=yloc.abovebar
          )
 
     if showTD and isTdMarker(tdBearishSetupCount, tdMarkerLimit)
         label.new(
              bar_index,
-             getBullTdLabelY(tdBearishSetupCount),
+             na,
              str.tostring(tdBearishSetupCount),
              color=getBullTdLabelColor(tdBearishSetupCount),
-             style=label.style_label_up,
+             style=label.style_text_outline,
              textcolor=getBullTdTextColor(tdBearishSetupCount),
-             size=size.small,
-             tooltip="TD 多方計數: " + str.tostring(tdBearishSetupCount)
+             size=size.large,
+             tooltip="TD 多方計數: " + str.tostring(tdBearishSetupCount),
+             yloc=yloc.belowbar
          )
 
 // 與最近高低點的距離
@@ -240,3 +261,15 @@ plot(fib618Value, "[0.618]", color=color.new(color.blue, 100), display=display.d
 plot(fib66Value, "[0.66]", color=color.new(color.blue, 100), display=display.data_window)
 plot(fib1382Value, "[1.382]", color=color.new(color.blue, 100), display=display.data_window)
 plot(fib1618Value, "[1.618]", color=color.new(color.blue, 100), display=display.data_window)
+
+plotshape(showLabels and showAllHL ? highPlotY : na, "歷史高點", shape.triangledown, location.absolute, color.green, offset=-lookbackPeriod, size=size.small)
+plotshape(showLabels and showAllHL ? lowPlotY : na, "歷史低點", shape.triangleup, location.absolute, color.red, offset=-lookbackPeriod, size=size.small)
+plotshape(showLabels and not showAllHL and barstate.islast ? latestHighPlotY : na, "最新高點", shape.triangledown, location.absolute, color.green, offset=lastHighBar - bar_index, size=size.small)
+plotshape(showLabels and not showAllHL and barstate.islast ? latestLowPlotY : na, "最新低點", shape.triangleup, location.absolute, color.red, offset=lastLowBar - bar_index, size=size.small)
+
+if barstate.islast and showInfoPanel
+    string hlDistanceMode = useAutoHlLabelDistance ? "自動" : "手動"
+    string tdDistanceText = "TD距離\n週期: " + timeframe.period + "\n模式: 固定 Bar 間距\n\nHL距離(" + hlDistanceMode + ")\n倍率: " + str.tostring(getEffectiveHlLabelDistance(), "#.##")
+    table.cell(tdInfoTable, 0, 0, tdDistanceText, text_color=color.white, text_size=size.small, bgcolor=color.new(color.black, 35))
+else if barstate.islast
+    table.clear(tdInfoTable, 0, 0)
