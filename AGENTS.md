@@ -367,3 +367,6 @@ For grid-parameter discussions, summarize:
 - whether enough inputs were provided
 - which parameter fields are still missing
 - where the parameter system is recorded under `grid/`
+
+## Comment Rules
+- When adding or editing code comments, use Traditional Chinese.
