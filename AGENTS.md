@@ -88,3 +88,6 @@ When completing this workflow, summarize:
 - whether `PNLRebalance` was updated
 - whether a commit was created
 - any blockers such as missing token, malformed payload, or missing markers
+
+## Comment Rules
+- When adding or editing code comments, use Traditional Chinese.
