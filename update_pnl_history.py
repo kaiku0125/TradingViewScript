@@ -29,10 +29,10 @@ class HistoryEntry:
     def same_date(self, year: int, month: int, day: int) -> bool:
         return self.year == year and self.month == month and self.day == day
 
-    def render(self, value_text: str) -> str:
+    def render(self, value_text: str, comment: str) -> str:
         return (
             f"{self.indent}array.push(rdArray, newData({self.year}, {self.month}, {self.day}, {value_text}))"
-            f"{self.comment}"
+            f"{comment}"
         )
 
 
@@ -50,6 +50,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pnl-value", required=True, type=float)
     parser.add_argument("--pnl-file", default=str(DEFAULT_PNL_FILE))
     parser.add_argument("--date", help="Optional date in YYYY-MM-DD format")
+    parser.add_argument("--comment", help="Optional trailing comment such as -10.7%")
     return parser.parse_args()
 
 
@@ -106,16 +107,34 @@ def parse_history_entries(lines: List[str], start_index: int, end_index: int) ->
     return entries
 
 
-def update_history_content(content: str, pnl_value: float, year: int, month: int, day: int) -> tuple[str, str]:
+def normalize_comment(comment_arg: Optional[str]) -> str:
+    if not comment_arg:
+        return ""
+
+    stripped = comment_arg.strip()
+    if not stripped:
+        return ""
+
+    if stripped.startswith("//"):
+        return f" {stripped}"
+
+    return f" //{stripped}"
+
+
+def update_history_content(
+    content: str, pnl_value: float, year: int, month: int, day: int, comment_arg: Optional[str]
+) -> tuple[str, str]:
     lines = content.splitlines()
     start_index, end_index = find_history_block(lines)
     entries = parse_history_entries(lines, start_index, end_index)
     pnl_text = format_pnl_value(pnl_value)
+    normalized_comment = normalize_comment(comment_arg)
 
     for entry in entries:
         if entry.same_date(year, month, day):
             old_value = entry.value_text
-            lines[entry.line_index] = entry.render(pnl_text)
+            comment = normalized_comment if normalized_comment else entry.comment
+            lines[entry.line_index] = entry.render(pnl_text, comment)
             summary = f"updated {year}-{month}-{day}: {old_value} -> {pnl_text}"
             return "\n".join(lines) + "\n", summary
 
@@ -123,6 +142,7 @@ def update_history_content(content: str, pnl_value: float, year: int, month: int
     insertion_index = entries[-1].line_index + 1
     new_line = (
         f"{template.indent}array.push(rdArray, newData({year}, {month}, {day}, {pnl_text}))"
+        f"{normalized_comment}"
     )
     lines.insert(insertion_index, new_line)
     summary = f"added {year}-{month}-{day}: {pnl_text}"
@@ -134,7 +154,9 @@ def main() -> int:
     year, month, day = resolve_date(args.date)
     pnl_path = Path(args.pnl_file)
     content = pnl_path.read_text(encoding="utf-8")
-    updated_content, summary = update_history_content(content, args.pnl_value, year, month, day)
+    updated_content, summary = update_history_content(
+        content, args.pnl_value, year, month, day, args.comment
+    )
     pnl_path.write_text(updated_content, encoding="utf-8")
     print(f"Updated {pnl_path}")
     print("Summary:")
