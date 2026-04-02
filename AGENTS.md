@@ -31,6 +31,27 @@ If either value is missing, ask the user before running the sync.
 10. If the user wants a commit but does not specify a commit message, use:
     - `[update] Update assets`
 
+## Main Workflow: Update Pnl(更新損益)
+When the user asks to update pnl, refresh daily pnl, or append the current pnl history, follow this process:
+
+Required inputs:
+- current pnl
+- commit preference
+
+If either value is missing, ask the user before running the update.
+
+1. Use the current Asia/Taipei date by default.
+2. If the user only says `更新損益`, ask exactly:
+   - `1. current pnl=?`
+   - `2. create commit after sync: yes/no?`
+3. Use `update_pnl_history.py` to update the `rdArray` history block in `PNLRebalance`.
+4. If the current date already exists in the history block, overwrite that day's pnl value.
+5. If the current date does not exist, append a new `array.push(rdArray, newData(...))` line.
+6. Do not change `PNLRebalance` structure outside the historical `rdArray` initialization block unless the user explicitly asks.
+7. Create a commit after sync only if the user explicitly says yes.
+8. If the user wants a commit but does not specify a commit message, use:
+   - `[update] Update pnl`
+
 ## Commands
 Preferred command for holdings sync:
 
@@ -42,6 +63,12 @@ If the user wants to generate the Pine block without modifying `PNLRebalance`:
 
 ```bash
 python3 update_holdings_pine.py --token "$HOLDINGS_WEB_APP_TOKEN" --skip-pnl-update
+```
+
+Preferred command for pnl sync:
+
+```bash
+python3 update_pnl_history.py --pnl-value "<CURRENT_PNL>"
 ```
 
 ## PNLRebalance Rules
@@ -64,6 +91,13 @@ After updating holdings, verify:
 3. The generated arrays match the expected symbols and values from the payload.
 4. No `input.float(defval=runtime_value)` pattern was introduced for generated positions or costs.
 
+After updating pnl, verify:
+
+1. `PNLRebalance` history block was updated.
+2. Same-day updates overwrite the existing entry instead of adding a duplicate.
+3. New-day updates append one new `array.push(rdArray, newData(...))` line.
+4. No code outside the `rdArray` history block was changed.
+
 ## Commit Workflow
 After a successful holdings sync, the agent should create a commit only if the user explicitly asked for one.
 
@@ -78,6 +112,8 @@ After a successful holdings sync, the agent should create a commit only if the u
 - Prefer messages such as:
   - `[feat] Add automated holdings sync for PNLRebalance`
   - `[update] Refresh holdings in PNLRebalance`
+- For pnl history updates, prefer:
+  - `[update] Update pnl`
 - If the change is only a holdings data refresh, use an `update` style message.
 - If the change adds or modifies tooling, automation, or workflow behavior, use a `feat` style message.
 
