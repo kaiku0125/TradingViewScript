@@ -89,5 +89,27 @@ When completing this workflow, summarize:
 - whether a commit was created
 - any blockers such as missing token, malformed payload, or missing markers
 
+## Main Workflow: Market State(行情狀態)
+When the user asks for market-state analysis using the `TDHighLow` trading system, use the dedicated workflow spec in:
+- [TDHighLow/MarketStateAgent.md](/Users/kevinlin/MyProject/TradingViewScript/TDHighLow/MarketStateAgent.md)
+
+Use this workflow only when the user provides a fixed `行情狀態` block such as:
+
+```text
+行情狀態
+4H = M
+1H = L
+15m = ML
+1m = S
+```
+
+Quick rules:
+- Treat the listed timeframes as ordered from large period to small period
+- Output a short fixed-template analysis with an explicit first-line conclusion:
+  - `偏多`
+  - `偏空`
+  - `等待`
+- If the format is incomplete or ambiguous, ask the user to resend it in the fixed format
+
 ## Comment Rules
 - When adding or editing code comments, use Traditional Chinese.
