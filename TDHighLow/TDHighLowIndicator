@@ -1,0 +1,711 @@
+//@version=5
+
+indicator("TD高低點", overlay=true, max_labels_count=500, max_lines_count=200)
+
+const int MAX_PIVOTS = 20
+const int STRUCTURE_UNKNOWN = 0
+const int STRUCTURE_BULL = 1
+const int STRUCTURE_BEAR = -1
+const int STRUCTURE_MIXED = 2
+
+// 輸入參數
+showLabels = input.bool(true, "顯示高低點標籤")
+showAllHL = input.bool(false, "顯示歷史高低點", tooltip="開啟後顯示所有已確認高低點，關閉則只顯示最新一組高低點")
+showTD = input.bool(true, "顯示 TD 序列", tooltip="顯示 TD Setup 的關鍵計數")
+tdLength = input.int(9, "TD 序列長度", minval=1, tooltip="TD Setup 的目標計數長度")
+showInfoPanel = input.bool(true, "顯示資訊面板", tooltip="顯示右上角 TD 與 HL 距離資訊")
+showInfoStructureDirection = input.bool(true, "資訊面板顯示結構方向")
+showInfoTimeframe = input.bool(false, "資訊面板顯示週期")
+showSystemSummaryTable = input.bool(false, "顯示交易系統摘要")
+showFib = input.bool(true, "顯示斐波那契", tooltip="顯示最近一組高低點推導出的斐波那契水平")
+fibExtendBars = input.int(100, "Fib 右延伸長度", minval=1)
+tdLabelDisplayMode = input.string("Bar 間距顯示", "TD 標籤顯示方式", options=["Bar 間距顯示", "固定價格偏移"], tooltip="切換 TD 序列標籤使用 TradingView 內建 Bar 間距，或固定價格偏移")
+hlLabelDisplayMode = input.string("固定價格偏移", "高低點標籤顯示方式", options=["Bar 間距顯示", "固定價格偏移"], tooltip="切換 High/Low 標籤使用 TradingView 內建 Bar 間距，或固定價格偏移")
+showStructureLabels = input.bool(true, "顯示結構標籤")
+showStructureBarCount = input.bool(false, "顯示結構 Bar Count", tooltip="顯示格式如 HH(9)")
+highPivotColor = input.color(color.green, "高點三角形顏色")
+lowPivotColor = input.color(color.red, "低點三角形顏色")
+
+depthInput = input.int(12, "Depth", minval=1, tooltip="用於偵測 ZigZag 高低點的回看深度")
+deviationInput = input.int(5, "Deviation", minval=1, tooltip="兩個高低點之間至少要有的最小價格差，單位為最小跳動")
+backstepInput = input.int(3, "Backstep", minval=2, tooltip="高低點確認時所需的最少回退 K 棒數")
+
+useAutoHlLabelDistance = input.bool(true, "自動 HL 標籤距離", tooltip="依照常用週期自動套用 High/Low 標籤距離")
+hlLabelAtrLength = input.int(14, "HL 標籤波動週期", minval=1, tooltip="用 ATR 計算 High/Low 標籤與 K 棒的基礎距離")
+hlLabelDistance = input.float(0.30, "HL 標籤距離倍率", minval=0.05, step=0.05, tooltip="關閉自動 HL 標籤距離時使用的預設倍率")
+
+// ZigZag 式 Pivot 計算
+float zigHighPoint = ta.pivothigh(high, depthInput, backstepInput)
+float zigLowPoint = ta.pivotlow(low, depthInput, backstepInput)
+int confirmedHighBar = bar_index - backstepInput
+int confirmedLowBar = bar_index - backstepInput
+
+// 最近高低點資料
+var float lastHigh = na
+var float lastLow = na
+var int lastHighBar = na
+var int lastLowBar = na
+var int lastAcceptedPivotType = 0
+
+// 歷史高低點資料
+var array<float> allHighs = array.new_float()
+var array<float> allLows = array.new_float()
+var array<int> allHighBars = array.new_int()
+var array<int> allLowBars = array.new_int()
+var array<string> allHighStructures = array.new_string()
+var array<string> allLowStructures = array.new_string()
+var array<int> allHighBarCounts = array.new_int()
+var array<int> allLowBarCounts = array.new_int()
+var array<label> highTriangleLabels = array.new_label()
+var array<label> lowTriangleLabels = array.new_label()
+var array<label> highStructureLabels = array.new_label()
+var array<label> lowStructureLabels = array.new_label()
+var bool previousShowAllHL = showAllHL
+var bool previousShowLabels = showLabels
+var string previousHlLabelDisplayMode = hlLabelDisplayMode
+var bool previousShowStructureLabels = showStructureLabels
+var bool previousShowStructureBarCount = showStructureBarCount
+var int currentStructureState = STRUCTURE_UNKNOWN
+var int previousConfirmedTrendState = STRUCTURE_UNKNOWN
+var int mixedAnchorTrendState = STRUCTURE_UNKNOWN
+var bool isFirstMixedTransition = false
+var bool mixedFibPairValid = false
+var float mixedFibLow = na
+var int mixedFibLowBar = na
+var float mixedFibHigh = na
+var int mixedFibHighBar = na
+
+// 斐波那契物件
+var line fib618Line = na
+var line fib1618Line = na
+var line fib66Line = na
+var line fib50Line = na
+var line fib1382Line = na
+var label fib618Label = na
+var label fib1618Label = na
+var label fib66Label = na
+var label fib50Label = na
+var label fib1382Label = na
+var float fib618Value = na
+var float fib1618Value = na
+var float fib66Value = na
+var float fib50Value = na
+var float fib1382Value = na
+var table infoTable = table.new(position.bottom_right, 1, 1)
+var table summaryTable = table.new(position.bottom_left, 1, 1)
+
+// TD Setup 計數
+var int tdBullishSetupCount = 0
+var int tdBearishSetupCount = 0
+
+// 輔助函式
+trimPivotData(array<float> prices, array<int> bars) =>
+    if array.size(prices) > MAX_PIVOTS
+        array.shift(prices)
+        array.shift(bars)
+
+trimPivotLabels(array<label> labels) =>
+    if array.size(labels) > MAX_PIVOTS
+        label.delete(array.shift(labels))
+
+clearPivotLabels(array<label> labels) =>
+    while array.size(labels) > 0
+        label.delete(array.pop(labels))
+
+trimTextData(array<string> texts, array<int> counts) =>
+    if array.size(texts) > MAX_PIVOTS
+        array.shift(texts)
+        array.shift(counts)
+
+isTdMarker(int count, int maxCount) =>
+    ((count >= 7 and count <= 9) or (count >= 11 and count <= 13)) and count <= maxCount
+
+getBearTdLabelColor(int count) =>
+    count == 9 or count == 13 ? color.rgb(255, 59, 59) : color.new(color.rgb(90, 32, 32), 15)
+
+getBearTdTextColor(int count) =>
+    count == 11 or count == 12 ? color.new(color.white, 20) : color.white
+
+getBullTdLabelColor(int count) =>
+    count == 9 or count == 13 ? color.rgb(76, 175, 80) : color.new(color.rgb(44, 84, 52), 10)
+
+getBullTdTextColor(int count) =>
+    count == 11 or count == 12 ? color.new(color.white, 20) : color.white
+
+getAutoHlOffsetMultiplier() =>
+    string currentPeriod = timeframe.period
+    float autoDistance = 0.16
+
+    if currentPeriod == "15"
+        autoDistance := 0.12
+    else if currentPeriod == "60"
+        autoDistance := 0.14
+    else if currentPeriod == "240"
+        autoDistance := 0.16
+    else if currentPeriod == "D"
+        autoDistance := 0.18
+    else if currentPeriod == "3D"
+        autoDistance := 0.20
+    else if currentPeriod == "W"
+        autoDistance := 0.22
+    else if currentPeriod == "M"
+        autoDistance := 0.24
+
+    autoDistance
+
+getEffectiveHlOffsetMultiplier() =>
+    useAutoHlLabelDistance ? getAutoHlOffsetMultiplier() : hlLabelDistance
+
+getFixedHlOffset() =>
+    math.max(ta.atr(hlLabelAtrLength) * getEffectiveHlOffsetMultiplier(), syminfo.mintick * 16)
+
+isTdBarSpacingMode() =>
+    tdLabelDisplayMode == "Bar 間距顯示"
+
+isHlBarSpacingMode() =>
+    hlLabelDisplayMode == "Bar 間距顯示"
+
+getHighLabelY(float pivotPrice, int barsAgo) =>
+    pivotPrice + getFixedHlOffset()
+
+getLowLabelY(float pivotPrice, int barsAgo) =>
+    pivotPrice - getFixedHlOffset()
+
+getStructureTextMultiplier(string currentPeriod, bool isHigh) =>
+    float multiplier = isHigh ? 0.35 : 0.75
+
+    if currentPeriod == "15"
+        multiplier := isHigh ? 0.60 : 1.20
+    else if currentPeriod == "60"
+        multiplier := isHigh ? 0.55 : 1.05
+    else if currentPeriod == "240"
+        multiplier := isHigh ? 0.45 : 0.90
+
+    multiplier
+
+getStructureLabelY(bool isHigh, float pivotPrice, int barsAgo) =>
+    isHigh ? getHighLabelY(pivotPrice, barsAgo) : getLowLabelY(pivotPrice, barsAgo)
+
+getHighStructureTextOffset() =>
+    getFixedHlOffset() * getStructureTextMultiplier(timeframe.period, true)
+
+getLowStructureTextOffset() =>
+    getFixedHlOffset() * getStructureTextMultiplier(timeframe.period, false)
+
+getStructureTextY(bool isHigh, float pivotPrice, int barsAgo) =>
+    float baseY = getStructureLabelY(isHigh, pivotPrice, barsAgo)
+    isHigh ? baseY + getHighStructureTextOffset() : baseY - getLowStructureTextOffset()
+
+formatStructureText(string structureText, int barCount) =>
+    if str.length(structureText) == 0
+        ""
+    else if showStructureBarCount and not na(barCount)
+        structureText + "(" + str.tostring(barCount) + ")"
+    else
+        structureText
+
+createHighLabel(int pivotBar, float pivotPrice, int barsAgo) =>
+    isHlBarSpacingMode() ?
+         label.new(pivotBar, pivotPrice, "", color=highPivotColor, style=label.style_triangledown, textcolor=color.white, size=size.tiny, tooltip="高點價位: " + str.tostring(pivotPrice, format.mintick), yloc=yloc.abovebar) :
+         label.new(pivotBar, getHighLabelY(pivotPrice, barsAgo), "", color=highPivotColor, style=label.style_triangledown, textcolor=color.white, size=size.tiny, tooltip="高點價位: " + str.tostring(pivotPrice, format.mintick))
+
+createLowLabel(int pivotBar, float pivotPrice, int barsAgo) =>
+    isHlBarSpacingMode() ?
+         label.new(pivotBar, pivotPrice, "", color=lowPivotColor, style=label.style_triangleup, textcolor=color.white, size=size.tiny, tooltip="低點價位: " + str.tostring(pivotPrice, format.mintick), yloc=yloc.belowbar) :
+         label.new(pivotBar, getLowLabelY(pivotPrice, barsAgo), "", color=lowPivotColor, style=label.style_triangleup, textcolor=color.white, size=size.tiny, tooltip="低點價位: " + str.tostring(pivotPrice, format.mintick))
+
+createStructureLabel(bool isHigh, int pivotBar, float pivotPrice, int barsAgo, string structureText, int barCount) =>
+    string displayText = formatStructureText(structureText, barCount)
+    if str.length(displayText) == 0
+        na
+    else if isHlBarSpacingMode()
+        label.new(pivotBar, getStructureTextY(isHigh, pivotPrice, barsAgo), displayText, color=color.new(color.black, 100), style=label.style_none, textcolor=color.white, size=size.small)
+    else
+        label.new(pivotBar, getStructureTextY(isHigh, pivotPrice, barsAgo), displayText, color=color.new(color.black, 100), style=label.style_none, textcolor=color.white, size=size.small)
+
+getCurrentStructureDirection() =>
+    if currentStructureState == STRUCTURE_BULL
+        "多頭延續"
+    else if currentStructureState == STRUCTURE_BEAR
+        "空頭延續"
+    else if currentStructureState == STRUCTURE_MIXED
+        if isFirstMixedTransition and mixedAnchorTrendState == STRUCTURE_BULL
+            "混合(由多頭轉弱)"
+        else if isFirstMixedTransition and mixedAnchorTrendState == STRUCTURE_BEAR
+            "混合(由空頭轉強)"
+        else
+            "混合"
+    else
+        "未定"
+
+getStructureStateFromStructures() =>
+    string lastHighStructure = array.size(allHighStructures) > 0 ? array.get(allHighStructures, array.size(allHighStructures) - 1) : ""
+    string lastLowStructure = array.size(allLowStructures) > 0 ? array.get(allLowStructures, array.size(allLowStructures) - 1) : ""
+
+    if lastHighStructure == "HH" and lastLowStructure == "HL"
+        STRUCTURE_BULL
+    else if lastHighStructure == "LH" and lastLowStructure == "LL"
+        STRUCTURE_BEAR
+    else if str.length(lastHighStructure) == 0 or str.length(lastLowStructure) == 0
+        STRUCTURE_UNKNOWN
+    else
+        STRUCTURE_MIXED
+
+findLatestBullishFibPair() =>
+    bool foundPair = false
+    float pairLowPrice = na
+    int pairLowBar = na
+    float pairHighPrice = na
+    int pairHighBar = na
+
+    if array.size(allHighs) > 0 and array.size(allLows) > 0
+        for highIndex = array.size(allHighs) - 1 to 0
+            int candidateHighBar = array.get(allHighBars, highIndex)
+            float candidateHighPrice = array.get(allHighs, highIndex)
+
+            for lowIndex = array.size(allLows) - 1 to 0
+                int candidateLowBar = array.get(allLowBars, lowIndex)
+                if candidateLowBar < candidateHighBar
+                    pairLowPrice := array.get(allLows, lowIndex)
+                    pairLowBar := candidateLowBar
+                    pairHighPrice := candidateHighPrice
+                    pairHighBar := candidateHighBar
+                    foundPair := true
+                    break
+
+            if foundPair
+                break
+
+    [foundPair, pairLowPrice, pairLowBar, pairHighPrice, pairHighBar]
+
+findLatestBearishFibPair() =>
+    bool foundPair = false
+    float pairLowPrice = na
+    int pairLowBar = na
+    float pairHighPrice = na
+    int pairHighBar = na
+
+    if array.size(allHighs) > 0 and array.size(allLows) > 0
+        for lowIndex = array.size(allLows) - 1 to 0
+            int candidateLowBar = array.get(allLowBars, lowIndex)
+            float candidateLowPrice = array.get(allLows, lowIndex)
+
+            for highIndex = array.size(allHighs) - 1 to 0
+                int candidateHighBar = array.get(allHighBars, highIndex)
+                if candidateHighBar < candidateLowBar
+                    pairLowPrice := candidateLowPrice
+                    pairLowBar := candidateLowBar
+                    pairHighPrice := array.get(allHighs, highIndex)
+                    pairHighBar := candidateHighBar
+                    foundPair := true
+                    break
+
+            if foundPair
+                break
+
+    [foundPair, pairLowPrice, pairLowBar, pairHighPrice, pairHighBar]
+
+clearFibObjects() =>
+    if not na(fib618Line)
+        line.delete(fib618Line)
+    if not na(fib1618Line)
+        line.delete(fib1618Line)
+    if not na(fib66Line)
+        line.delete(fib66Line)
+    if not na(fib50Line)
+        line.delete(fib50Line)
+    if not na(fib1382Line)
+        line.delete(fib1382Line)
+    if not na(fib618Label)
+        label.delete(fib618Label)
+    if not na(fib1618Label)
+        label.delete(fib1618Label)
+    if not na(fib66Label)
+        label.delete(fib66Label)
+    if not na(fib50Label)
+        label.delete(fib50Label)
+    if not na(fib1382Label)
+        label.delete(fib1382Label)
+
+refreshPivotLabels() =>
+    clearPivotLabels(highTriangleLabels)
+    clearPivotLabels(lowTriangleLabels)
+    clearPivotLabels(highStructureLabels)
+    clearPivotLabels(lowStructureLabels)
+
+    if showLabels
+        if showAllHL
+            if array.size(allHighs) > 0
+                for i = 0 to array.size(allHighs) - 1
+                    int highBar = array.get(allHighBars, i)
+                    float highPrice = array.get(allHighs, i)
+                    int highBarsAgo = bar_index - highBar
+                    array.push(highTriangleLabels, createHighLabel(highBar, highPrice, highBarsAgo))
+                    trimPivotLabels(highTriangleLabels)
+                    if showStructureLabels
+                        label highStructureLabel = createStructureLabel(true, highBar, highPrice, highBarsAgo, array.get(allHighStructures, i), array.get(allHighBarCounts, i))
+                        if not na(highStructureLabel)
+                            array.push(highStructureLabels, highStructureLabel)
+                            trimPivotLabels(highStructureLabels)
+            if array.size(allLows) > 0
+                for i = 0 to array.size(allLows) - 1
+                    int lowBar = array.get(allLowBars, i)
+                    float lowPrice = array.get(allLows, i)
+                    int lowBarsAgo = bar_index - lowBar
+                    array.push(lowTriangleLabels, createLowLabel(lowBar, lowPrice, lowBarsAgo))
+                    trimPivotLabels(lowTriangleLabels)
+                    if showStructureLabels
+                        label lowStructureLabel = createStructureLabel(false, lowBar, lowPrice, lowBarsAgo, array.get(allLowStructures, i), array.get(allLowBarCounts, i))
+                        if not na(lowStructureLabel)
+                            array.push(lowStructureLabels, lowStructureLabel)
+                            trimPivotLabels(lowStructureLabels)
+        else
+            string structureDirection = getCurrentStructureDirection()
+            int displayHighIndex = array.size(allHighs) > 0 ? array.size(allHighs) - 1 : na
+            int displayLowIndex = array.size(allLows) > 0 ? array.size(allLows) - 1 : na
+
+            if structureDirection == "多頭延續" and not na(displayHighIndex)
+                int referenceHighBar = array.get(allHighBars, displayHighIndex)
+                for lowIndex = array.size(allLows) - 1 to 0
+                    if array.get(allLowBars, lowIndex) < referenceHighBar
+                        displayLowIndex := lowIndex
+                        break
+            else if structureDirection == "空頭延續" and not na(displayLowIndex)
+                int referenceLowBar = array.get(allLowBars, displayLowIndex)
+                for highIndex = array.size(allHighs) - 1 to 0
+                    if array.get(allHighBars, highIndex) < referenceLowBar
+                        displayHighIndex := highIndex
+                        break
+
+            if not na(displayHighIndex)
+                int lastHighBarValue = array.get(allHighBars, displayHighIndex)
+                float lastHighPriceValue = array.get(allHighs, displayHighIndex)
+                int lastHighBarsAgo = bar_index - lastHighBarValue
+                array.push(highTriangleLabels, createHighLabel(lastHighBarValue, lastHighPriceValue, lastHighBarsAgo))
+                if showStructureLabels
+                    label lastHighStructureLabel = createStructureLabel(true, lastHighBarValue, lastHighPriceValue, lastHighBarsAgo, array.get(allHighStructures, displayHighIndex), array.get(allHighBarCounts, displayHighIndex))
+                    if not na(lastHighStructureLabel)
+                        array.push(highStructureLabels, lastHighStructureLabel)
+            if not na(displayLowIndex)
+                int lastLowBarValue = array.get(allLowBars, displayLowIndex)
+                float lastLowPriceValue = array.get(allLows, displayLowIndex)
+                int lastLowBarsAgo = bar_index - lastLowBarValue
+                array.push(lowTriangleLabels, createLowLabel(lastLowBarValue, lastLowPriceValue, lastLowBarsAgo))
+                if showStructureLabels
+                    label lastLowStructureLabel = createStructureLabel(false, lastLowBarValue, lastLowPriceValue, lastLowBarsAgo, array.get(allLowStructures, displayLowIndex), array.get(allLowBarCounts, displayLowIndex))
+                    if not na(lastLowStructureLabel)
+                        array.push(lowStructureLabels, lastLowStructureLabel)
+
+if barstate.isconfirmed
+    bool pivotChanged = false
+    float minDeviation = deviationInput * syminfo.mintick
+
+    if showAllHL != previousShowAllHL or showLabels != previousShowLabels or hlLabelDisplayMode != previousHlLabelDisplayMode or showStructureLabels != previousShowStructureLabels or showStructureBarCount != previousShowStructureBarCount
+        refreshPivotLabels()
+        previousShowAllHL := showAllHL
+        previousShowLabels := showLabels
+        previousHlLabelDisplayMode := hlLabelDisplayMode
+        previousShowStructureLabels := showStructureLabels
+        previousShowStructureBarCount := showStructureBarCount
+
+    if not na(zigHighPoint)
+        bool canAcceptHigh = lastAcceptedPivotType != 1 and (na(lastLow) or math.abs(zigHighPoint - lastLow) >= minDeviation)
+        if canAcceptHigh
+            string highStructure = array.size(allHighs) > 0 ? (zigHighPoint > array.get(allHighs, array.size(allHighs) - 1) ? "HH" : "LH") : ""
+            int highBarCount = not na(lastLowBar) ? math.abs(confirmedHighBar - lastLowBar) : na
+            lastHigh := zigHighPoint
+            lastHighBar := confirmedHighBar
+            array.push(allHighs, zigHighPoint)
+            array.push(allHighBars, confirmedHighBar)
+            trimPivotData(allHighs, allHighBars)
+            array.push(allHighStructures, highStructure)
+            array.push(allHighBarCounts, highBarCount)
+            trimTextData(allHighStructures, allHighBarCounts)
+            lastAcceptedPivotType := 1
+            pivotChanged := true
+        else if lastAcceptedPivotType == 1 and (na(lastHigh) or zigHighPoint > lastHigh)
+            string highStructure = array.size(allHighs) > 1 ? (zigHighPoint > array.get(allHighs, array.size(allHighs) - 2) ? "HH" : "LH") : ""
+            int highBarCount = not na(lastLowBar) ? math.abs(confirmedHighBar - lastLowBar) : na
+            lastHigh := zigHighPoint
+            lastHighBar := confirmedHighBar
+            if array.size(allHighs) > 0
+                array.set(allHighs, array.size(allHighs) - 1, zigHighPoint)
+                array.set(allHighBars, array.size(allHighBars) - 1, confirmedHighBar)
+                array.set(allHighStructures, array.size(allHighStructures) - 1, highStructure)
+                array.set(allHighBarCounts, array.size(allHighBarCounts) - 1, highBarCount)
+            else
+                array.push(allHighs, zigHighPoint)
+                array.push(allHighBars, confirmedHighBar)
+                array.push(allHighStructures, highStructure)
+                array.push(allHighBarCounts, highBarCount)
+            pivotChanged := true
+
+    if not na(zigLowPoint)
+        bool canAcceptLow = lastAcceptedPivotType != -1 and (na(lastHigh) or math.abs(lastHigh - zigLowPoint) >= minDeviation)
+        if canAcceptLow
+            string lowStructure = array.size(allLows) > 0 ? (zigLowPoint < array.get(allLows, array.size(allLows) - 1) ? "LL" : "HL") : ""
+            int lowBarCount = not na(lastHighBar) ? math.abs(confirmedLowBar - lastHighBar) : na
+            lastLow := zigLowPoint
+            lastLowBar := confirmedLowBar
+            array.push(allLows, zigLowPoint)
+            array.push(allLowBars, confirmedLowBar)
+            trimPivotData(allLows, allLowBars)
+            array.push(allLowStructures, lowStructure)
+            array.push(allLowBarCounts, lowBarCount)
+            trimTextData(allLowStructures, allLowBarCounts)
+            lastAcceptedPivotType := -1
+            pivotChanged := true
+        else if lastAcceptedPivotType == -1 and (na(lastLow) or zigLowPoint < lastLow)
+            string lowStructure = array.size(allLows) > 1 ? (zigLowPoint < array.get(allLows, array.size(allLows) - 2) ? "LL" : "HL") : ""
+            int lowBarCount = not na(lastHighBar) ? math.abs(confirmedLowBar - lastHighBar) : na
+            lastLow := zigLowPoint
+            lastLowBar := confirmedLowBar
+            if array.size(allLows) > 0
+                array.set(allLows, array.size(allLows) - 1, zigLowPoint)
+                array.set(allLowBars, array.size(allLowBars) - 1, confirmedLowBar)
+                array.set(allLowStructures, array.size(allLowStructures) - 1, lowStructure)
+                array.set(allLowBarCounts, array.size(allLowBarCounts) - 1, lowBarCount)
+            else
+                array.push(allLows, zigLowPoint)
+                array.push(allLowBars, confirmedLowBar)
+                array.push(allLowStructures, lowStructure)
+                array.push(allLowBarCounts, lowBarCount)
+            pivotChanged := true
+
+    tdBullishSetupCount := close > close[4] ? tdBullishSetupCount + 1 : 0
+    tdBearishSetupCount := close < close[4] ? tdBearishSetupCount + 1 : 0
+
+    if pivotChanged
+        int nextStructureState = getStructureStateFromStructures()
+
+        if nextStructureState == STRUCTURE_BULL or nextStructureState == STRUCTURE_BEAR
+            currentStructureState := nextStructureState
+            previousConfirmedTrendState := nextStructureState
+            mixedAnchorTrendState := STRUCTURE_UNKNOWN
+            isFirstMixedTransition := false
+            mixedFibPairValid := false
+            mixedFibLow := na
+            mixedFibLowBar := na
+            mixedFibHigh := na
+            mixedFibHighBar := na
+        else if nextStructureState == STRUCTURE_MIXED
+            bool enteringMixed = currentStructureState != STRUCTURE_MIXED
+            isFirstMixedTransition := enteringMixed
+            if enteringMixed
+                mixedAnchorTrendState := previousConfirmedTrendState
+                mixedFibPairValid := false
+                mixedFibLow := na
+                mixedFibLowBar := na
+                mixedFibHigh := na
+                mixedFibHighBar := na
+
+                if mixedAnchorTrendState == STRUCTURE_BULL and array.size(allHighs) > 0 and array.size(allLows) > 0
+                    for lowIndex = array.size(allLows) - 1 to 0
+                        int candidateLowBar = array.get(allLowBars, lowIndex)
+                        float candidateLowPrice = array.get(allLows, lowIndex)
+
+                        for highIndex = array.size(allHighs) - 1 to 0
+                            int candidateHighBar = array.get(allHighBars, highIndex)
+                            if candidateHighBar < candidateLowBar
+                                mixedFibLow := candidateLowPrice
+                                mixedFibLowBar := candidateLowBar
+                                mixedFibHigh := array.get(allHighs, highIndex)
+                                mixedFibHighBar := candidateHighBar
+                                mixedFibPairValid := true
+                                break
+
+                        if mixedFibPairValid
+                            break
+                else if mixedAnchorTrendState == STRUCTURE_BEAR and array.size(allHighs) > 0 and array.size(allLows) > 0
+                    for highIndex = array.size(allHighs) - 1 to 0
+                        int candidateHighBar = array.get(allHighBars, highIndex)
+                        float candidateHighPrice = array.get(allHighs, highIndex)
+
+                        for lowIndex = array.size(allLows) - 1 to 0
+                            int candidateLowBar = array.get(allLowBars, lowIndex)
+                            if candidateLowBar < candidateHighBar
+                                mixedFibLow := array.get(allLows, lowIndex)
+                                mixedFibLowBar := candidateLowBar
+                                mixedFibHigh := candidateHighPrice
+                                mixedFibHighBar := candidateHighBar
+                                mixedFibPairValid := true
+                                break
+
+                        if mixedFibPairValid
+                            break
+
+            currentStructureState := STRUCTURE_MIXED
+        else
+            currentStructureState := STRUCTURE_UNKNOWN
+            mixedAnchorTrendState := STRUCTURE_UNKNOWN
+            isFirstMixedTransition := false
+            mixedFibPairValid := false
+            mixedFibLow := na
+            mixedFibLowBar := na
+            mixedFibHigh := na
+            mixedFibHighBar := na
+
+        refreshPivotLabels()
+        fib618Value := na
+        fib1618Value := na
+        fib66Value := na
+        fib50Value := na
+        fib1382Value := na
+        clearFibObjects()
+        fib618Line := na
+        fib1618Line := na
+        fib66Line := na
+        fib50Line := na
+        fib1382Line := na
+        fib618Label := na
+        fib1618Label := na
+        fib66Label := na
+        fib50Label := na
+        fib1382Label := na
+
+        if showFib
+            bool hasActiveFibPair = false
+            float activeFibLow = na
+            int activeFibLowBar = na
+            float activeFibHigh = na
+            int activeFibHighBar = na
+
+            if currentStructureState == STRUCTURE_BULL and array.size(allHighs) > 0 and array.size(allLows) > 0
+                for highIndex = array.size(allHighs) - 1 to 0
+                    int candidateHighBar = array.get(allHighBars, highIndex)
+                    float candidateHighPrice = array.get(allHighs, highIndex)
+
+                    for lowIndex = array.size(allLows) - 1 to 0
+                        int candidateLowBar = array.get(allLowBars, lowIndex)
+                        if candidateLowBar < candidateHighBar
+                            activeFibLow := array.get(allLows, lowIndex)
+                            activeFibLowBar := candidateLowBar
+                            activeFibHigh := candidateHighPrice
+                            activeFibHighBar := candidateHighBar
+                            hasActiveFibPair := true
+                            break
+
+                    if hasActiveFibPair
+                        break
+            else if currentStructureState == STRUCTURE_BEAR and array.size(allHighs) > 0 and array.size(allLows) > 0
+                for lowIndex = array.size(allLows) - 1 to 0
+                    int candidateLowBar = array.get(allLowBars, lowIndex)
+                    float candidateLowPrice = array.get(allLows, lowIndex)
+
+                    for highIndex = array.size(allHighs) - 1 to 0
+                        int candidateHighBar = array.get(allHighBars, highIndex)
+                        if candidateHighBar < candidateLowBar
+                            activeFibLow := candidateLowPrice
+                            activeFibLowBar := candidateLowBar
+                            activeFibHigh := array.get(allHighs, highIndex)
+                            activeFibHighBar := candidateHighBar
+                            hasActiveFibPair := true
+                            break
+
+                    if hasActiveFibPair
+                        break
+            else if currentStructureState == STRUCTURE_MIXED and isFirstMixedTransition and mixedFibPairValid
+                hasActiveFibPair := true
+                activeFibLow := mixedFibLow
+                activeFibLowBar := mixedFibLowBar
+                activeFibHigh := mixedFibHigh
+                activeFibHighBar := mixedFibHighBar
+
+            if hasActiveFibPair
+                int fibStartX = bar_index - 1
+                int fibEndX = bar_index + fibExtendBars
+                int fibCenterX = int(math.round((fibStartX + fibEndX) / 2.0))
+                float logHigh = math.log(activeFibHigh)
+                float logLow = math.log(activeFibLow)
+                float logRange = math.abs(logHigh - logLow)
+                bool activeFibIsBullish = activeFibHighBar > activeFibLowBar
+
+                float logFib618 = activeFibIsBullish ? logHigh - logRange * 0.618 : logLow + logRange * 0.618
+                float logFib1618 = activeFibIsBullish ? logHigh + logRange * 0.618 : logLow - logRange * 0.618
+                float logFib66 = activeFibIsBullish ? logHigh - logRange * 0.66 : logLow + logRange * 0.66
+                float logFib50 = activeFibIsBullish ? logHigh - logRange * 0.5 : logLow + logRange * 0.5
+                float logFib1382 = activeFibIsBullish ? logHigh + logRange * 0.382 : logLow - logRange * 0.382
+
+                float fib618 = math.exp(logFib618)
+                float fib1618 = math.exp(logFib1618)
+                float fib66 = math.exp(logFib66)
+                float fib50 = math.exp(logFib50)
+                float fib1382 = math.exp(logFib1382)
+
+                fib618Value := fib618
+                fib1618Value := fib1618
+                fib66Value := fib66
+                fib50Value := fib50
+                fib1382Value := fib1382
+
+                fib618Line := line.new(fibStartX, fib618, fibEndX, fib618, color=color.blue, style=line.style_dashed, extend=extend.right)
+                fib1618Line := line.new(fibStartX, fib1618, fibEndX, fib1618, color=color.blue, style=line.style_dashed, extend=extend.right)
+                fib66Line := line.new(fibStartX, fib66, fibEndX, fib66, color=color.blue, style=line.style_dashed, extend=extend.right)
+                fib50Line := line.new(fibStartX, fib50, fibEndX, fib50, color=color.blue, style=line.style_dashed, extend=extend.right)
+                fib1382Line := line.new(fibStartX, fib1382, fibEndX, fib1382, color=color.blue, style=line.style_dashed, extend=extend.right)
+
+                fib618Label := label.new(fibCenterX, fib618, "0.618", color=color.new(color.blue, 70), style=label.style_label_left, textcolor=color.white, size=size.normal, tooltip="[0.618] " + str.tostring(fib618, format.mintick))
+                fib1618Label := label.new(fibCenterX, fib1618, "1.618", color=color.new(color.blue, 70), style=label.style_label_left, textcolor=color.white, size=size.normal, tooltip="[1.618] " + str.tostring(fib1618, format.mintick))
+                fib66Label := label.new(fibCenterX, fib66, "0.66", color=color.new(color.blue, 70), style=label.style_label_left, textcolor=color.white, size=size.normal, tooltip="[0.66] " + str.tostring(fib66, format.mintick))
+                fib50Label := label.new(fibCenterX, fib50, "0.5", color=color.new(color.blue, 70), style=label.style_label_left, textcolor=color.white, size=size.normal, tooltip="[0.5] " + str.tostring(fib50, format.mintick))
+                fib1382Label := label.new(fibCenterX, fib1382, "1.382", color=color.new(color.blue, 70), style=label.style_label_left, textcolor=color.white, size=size.normal, tooltip="[1.382] " + str.tostring(fib1382, format.mintick))
+    else if not showFib
+        fib618Value := na
+        fib1618Value := na
+        fib66Value := na
+        fib50Value := na
+        fib1382Value := na
+        clearFibObjects()
+        fib618Line := na
+        fib1618Line := na
+        fib66Line := na
+        fib50Line := na
+        fib1382Line := na
+        fib618Label := na
+        fib1618Label := na
+        fib66Label := na
+        fib50Label := na
+        fib1382Label := na
+
+    int tdMarkerLimit = math.max(tdLength, 13)
+
+    if showTD and isTdMarker(tdBullishSetupCount, tdMarkerLimit)
+        if isTdBarSpacingMode()
+            label.new(bar_index, na, str.tostring(tdBullishSetupCount), color=getBearTdLabelColor(tdBullishSetupCount), style=label.style_text_outline, textcolor=getBearTdTextColor(tdBullishSetupCount), size=size.large, tooltip="TD 空方計數: " + str.tostring(tdBullishSetupCount), yloc=yloc.abovebar)
+        else
+            label.new(bar_index, high + getFixedHlOffset(), str.tostring(tdBullishSetupCount), color=getBearTdLabelColor(tdBullishSetupCount), style=label.style_text_outline, textcolor=getBearTdTextColor(tdBullishSetupCount), size=size.large, tooltip="TD 空方計數: " + str.tostring(tdBullishSetupCount))
+
+    if showTD and isTdMarker(tdBearishSetupCount, tdMarkerLimit)
+        if isTdBarSpacingMode()
+            label.new(bar_index, na, str.tostring(tdBearishSetupCount), color=getBullTdLabelColor(tdBearishSetupCount), style=label.style_text_outline, textcolor=getBullTdTextColor(tdBearishSetupCount), size=size.large, tooltip="TD 多方計數: " + str.tostring(tdBearishSetupCount), yloc=yloc.belowbar)
+        else
+            label.new(bar_index, low - getFixedHlOffset(), str.tostring(tdBearishSetupCount), color=getBullTdLabelColor(tdBearishSetupCount), style=label.style_text_outline, textcolor=getBullTdTextColor(tdBearishSetupCount), size=size.large, tooltip="TD 多方計數: " + str.tostring(tdBearishSetupCount))
+
+// 與最近高低點的距離
+float distanceToHigh = not na(lastHigh) ? (lastHigh - close) / close * 100 : na
+float distanceToLow = not na(lastLow) ? (close - lastLow) / close * 100 : na
+
+// 保留數值供資料視窗或後續策略整合使用
+plot(distanceToHigh, "距離最近高點 (%)", color=color.new(color.red, 100), display=display.data_window)
+plot(distanceToLow, "距離最近低點 (%)", color=color.new(color.green, 100), display=display.data_window)
+plot(fib618Value, "[0.618]", color=color.new(color.blue, 100), display=display.data_window)
+plot(fib66Value, "[0.66]", color=color.new(color.blue, 100), display=display.data_window)
+plot(fib50Value, "[0.5]", color=color.new(color.blue, 100), display=display.data_window)
+plot(fib1382Value, "[1.382]", color=color.new(color.blue, 100), display=display.data_window)
+plot(fib1618Value, "[1.618]", color=color.new(color.blue, 100), display=display.data_window)
+
+if barstate.islast and showSystemSummaryTable
+    string summaryText = "𖤐  大(P)定方向，只順勢\n𖤐  中(P)找回撤與結構\n𖤐  小(P)等再啟動\n𖤐  小(P)混合＝先等\n𖤐  HH / HL 或 LH / LL 才進\n𖤐  止損放 swing 外\n𖤐  ！！只做回撤！！"
+    table.cell(summaryTable, 0, 0, summaryText, text_color=color.white, text_size=size.normal, text_halign=text.align_left, bgcolor=color.new(color.black, 25))
+else if barstate.islast
+    table.clear(summaryTable, 0, 0)
+
+if barstate.islast and showInfoPanel
+    string infoText = ""
+    if showInfoStructureDirection
+        infoText := "結構方向: " + getCurrentStructureDirection()
+    if showInfoTimeframe
+        infoText := str.length(infoText) > 0 ? infoText + "\n週期: " + timeframe.period : "週期: " + timeframe.period
+    table.cell(infoTable, 0, 0, infoText, text_color=color.white, text_size=size.large, bgcolor=color.new(color.black, 35))
+else if barstate.islast
+    table.clear(infoTable, 0, 0)
