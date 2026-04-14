@@ -4,11 +4,16 @@
 Use this workflow when the user provides a fixed `行情狀態` block and wants a short trading analysis based on the `TDHighLow` system.
 
 ## Supported State Codes
-- `L` = 多頭延續
-- `S` = 空頭延續
-- `ML` = 混合(由多頭轉弱)
-- `MS` = 混合(由空頭轉強)
-- `M` = 混合
+- `L` = `Long` = 多頭延續
+- `S` = `Short` = 空頭延續
+- `ML` = `Mixed from Long weakening` = 混合(由多頭轉弱)
+- `MS` = `Mixed from Short strengthening` = 混合(由空頭轉強)
+- `M` = `Mixed` = 混合
+
+Hard rules:
+- Never interpret `L` as `Low`
+- Never interpret `S` as sell-only sentiment
+- `L / S` are structure-direction codes, not price-level abbreviations
 
 ## Required Input Format
 Only treat the request as a market-state workflow when the user provides this structure:
@@ -18,7 +23,7 @@ Only treat the request as a market-state workflow when the user provides this st
 4H = M
 1H = L
 15m = ML
-1m = S
+5m = S
 ```
 
 Rules:
@@ -89,7 +94,7 @@ Input:
 4H = M
 1H = L
 15m = ML
-1m = S
+5m = S
 ```
 
 Expected direction:

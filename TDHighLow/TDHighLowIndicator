@@ -136,7 +136,9 @@ getAutoHlOffsetMultiplier() =>
     string currentPeriod = timeframe.period
     float autoDistance = 0.16
 
-    if currentPeriod == "15"
+    if currentPeriod == "5"
+        autoDistance := 0.10
+    else if currentPeriod == "15"
         autoDistance := 0.12
     else if currentPeriod == "60"
         autoDistance := 0.14
@@ -174,7 +176,9 @@ getLowLabelY(float pivotPrice, int barsAgo) =>
 getStructureTextMultiplier(string currentPeriod, bool isHigh) =>
     float multiplier = isHigh ? 0.35 : 0.75
 
-    if currentPeriod == "15"
+    if currentPeriod == "5"
+        multiplier := isHigh ? 0.70 : 1.35
+    else if currentPeriod == "15"
         multiplier := isHigh ? 0.60 : 1.20
     else if currentPeriod == "60"
         multiplier := isHigh ? 0.55 : 1.05
