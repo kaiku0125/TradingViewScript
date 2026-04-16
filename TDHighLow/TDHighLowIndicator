@@ -1,5 +1,8 @@
 //@version=5
 
+import kaiku0125/TDSequenceLib/1 as tdseq
+import kaiku0125/ZigZagPivotLib/1 as zigzag
+
 indicator("TD高低點", overlay=true, max_labels_count=500, max_lines_count=200)
 
 const int MAX_PIVOTS = 20
@@ -40,22 +43,9 @@ float zigLowPoint = ta.pivotlow(low, depthInput, backstepInput)
 int confirmedHighBar = bar_index - backstepInput
 int confirmedLowBar = bar_index - backstepInput
 
-// 最近高低點資料
-var float lastHigh = na
-var float lastLow = na
-var int lastHighBar = na
-var int lastLowBar = na
-var int lastAcceptedPivotType = 0
+// ZigZag pivot 狀態（陣列與最近高低點由 library 維護）
+var pivotState = zigzag.newEmptyPivotState()
 
-// 歷史高低點資料
-var array<float> allHighs = array.new_float()
-var array<float> allLows = array.new_float()
-var array<int> allHighBars = array.new_int()
-var array<int> allLowBars = array.new_int()
-var array<string> allHighStructures = array.new_string()
-var array<string> allLowStructures = array.new_string()
-var array<int> allHighBarCounts = array.new_int()
-var array<int> allLowBarCounts = array.new_int()
 var array<label> highTriangleLabels = array.new_label()
 var array<label> lowTriangleLabels = array.new_label()
 var array<label> highStructureLabels = array.new_label()
@@ -99,11 +89,6 @@ var int tdBullishSetupCount = 0
 var int tdBearishSetupCount = 0
 
 // 輔助函式
-trimPivotData(array<float> prices, array<int> bars) =>
-    if array.size(prices) > MAX_PIVOTS
-        array.shift(prices)
-        array.shift(bars)
-
 trimPivotLabels(array<label> labels) =>
     if array.size(labels) > MAX_PIVOTS
         label.delete(array.shift(labels))
@@ -111,26 +96,6 @@ trimPivotLabels(array<label> labels) =>
 clearPivotLabels(array<label> labels) =>
     while array.size(labels) > 0
         label.delete(array.pop(labels))
-
-trimTextData(array<string> texts, array<int> counts) =>
-    if array.size(texts) > MAX_PIVOTS
-        array.shift(texts)
-        array.shift(counts)
-
-isTdMarker(int count, int maxCount) =>
-    ((count >= 7 and count <= 9) or (count >= 11 and count <= 13)) and count <= maxCount
-
-getBearTdLabelColor(int count) =>
-    count == 9 or count == 13 ? color.rgb(255, 59, 59) : color.new(color.rgb(90, 32, 32), 15)
-
-getBearTdTextColor(int count) =>
-    count == 11 or count == 12 ? color.new(color.white, 20) : color.white
-
-getBullTdLabelColor(int count) =>
-    count == 9 or count == 13 ? color.rgb(76, 175, 80) : color.new(color.rgb(44, 84, 52), 10)
-
-getBullTdTextColor(int count) =>
-    count == 11 or count == 12 ? color.new(color.white, 20) : color.white
 
 getAutoHlOffsetMultiplier() =>
     string currentPeriod = timeframe.period
@@ -243,8 +208,8 @@ getCurrentStructureDirection() =>
         "未定"
 
 getStructureStateFromStructures() =>
-    string lastHighStructure = array.size(allHighStructures) > 0 ? array.get(allHighStructures, array.size(allHighStructures) - 1) : ""
-    string lastLowStructure = array.size(allLowStructures) > 0 ? array.get(allLowStructures, array.size(allLowStructures) - 1) : ""
+    string lastHighStructure = array.size(pivotState.allHighStructures) > 0 ? array.get(pivotState.allHighStructures, array.size(pivotState.allHighStructures) - 1) : ""
+    string lastLowStructure = array.size(pivotState.allLowStructures) > 0 ? array.get(pivotState.allLowStructures, array.size(pivotState.allLowStructures) - 1) : ""
 
     if lastHighStructure == "HH" and lastLowStructure == "HL"
         STRUCTURE_BULL
@@ -262,15 +227,15 @@ findLatestBullishFibPair() =>
     float pairHighPrice = na
     int pairHighBar = na
 
-    if array.size(allHighs) > 0 and array.size(allLows) > 0
-        for highIndex = array.size(allHighs) - 1 to 0
-            int candidateHighBar = array.get(allHighBars, highIndex)
-            float candidateHighPrice = array.get(allHighs, highIndex)
+    if array.size(pivotState.allHighs) > 0 and array.size(pivotState.allLows) > 0
+        for highIndex = array.size(pivotState.allHighs) - 1 to 0
+            int candidateHighBar = array.get(pivotState.allHighBars, highIndex)
+            float candidateHighPrice = array.get(pivotState.allHighs, highIndex)
 
-            for lowIndex = array.size(allLows) - 1 to 0
-                int candidateLowBar = array.get(allLowBars, lowIndex)
+            for lowIndex = array.size(pivotState.allLows) - 1 to 0
+                int candidateLowBar = array.get(pivotState.allLowBars, lowIndex)
                 if candidateLowBar < candidateHighBar
-                    pairLowPrice := array.get(allLows, lowIndex)
+                    pairLowPrice := array.get(pivotState.allLows, lowIndex)
                     pairLowBar := candidateLowBar
                     pairHighPrice := candidateHighPrice
                     pairHighBar := candidateHighBar
@@ -289,17 +254,17 @@ findLatestBearishFibPair() =>
     float pairHighPrice = na
     int pairHighBar = na
 
-    if array.size(allHighs) > 0 and array.size(allLows) > 0
-        for lowIndex = array.size(allLows) - 1 to 0
-            int candidateLowBar = array.get(allLowBars, lowIndex)
-            float candidateLowPrice = array.get(allLows, lowIndex)
+    if array.size(pivotState.allHighs) > 0 and array.size(pivotState.allLows) > 0
+        for lowIndex = array.size(pivotState.allLows) - 1 to 0
+            int candidateLowBar = array.get(pivotState.allLowBars, lowIndex)
+            float candidateLowPrice = array.get(pivotState.allLows, lowIndex)
 
-            for highIndex = array.size(allHighs) - 1 to 0
-                int candidateHighBar = array.get(allHighBars, highIndex)
+            for highIndex = array.size(pivotState.allHighs) - 1 to 0
+                int candidateHighBar = array.get(pivotState.allHighBars, highIndex)
                 if candidateHighBar < candidateLowBar
                     pairLowPrice := candidateLowPrice
                     pairLowBar := candidateLowBar
-                    pairHighPrice := array.get(allHighs, highIndex)
+                    pairHighPrice := array.get(pivotState.allHighs, highIndex)
                     pairHighBar := candidateHighBar
                     foundPair := true
                     break
@@ -339,69 +304,68 @@ refreshPivotLabels() =>
 
     if showLabels
         if showAllHL
-            if array.size(allHighs) > 0
-                for i = 0 to array.size(allHighs) - 1
-                    int highBar = array.get(allHighBars, i)
-                    float highPrice = array.get(allHighs, i)
+            if array.size(pivotState.allHighs) > 0
+                for i = 0 to array.size(pivotState.allHighs) - 1
+                    int highBar = array.get(pivotState.allHighBars, i)
+                    float highPrice = array.get(pivotState.allHighs, i)
                     int highBarsAgo = bar_index - highBar
                     array.push(highTriangleLabels, createHighLabel(highBar, highPrice, highBarsAgo))
                     trimPivotLabels(highTriangleLabels)
                     if showStructureLabels
-                        label highStructureLabel = createStructureLabel(true, highBar, highPrice, highBarsAgo, array.get(allHighStructures, i), array.get(allHighBarCounts, i))
+                        label highStructureLabel = createStructureLabel(true, highBar, highPrice, highBarsAgo, array.get(pivotState.allHighStructures, i), array.get(pivotState.allHighBarCounts, i))
                         if not na(highStructureLabel)
                             array.push(highStructureLabels, highStructureLabel)
                             trimPivotLabels(highStructureLabels)
-            if array.size(allLows) > 0
-                for i = 0 to array.size(allLows) - 1
-                    int lowBar = array.get(allLowBars, i)
-                    float lowPrice = array.get(allLows, i)
+            if array.size(pivotState.allLows) > 0
+                for i = 0 to array.size(pivotState.allLows) - 1
+                    int lowBar = array.get(pivotState.allLowBars, i)
+                    float lowPrice = array.get(pivotState.allLows, i)
                     int lowBarsAgo = bar_index - lowBar
                     array.push(lowTriangleLabels, createLowLabel(lowBar, lowPrice, lowBarsAgo))
                     trimPivotLabels(lowTriangleLabels)
                     if showStructureLabels
-                        label lowStructureLabel = createStructureLabel(false, lowBar, lowPrice, lowBarsAgo, array.get(allLowStructures, i), array.get(allLowBarCounts, i))
+                        label lowStructureLabel = createStructureLabel(false, lowBar, lowPrice, lowBarsAgo, array.get(pivotState.allLowStructures, i), array.get(pivotState.allLowBarCounts, i))
                         if not na(lowStructureLabel)
                             array.push(lowStructureLabels, lowStructureLabel)
                             trimPivotLabels(lowStructureLabels)
         else
             string structureDirection = getCurrentStructureDirection()
-            int displayHighIndex = array.size(allHighs) > 0 ? array.size(allHighs) - 1 : na
-            int displayLowIndex = array.size(allLows) > 0 ? array.size(allLows) - 1 : na
+            int displayHighIndex = array.size(pivotState.allHighs) > 0 ? array.size(pivotState.allHighs) - 1 : na
+            int displayLowIndex = array.size(pivotState.allLows) > 0 ? array.size(pivotState.allLows) - 1 : na
 
             if structureDirection == "多頭延續" and not na(displayHighIndex)
-                int referenceHighBar = array.get(allHighBars, displayHighIndex)
-                for lowIndex = array.size(allLows) - 1 to 0
-                    if array.get(allLowBars, lowIndex) < referenceHighBar
+                int referenceHighBar = array.get(pivotState.allHighBars, displayHighIndex)
+                for lowIndex = array.size(pivotState.allLows) - 1 to 0
+                    if array.get(pivotState.allLowBars, lowIndex) < referenceHighBar
                         displayLowIndex := lowIndex
                         break
             else if structureDirection == "空頭延續" and not na(displayLowIndex)
-                int referenceLowBar = array.get(allLowBars, displayLowIndex)
-                for highIndex = array.size(allHighs) - 1 to 0
-                    if array.get(allHighBars, highIndex) < referenceLowBar
+                int referenceLowBar = array.get(pivotState.allLowBars, displayLowIndex)
+                for highIndex = array.size(pivotState.allHighs) - 1 to 0
+                    if array.get(pivotState.allHighBars, highIndex) < referenceLowBar
                         displayHighIndex := highIndex
                         break
 
             if not na(displayHighIndex)
-                int lastHighBarValue = array.get(allHighBars, displayHighIndex)
-                float lastHighPriceValue = array.get(allHighs, displayHighIndex)
+                int lastHighBarValue = array.get(pivotState.allHighBars, displayHighIndex)
+                float lastHighPriceValue = array.get(pivotState.allHighs, displayHighIndex)
                 int lastHighBarsAgo = bar_index - lastHighBarValue
                 array.push(highTriangleLabels, createHighLabel(lastHighBarValue, lastHighPriceValue, lastHighBarsAgo))
                 if showStructureLabels
-                    label lastHighStructureLabel = createStructureLabel(true, lastHighBarValue, lastHighPriceValue, lastHighBarsAgo, array.get(allHighStructures, displayHighIndex), array.get(allHighBarCounts, displayHighIndex))
+                    label lastHighStructureLabel = createStructureLabel(true, lastHighBarValue, lastHighPriceValue, lastHighBarsAgo, array.get(pivotState.allHighStructures, displayHighIndex), array.get(pivotState.allHighBarCounts, displayHighIndex))
                     if not na(lastHighStructureLabel)
                         array.push(highStructureLabels, lastHighStructureLabel)
             if not na(displayLowIndex)
-                int lastLowBarValue = array.get(allLowBars, displayLowIndex)
-                float lastLowPriceValue = array.get(allLows, displayLowIndex)
+                int lastLowBarValue = array.get(pivotState.allLowBars, displayLowIndex)
+                float lastLowPriceValue = array.get(pivotState.allLows, displayLowIndex)
                 int lastLowBarsAgo = bar_index - lastLowBarValue
                 array.push(lowTriangleLabels, createLowLabel(lastLowBarValue, lastLowPriceValue, lastLowBarsAgo))
                 if showStructureLabels
-                    label lastLowStructureLabel = createStructureLabel(false, lastLowBarValue, lastLowPriceValue, lastLowBarsAgo, array.get(allLowStructures, displayLowIndex), array.get(allLowBarCounts, displayLowIndex))
+                    label lastLowStructureLabel = createStructureLabel(false, lastLowBarValue, lastLowPriceValue, lastLowBarsAgo, array.get(pivotState.allLowStructures, displayLowIndex), array.get(pivotState.allLowBarCounts, displayLowIndex))
                     if not na(lastLowStructureLabel)
                         array.push(lowStructureLabels, lastLowStructureLabel)
 
 if barstate.isconfirmed
-    bool pivotChanged = false
     float minDeviation = deviationInput * syminfo.mintick
 
     if showAllHL != previousShowAllHL or showLabels != previousShowLabels or hlLabelDisplayMode != previousHlLabelDisplayMode or showStructureLabels != previousShowStructureLabels or showStructureBarCount != previousShowStructureBarCount
@@ -412,72 +376,11 @@ if barstate.isconfirmed
         previousShowStructureLabels := showStructureLabels
         previousShowStructureBarCount := showStructureBarCount
 
-    if not na(zigHighPoint)
-        bool canAcceptHigh = lastAcceptedPivotType != 1 and (na(lastLow) or math.abs(zigHighPoint - lastLow) >= minDeviation)
-        if canAcceptHigh
-            string highStructure = array.size(allHighs) > 0 ? (zigHighPoint > array.get(allHighs, array.size(allHighs) - 1) ? "HH" : "LH") : ""
-            int highBarCount = not na(lastLowBar) ? math.abs(confirmedHighBar - lastLowBar) : na
-            lastHigh := zigHighPoint
-            lastHighBar := confirmedHighBar
-            array.push(allHighs, zigHighPoint)
-            array.push(allHighBars, confirmedHighBar)
-            trimPivotData(allHighs, allHighBars)
-            array.push(allHighStructures, highStructure)
-            array.push(allHighBarCounts, highBarCount)
-            trimTextData(allHighStructures, allHighBarCounts)
-            lastAcceptedPivotType := 1
-            pivotChanged := true
-        else if lastAcceptedPivotType == 1 and (na(lastHigh) or zigHighPoint > lastHigh)
-            string highStructure = array.size(allHighs) > 1 ? (zigHighPoint > array.get(allHighs, array.size(allHighs) - 2) ? "HH" : "LH") : ""
-            int highBarCount = not na(lastLowBar) ? math.abs(confirmedHighBar - lastLowBar) : na
-            lastHigh := zigHighPoint
-            lastHighBar := confirmedHighBar
-            if array.size(allHighs) > 0
-                array.set(allHighs, array.size(allHighs) - 1, zigHighPoint)
-                array.set(allHighBars, array.size(allHighBars) - 1, confirmedHighBar)
-                array.set(allHighStructures, array.size(allHighStructures) - 1, highStructure)
-                array.set(allHighBarCounts, array.size(allHighBarCounts) - 1, highBarCount)
-            else
-                array.push(allHighs, zigHighPoint)
-                array.push(allHighBars, confirmedHighBar)
-                array.push(allHighStructures, highStructure)
-                array.push(allHighBarCounts, highBarCount)
-            pivotChanged := true
+    bool pivotChanged = zigzag.processConfirmedBar(pivotState, zigHighPoint, zigLowPoint, confirmedHighBar, confirmedLowBar, minDeviation, MAX_PIVOTS)
 
-    if not na(zigLowPoint)
-        bool canAcceptLow = lastAcceptedPivotType != -1 and (na(lastHigh) or math.abs(lastHigh - zigLowPoint) >= minDeviation)
-        if canAcceptLow
-            string lowStructure = array.size(allLows) > 0 ? (zigLowPoint < array.get(allLows, array.size(allLows) - 1) ? "LL" : "HL") : ""
-            int lowBarCount = not na(lastHighBar) ? math.abs(confirmedLowBar - lastHighBar) : na
-            lastLow := zigLowPoint
-            lastLowBar := confirmedLowBar
-            array.push(allLows, zigLowPoint)
-            array.push(allLowBars, confirmedLowBar)
-            trimPivotData(allLows, allLowBars)
-            array.push(allLowStructures, lowStructure)
-            array.push(allLowBarCounts, lowBarCount)
-            trimTextData(allLowStructures, allLowBarCounts)
-            lastAcceptedPivotType := -1
-            pivotChanged := true
-        else if lastAcceptedPivotType == -1 and (na(lastLow) or zigLowPoint < lastLow)
-            string lowStructure = array.size(allLows) > 1 ? (zigLowPoint < array.get(allLows, array.size(allLows) - 2) ? "LL" : "HL") : ""
-            int lowBarCount = not na(lastHighBar) ? math.abs(confirmedLowBar - lastHighBar) : na
-            lastLow := zigLowPoint
-            lastLowBar := confirmedLowBar
-            if array.size(allLows) > 0
-                array.set(allLows, array.size(allLows) - 1, zigLowPoint)
-                array.set(allLowBars, array.size(allLowBars) - 1, confirmedLowBar)
-                array.set(allLowStructures, array.size(allLowStructures) - 1, lowStructure)
-                array.set(allLowBarCounts, array.size(allLowBarCounts) - 1, lowBarCount)
-            else
-                array.push(allLows, zigLowPoint)
-                array.push(allLowBars, confirmedLowBar)
-                array.push(allLowStructures, lowStructure)
-                array.push(allLowBarCounts, lowBarCount)
-            pivotChanged := true
-
-    tdBullishSetupCount := close > close[4] ? tdBullishSetupCount + 1 : 0
-    tdBearishSetupCount := close < close[4] ? tdBearishSetupCount + 1 : 0
+    [nextTdBull, nextTdBear] = tdseq.next(tdBullishSetupCount, tdBearishSetupCount, close, close[4])
+    tdBullishSetupCount := nextTdBull
+    tdBearishSetupCount := nextTdBear
 
     if pivotChanged
         int nextStructureState = getStructureStateFromStructures()
@@ -503,32 +406,32 @@ if barstate.isconfirmed
                 mixedFibHigh := na
                 mixedFibHighBar := na
 
-                if mixedAnchorTrendState == STRUCTURE_BULL and array.size(allHighs) > 0 and array.size(allLows) > 0
-                    for lowIndex = array.size(allLows) - 1 to 0
-                        int candidateLowBar = array.get(allLowBars, lowIndex)
-                        float candidateLowPrice = array.get(allLows, lowIndex)
+                if mixedAnchorTrendState == STRUCTURE_BULL and array.size(pivotState.allHighs) > 0 and array.size(pivotState.allLows) > 0
+                    for lowIndex = array.size(pivotState.allLows) - 1 to 0
+                        int candidateLowBar = array.get(pivotState.allLowBars, lowIndex)
+                        float candidateLowPrice = array.get(pivotState.allLows, lowIndex)
 
-                        for highIndex = array.size(allHighs) - 1 to 0
-                            int candidateHighBar = array.get(allHighBars, highIndex)
+                        for highIndex = array.size(pivotState.allHighs) - 1 to 0
+                            int candidateHighBar = array.get(pivotState.allHighBars, highIndex)
                             if candidateHighBar < candidateLowBar
                                 mixedFibLow := candidateLowPrice
                                 mixedFibLowBar := candidateLowBar
-                                mixedFibHigh := array.get(allHighs, highIndex)
+                                mixedFibHigh := array.get(pivotState.allHighs, highIndex)
                                 mixedFibHighBar := candidateHighBar
                                 mixedFibPairValid := true
                                 break
 
                         if mixedFibPairValid
                             break
-                else if mixedAnchorTrendState == STRUCTURE_BEAR and array.size(allHighs) > 0 and array.size(allLows) > 0
-                    for highIndex = array.size(allHighs) - 1 to 0
-                        int candidateHighBar = array.get(allHighBars, highIndex)
-                        float candidateHighPrice = array.get(allHighs, highIndex)
+                else if mixedAnchorTrendState == STRUCTURE_BEAR and array.size(pivotState.allHighs) > 0 and array.size(pivotState.allLows) > 0
+                    for highIndex = array.size(pivotState.allHighs) - 1 to 0
+                        int candidateHighBar = array.get(pivotState.allHighBars, highIndex)
+                        float candidateHighPrice = array.get(pivotState.allHighs, highIndex)
 
-                        for lowIndex = array.size(allLows) - 1 to 0
-                            int candidateLowBar = array.get(allLowBars, lowIndex)
+                        for lowIndex = array.size(pivotState.allLows) - 1 to 0
+                            int candidateLowBar = array.get(pivotState.allLowBars, lowIndex)
                             if candidateLowBar < candidateHighBar
-                                mixedFibLow := array.get(allLows, lowIndex)
+                                mixedFibLow := array.get(pivotState.allLows, lowIndex)
                                 mixedFibLowBar := candidateLowBar
                                 mixedFibHigh := candidateHighPrice
                                 mixedFibHighBar := candidateHighBar
@@ -574,15 +477,15 @@ if barstate.isconfirmed
             float activeFibHigh = na
             int activeFibHighBar = na
 
-            if currentStructureState == STRUCTURE_BULL and array.size(allHighs) > 0 and array.size(allLows) > 0
-                for highIndex = array.size(allHighs) - 1 to 0
-                    int candidateHighBar = array.get(allHighBars, highIndex)
-                    float candidateHighPrice = array.get(allHighs, highIndex)
+            if currentStructureState == STRUCTURE_BULL and array.size(pivotState.allHighs) > 0 and array.size(pivotState.allLows) > 0
+                for highIndex = array.size(pivotState.allHighs) - 1 to 0
+                    int candidateHighBar = array.get(pivotState.allHighBars, highIndex)
+                    float candidateHighPrice = array.get(pivotState.allHighs, highIndex)
 
-                    for lowIndex = array.size(allLows) - 1 to 0
-                        int candidateLowBar = array.get(allLowBars, lowIndex)
+                    for lowIndex = array.size(pivotState.allLows) - 1 to 0
+                        int candidateLowBar = array.get(pivotState.allLowBars, lowIndex)
                         if candidateLowBar < candidateHighBar
-                            activeFibLow := array.get(allLows, lowIndex)
+                            activeFibLow := array.get(pivotState.allLows, lowIndex)
                             activeFibLowBar := candidateLowBar
                             activeFibHigh := candidateHighPrice
                             activeFibHighBar := candidateHighBar
@@ -591,17 +494,17 @@ if barstate.isconfirmed
 
                     if hasActiveFibPair
                         break
-            else if currentStructureState == STRUCTURE_BEAR and array.size(allHighs) > 0 and array.size(allLows) > 0
-                for lowIndex = array.size(allLows) - 1 to 0
-                    int candidateLowBar = array.get(allLowBars, lowIndex)
-                    float candidateLowPrice = array.get(allLows, lowIndex)
+            else if currentStructureState == STRUCTURE_BEAR and array.size(pivotState.allHighs) > 0 and array.size(pivotState.allLows) > 0
+                for lowIndex = array.size(pivotState.allLows) - 1 to 0
+                    int candidateLowBar = array.get(pivotState.allLowBars, lowIndex)
+                    float candidateLowPrice = array.get(pivotState.allLows, lowIndex)
 
-                    for highIndex = array.size(allHighs) - 1 to 0
-                        int candidateHighBar = array.get(allHighBars, highIndex)
+                    for highIndex = array.size(pivotState.allHighs) - 1 to 0
+                        int candidateHighBar = array.get(pivotState.allHighBars, highIndex)
                         if candidateHighBar < candidateLowBar
                             activeFibLow := candidateLowPrice
                             activeFibLowBar := candidateLowBar
-                            activeFibHigh := array.get(allHighs, highIndex)
+                            activeFibHigh := array.get(pivotState.allHighs, highIndex)
                             activeFibHighBar := candidateHighBar
                             hasActiveFibPair := true
                             break
@@ -671,23 +574,23 @@ if barstate.isconfirmed
         fib50Label := na
         fib1382Label := na
 
-    int tdMarkerLimit = math.max(tdLength, 13)
+    int tdMarkerLimit = tdseq.markerLimit(tdLength)
 
-    if showTD and isTdMarker(tdBullishSetupCount, tdMarkerLimit)
+    if showTD and tdseq.isMarker(tdBullishSetupCount, tdMarkerLimit)
         if isTdBarSpacingMode()
-            label.new(bar_index, na, str.tostring(tdBullishSetupCount), color=getBearTdLabelColor(tdBullishSetupCount), style=label.style_text_outline, textcolor=getBearTdTextColor(tdBullishSetupCount), size=size.large, tooltip="TD 空方計數: " + str.tostring(tdBullishSetupCount), yloc=yloc.abovebar)
+            label.new(bar_index, na, str.tostring(tdBullishSetupCount), color=tdseq.bearLabelColor(tdBullishSetupCount), style=label.style_text_outline, textcolor=tdseq.bearTextColor(tdBullishSetupCount), size=size.large, tooltip="TD 空方計數: " + str.tostring(tdBullishSetupCount), yloc=yloc.abovebar)
         else
-            label.new(bar_index, high + getFixedHlOffset(), str.tostring(tdBullishSetupCount), color=getBearTdLabelColor(tdBullishSetupCount), style=label.style_text_outline, textcolor=getBearTdTextColor(tdBullishSetupCount), size=size.large, tooltip="TD 空方計數: " + str.tostring(tdBullishSetupCount))
+            label.new(bar_index, high + getFixedHlOffset(), str.tostring(tdBullishSetupCount), color=tdseq.bearLabelColor(tdBullishSetupCount), style=label.style_text_outline, textcolor=tdseq.bearTextColor(tdBullishSetupCount), size=size.large, tooltip="TD 空方計數: " + str.tostring(tdBullishSetupCount))
 
-    if showTD and isTdMarker(tdBearishSetupCount, tdMarkerLimit)
+    if showTD and tdseq.isMarker(tdBearishSetupCount, tdMarkerLimit)
         if isTdBarSpacingMode()
-            label.new(bar_index, na, str.tostring(tdBearishSetupCount), color=getBullTdLabelColor(tdBearishSetupCount), style=label.style_text_outline, textcolor=getBullTdTextColor(tdBearishSetupCount), size=size.large, tooltip="TD 多方計數: " + str.tostring(tdBearishSetupCount), yloc=yloc.belowbar)
+            label.new(bar_index, na, str.tostring(tdBearishSetupCount), color=tdseq.bullLabelColor(tdBearishSetupCount), style=label.style_text_outline, textcolor=tdseq.bullTextColor(tdBearishSetupCount), size=size.large, tooltip="TD 多方計數: " + str.tostring(tdBearishSetupCount), yloc=yloc.belowbar)
         else
-            label.new(bar_index, low - getFixedHlOffset(), str.tostring(tdBearishSetupCount), color=getBullTdLabelColor(tdBearishSetupCount), style=label.style_text_outline, textcolor=getBullTdTextColor(tdBearishSetupCount), size=size.large, tooltip="TD 多方計數: " + str.tostring(tdBearishSetupCount))
+            label.new(bar_index, low - getFixedHlOffset(), str.tostring(tdBearishSetupCount), color=tdseq.bullLabelColor(tdBearishSetupCount), style=label.style_text_outline, textcolor=tdseq.bullTextColor(tdBearishSetupCount), size=size.large, tooltip="TD 多方計數: " + str.tostring(tdBearishSetupCount))
 
 // 與最近高低點的距離
-float distanceToHigh = not na(lastHigh) ? (lastHigh - close) / close * 100 : na
-float distanceToLow = not na(lastLow) ? (close - lastLow) / close * 100 : na
+float distanceToHigh = not na(pivotState.lastHigh) ? (pivotState.lastHigh - close) / close * 100 : na
+float distanceToLow = not na(pivotState.lastLow) ? (close - pivotState.lastLow) / close * 100 : na
 
 // 保留數值供資料視窗或後續策略整合使用
 plot(distanceToHigh, "距離最近高點 (%)", color=color.new(color.red, 100), display=display.data_window)
