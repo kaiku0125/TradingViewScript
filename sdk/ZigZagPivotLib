@@ -1,0 +1,116 @@
+//@version=5
+
+// ZigZag 式 pivot：ta.pivothigh / ta.pivotlow 確認後之偏差過濾、陣列與 HH/LH/HL/LL 結構字串（供指標／策略共用）
+library(title = "ZigZagPivotLib", overlay = false)
+
+export type ZigZagPivotState
+    array<float> allHighs
+    array<float> allLows
+    array<int> allHighBars
+    array<int> allLowBars
+    array<string> allHighStructures
+    array<string> allLowStructures
+    array<int> allHighBarCounts
+    array<int> allLowBarCounts
+    float lastHigh
+    float lastLow
+    int lastHighBar
+    int lastLowBar
+    int lastAcceptedPivotType
+
+// 建立空狀態（陣列為新實例，供 var 初始化一次使用）
+export newEmptyPivotState() =>
+    ZigZagPivotState.new(
+         array.new_float(),
+         array.new_float(),
+         array.new_int(),
+         array.new_int(),
+         array.new_string(),
+         array.new_string(),
+         array.new_int(),
+         array.new_int(),
+         na,
+         na,
+         na,
+         na,
+         0)
+
+trimPivotData(array<float> prices, array<int> bars, int maxPivots) =>
+    if array.size(prices) > maxPivots
+        array.shift(prices)
+        array.shift(bars)
+
+trimTextData(array<string> texts, array<int> counts, int maxPivots) =>
+    if array.size(texts) > maxPivots
+        array.shift(texts)
+        array.shift(counts)
+
+// 在已確認 K 線上更新 pivot 狀態（就地修改 state 內陣列與欄位）；回傳本棒是否改變 pivot
+export processConfirmedBar(ZigZagPivotState state, float zigHighPoint, float zigLowPoint, int confirmedHighBar, int confirmedLowBar, float minDeviation, int maxPivots) =>
+    bool pivotChanged = false
+
+    if not na(zigHighPoint)
+        bool canAcceptHigh = state.lastAcceptedPivotType != 1 and (na(state.lastLow) or math.abs(zigHighPoint - state.lastLow) >= minDeviation)
+        if canAcceptHigh
+            string highStructure = array.size(state.allHighs) > 0 ? (zigHighPoint > array.get(state.allHighs, array.size(state.allHighs) - 1) ? "HH" : "LH") : ""
+            int highBarCount = not na(state.lastLowBar) ? math.abs(confirmedHighBar - state.lastLowBar) : na
+            state.lastHigh := zigHighPoint
+            state.lastHighBar := confirmedHighBar
+            array.push(state.allHighs, zigHighPoint)
+            array.push(state.allHighBars, confirmedHighBar)
+            trimPivotData(state.allHighs, state.allHighBars, maxPivots)
+            array.push(state.allHighStructures, highStructure)
+            array.push(state.allHighBarCounts, highBarCount)
+            trimTextData(state.allHighStructures, state.allHighBarCounts, maxPivots)
+            state.lastAcceptedPivotType := 1
+            pivotChanged := true
+        else if state.lastAcceptedPivotType == 1 and (na(state.lastHigh) or zigHighPoint > state.lastHigh)
+            string highStructure = array.size(state.allHighs) > 1 ? (zigHighPoint > array.get(state.allHighs, array.size(state.allHighs) - 2) ? "HH" : "LH") : ""
+            int highBarCount = not na(state.lastLowBar) ? math.abs(confirmedHighBar - state.lastLowBar) : na
+            state.lastHigh := zigHighPoint
+            state.lastHighBar := confirmedHighBar
+            if array.size(state.allHighs) > 0
+                array.set(state.allHighs, array.size(state.allHighs) - 1, zigHighPoint)
+                array.set(state.allHighBars, array.size(state.allHighBars) - 1, confirmedHighBar)
+                array.set(state.allHighStructures, array.size(state.allHighStructures) - 1, highStructure)
+                array.set(state.allHighBarCounts, array.size(state.allHighBarCounts) - 1, highBarCount)
+            else
+                array.push(state.allHighs, zigHighPoint)
+                array.push(state.allHighBars, confirmedHighBar)
+                array.push(state.allHighStructures, highStructure)
+                array.push(state.allHighBarCounts, highBarCount)
+            pivotChanged := true
+
+    if not na(zigLowPoint)
+        bool canAcceptLow = state.lastAcceptedPivotType != -1 and (na(state.lastHigh) or math.abs(state.lastHigh - zigLowPoint) >= minDeviation)
+        if canAcceptLow
+            string lowStructure = array.size(state.allLows) > 0 ? (zigLowPoint < array.get(state.allLows, array.size(state.allLows) - 1) ? "LL" : "HL") : ""
+            int lowBarCount = not na(state.lastHighBar) ? math.abs(confirmedLowBar - state.lastHighBar) : na
+            state.lastLow := zigLowPoint
+            state.lastLowBar := confirmedLowBar
+            array.push(state.allLows, zigLowPoint)
+            array.push(state.allLowBars, confirmedLowBar)
+            trimPivotData(state.allLows, state.allLowBars, maxPivots)
+            array.push(state.allLowStructures, lowStructure)
+            array.push(state.allLowBarCounts, lowBarCount)
+            trimTextData(state.allLowStructures, state.allLowBarCounts, maxPivots)
+            state.lastAcceptedPivotType := -1
+            pivotChanged := true
+        else if state.lastAcceptedPivotType == -1 and (na(state.lastLow) or zigLowPoint < state.lastLow)
+            string lowStructure = array.size(state.allLows) > 1 ? (zigLowPoint < array.get(state.allLows, array.size(state.allLows) - 2) ? "LL" : "HL") : ""
+            int lowBarCount = not na(state.lastHighBar) ? math.abs(confirmedLowBar - state.lastHighBar) : na
+            state.lastLow := zigLowPoint
+            state.lastLowBar := confirmedLowBar
+            if array.size(state.allLows) > 0
+                array.set(state.allLows, array.size(state.allLows) - 1, zigLowPoint)
+                array.set(state.allLowBars, array.size(state.allLowBars) - 1, confirmedLowBar)
+                array.set(state.allLowStructures, array.size(state.allLowStructures) - 1, lowStructure)
+                array.set(state.allLowBarCounts, array.size(state.allLowBarCounts) - 1, lowBarCount)
+            else
+                array.push(state.allLows, zigLowPoint)
+                array.push(state.allLowBars, confirmedLowBar)
+                array.push(state.allLowStructures, lowStructure)
+                array.push(state.allLowBarCounts, lowBarCount)
+            pivotChanged := true
+
+    pivotChanged

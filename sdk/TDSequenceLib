@@ -1,0 +1,30 @@
+//@version=5
+
+// TD Sequential Setup：close 與前第 4 根 close 比較之計數與關鍵棒標記（供指標／策略共用）
+library(title = "TDSequenceLib", overlay = false)
+
+// 單根 K 線更新多空兩條 Setup 計數（對應 close / close[4] 規則）
+export next(int prevBull, int prevBear, float cl, float cl4) =>
+    int newBull = cl > cl4 ? prevBull + 1 : 0
+    int newBear = cl < cl4 ? prevBear + 1 : 0
+    [newBull, newBear]
+
+// 是否為需標示的關鍵計數（7–9、11–13，且受 tdLength 與 13 取大後之上限約束）
+export isMarker(int count, int maxCount) =>
+    ((count >= 7 and count <= 9) or (count >= 11 and count <= 13)) and count <= maxCount
+
+export markerLimit(int tdLength) =>
+    math.max(tdLength, 13)
+
+// TD 標籤顏色（空方計數列於 K 棒上方，多方計數列於下方；與原指標一致）
+export bearLabelColor(int count) =>
+    count == 9 or count == 13 ? color.rgb(255, 59, 59) : color.new(color.rgb(90, 32, 32), 15)
+
+export bearTextColor(int count) =>
+    count == 11 or count == 12 ? color.new(color.white, 20) : color.white
+
+export bullLabelColor(int count) =>
+    count == 9 or count == 13 ? color.rgb(76, 175, 80) : color.new(color.rgb(44, 84, 52), 10)
+
+export bullTextColor(int count) =>
+    count == 11 or count == 12 ? color.new(color.white, 20) : color.white
