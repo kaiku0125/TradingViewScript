@@ -16,6 +16,7 @@ showLabels = input.bool(true, "顯示高低點標籤")
 showAllHL = input.bool(false, "顯示歷史高低點", tooltip="開啟後顯示所有已確認高低點，關閉則只顯示最新一組高低點")
 showTD = input.bool(true, "顯示 TD 序列", tooltip="顯示 TD Setup 的關鍵計數")
 tdLength = input.int(9, "TD 序列長度", minval=1, tooltip="TD Setup 的目標計數長度")
+tdLabelSizeInput = input.string("中", "TD 計數字體大小", options=["大", "中", "小"], tooltip="大=Large、中=Normal、小=Small")
 showInfoPanel = input.bool(true, "顯示資訊面板", tooltip="顯示右上角 TD 與 HL 距離資訊")
 showInfoStructureDirection = input.bool(true, "資訊面板顯示結構方向")
 showInfoTimeframe = input.bool(false, "資訊面板顯示週期")
@@ -128,6 +129,10 @@ getFixedHlOffset() =>
 
 isTdBarSpacingMode() =>
     tdLabelDisplayMode == "Bar 間距顯示"
+
+// TD 計數標籤字體（大／中／小 對應 TradingView size）
+getTdLabelSize() =>
+    tdLabelSizeInput == "大" ? size.large : tdLabelSizeInput == "小" ? size.small : size.normal
 
 isHlBarSpacingMode() =>
     hlLabelDisplayMode == "Bar 間距顯示"
@@ -578,15 +583,15 @@ if barstate.isconfirmed
 
     if showTD and tdseq.isMarker(tdBullishSetupCount, tdMarkerLimit)
         if isTdBarSpacingMode()
-            label.new(bar_index, na, str.tostring(tdBullishSetupCount), color=tdseq.bearLabelColor(tdBullishSetupCount), style=label.style_text_outline, textcolor=tdseq.bearTextColor(tdBullishSetupCount), size=size.large, tooltip="TD 空方計數: " + str.tostring(tdBullishSetupCount), yloc=yloc.abovebar)
+            label.new(bar_index, na, str.tostring(tdBullishSetupCount), color=tdseq.bearLabelColor(tdBullishSetupCount), style=label.style_text_outline, textcolor=tdseq.bearTextColor(tdBullishSetupCount), size=getTdLabelSize(), tooltip="TD 空方計數: " + str.tostring(tdBullishSetupCount), yloc=yloc.abovebar)
         else
-            label.new(bar_index, high + getFixedHlOffset(), str.tostring(tdBullishSetupCount), color=tdseq.bearLabelColor(tdBullishSetupCount), style=label.style_text_outline, textcolor=tdseq.bearTextColor(tdBullishSetupCount), size=size.large, tooltip="TD 空方計數: " + str.tostring(tdBullishSetupCount))
+            label.new(bar_index, high + getFixedHlOffset(), str.tostring(tdBullishSetupCount), color=tdseq.bearLabelColor(tdBullishSetupCount), style=label.style_text_outline, textcolor=tdseq.bearTextColor(tdBullishSetupCount), size=getTdLabelSize(), tooltip="TD 空方計數: " + str.tostring(tdBullishSetupCount))
 
     if showTD and tdseq.isMarker(tdBearishSetupCount, tdMarkerLimit)
         if isTdBarSpacingMode()
-            label.new(bar_index, na, str.tostring(tdBearishSetupCount), color=tdseq.bullLabelColor(tdBearishSetupCount), style=label.style_text_outline, textcolor=tdseq.bullTextColor(tdBearishSetupCount), size=size.large, tooltip="TD 多方計數: " + str.tostring(tdBearishSetupCount), yloc=yloc.belowbar)
+            label.new(bar_index, na, str.tostring(tdBearishSetupCount), color=tdseq.bullLabelColor(tdBearishSetupCount), style=label.style_text_outline, textcolor=tdseq.bullTextColor(tdBearishSetupCount), size=getTdLabelSize(), tooltip="TD 多方計數: " + str.tostring(tdBearishSetupCount), yloc=yloc.belowbar)
         else
-            label.new(bar_index, low - getFixedHlOffset(), str.tostring(tdBearishSetupCount), color=tdseq.bullLabelColor(tdBearishSetupCount), style=label.style_text_outline, textcolor=tdseq.bullTextColor(tdBearishSetupCount), size=size.large, tooltip="TD 多方計數: " + str.tostring(tdBearishSetupCount))
+            label.new(bar_index, low - getFixedHlOffset(), str.tostring(tdBearishSetupCount), color=tdseq.bullLabelColor(tdBearishSetupCount), style=label.style_text_outline, textcolor=tdseq.bullTextColor(tdBearishSetupCount), size=getTdLabelSize(), tooltip="TD 多方計數: " + str.tostring(tdBearishSetupCount))
 
 // 與最近高低點的距離
 float distanceToHigh = not na(pivotState.lastHigh) ? (pivotState.lastHigh - close) / close * 100 : na
