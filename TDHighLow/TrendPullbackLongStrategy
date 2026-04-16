@@ -1,0 +1,344 @@
+//@version=5
+
+strategy("TDHighLow Trend Pullback Long Strategy V1", overlay=true, initial_capital=1000, pyramiding=0, default_qty_type=strategy.fixed, commission_type=strategy.commission.percent, commission_value=0.05, process_orders_on_close=true)
+
+const int STRUCTURE_UNKNOWN = 0
+const int STRUCTURE_BULL = 1
+const int STRUCTURE_BEAR = -1
+const int STRUCTURE_MIXED = 2
+
+const int STATE_L = 1
+const int STATE_S = -1
+const int STATE_M = 0
+const int STATE_ML = 2
+const int STATE_MS = 3
+
+const int SETUP_IDLE = 0
+const int SETUP_TREND_OK = 1
+const int SETUP_ZONE_READY = 2
+const int SETUP_IN_POSITION = 3
+
+bigPeriodInput = input.string("4H", "大(P)", options=["月", "週", "日", "4H"])
+depthInput = input.int(12, "ZigZag Depth", minval=1)
+deviationInput = input.int(5, "ZigZag Deviation", minval=1, tooltip="最小跳動單位")
+backstepInput = input.int(3, "ZigZag Backstep", minval=2)
+rsiLengthInput = input.int(14, "RSI 長度", minval=2)
+rsiPivotLeftInput = input.int(3, "RSI Pivot Left", minval=1)
+rsiPivotRightInput = input.int(3, "RSI Pivot Right", minval=1)
+riskDollarInput = input.float(20.0, "單筆固定風險(美金)", minval=0.01)
+stopBufferTicksInput = input.int(1, "停損緩衝 Tick", minval=0)
+slippageTicksInput = input.int(0, "滑價 Tick", minval=0)
+showDebugPlotsInput = input.bool(true, "顯示除錯線")
+
+f_structureState(int depth, int backstep, int deviationTicks) =>
+    float minDeviation = syminfo.mintick * deviationTicks
+    float zigHighPoint = ta.pivothigh(high, depth, backstep)
+    float zigLowPoint = ta.pivotlow(low, depth, backstep)
+    int confirmedHighBar = bar_index - backstep
+    int confirmedLowBar = bar_index - backstep
+
+    var float previousAcceptedHigh = na
+    var float latestAcceptedHigh = na
+    var int latestAcceptedHighBar = na
+    var float previousAcceptedLow = na
+    var float latestAcceptedLow = na
+    var int latestAcceptedLowBar = na
+    var int lastAcceptedPivotType = 0
+    var int currentStructureState = STRUCTURE_UNKNOWN
+    var int previousConfirmedTrendState = STRUCTURE_UNKNOWN
+    var int mixedAnchorTrendState = STRUCTURE_UNKNOWN
+    var bool isFirstMixedTransition = false
+
+    bool pivotChanged = false
+
+    if not na(zigHighPoint)
+        bool canAcceptHigh = lastAcceptedPivotType != 1 and (na(latestAcceptedLow) or math.abs(zigHighPoint - latestAcceptedLow) >= minDeviation)
+        if canAcceptHigh
+            previousAcceptedHigh := latestAcceptedHigh
+            latestAcceptedHigh := zigHighPoint
+            latestAcceptedHighBar := confirmedHighBar
+            lastAcceptedPivotType := 1
+            pivotChanged := true
+        else if lastAcceptedPivotType == 1 and (na(latestAcceptedHigh) or zigHighPoint > latestAcceptedHigh)
+            latestAcceptedHigh := zigHighPoint
+            latestAcceptedHighBar := confirmedHighBar
+            pivotChanged := true
+
+    if not na(zigLowPoint)
+        bool canAcceptLow = lastAcceptedPivotType != -1 and (na(latestAcceptedHigh) or math.abs(latestAcceptedHigh - zigLowPoint) >= minDeviation)
+        if canAcceptLow
+            previousAcceptedLow := latestAcceptedLow
+            latestAcceptedLow := zigLowPoint
+            latestAcceptedLowBar := confirmedLowBar
+            lastAcceptedPivotType := -1
+            pivotChanged := true
+        else if lastAcceptedPivotType == -1 and (na(latestAcceptedLow) or zigLowPoint < latestAcceptedLow)
+            latestAcceptedLow := zigLowPoint
+            latestAcceptedLowBar := confirmedLowBar
+            pivotChanged := true
+
+    if pivotChanged
+        int highStructure = na(previousAcceptedHigh) or na(latestAcceptedHigh) ? 0 : latestAcceptedHigh > previousAcceptedHigh ? 1 : -1
+        int lowStructure = na(previousAcceptedLow) or na(latestAcceptedLow) ? 0 : latestAcceptedLow > previousAcceptedLow ? 1 : -1
+        int nextStructureState = highStructure == 1 and lowStructure == 1 ? STRUCTURE_BULL : highStructure == -1 and lowStructure == -1 ? STRUCTURE_BEAR : highStructure == 0 or lowStructure == 0 ? STRUCTURE_UNKNOWN : STRUCTURE_MIXED
+
+        if nextStructureState == STRUCTURE_BULL or nextStructureState == STRUCTURE_BEAR
+            currentStructureState := nextStructureState
+            previousConfirmedTrendState := nextStructureState
+            mixedAnchorTrendState := STRUCTURE_UNKNOWN
+            isFirstMixedTransition := false
+        else if nextStructureState == STRUCTURE_MIXED
+            bool enteringMixed = currentStructureState != STRUCTURE_MIXED
+            isFirstMixedTransition := enteringMixed
+            if enteringMixed
+                mixedAnchorTrendState := previousConfirmedTrendState
+            currentStructureState := STRUCTURE_MIXED
+        else
+            currentStructureState := STRUCTURE_UNKNOWN
+            mixedAnchorTrendState := STRUCTURE_UNKNOWN
+            isFirstMixedTransition := false
+
+    int stateCode = currentStructureState == STRUCTURE_BULL ? STATE_L : currentStructureState == STRUCTURE_BEAR ? STATE_S : currentStructureState == STRUCTURE_MIXED and isFirstMixedTransition and mixedAnchorTrendState == STRUCTURE_BULL ? STATE_ML : currentStructureState == STRUCTURE_MIXED and isFirstMixedTransition and mixedAnchorTrendState == STRUCTURE_BEAR ? STATE_MS : STATE_M
+
+    stateCode
+
+f_latestBullFibLow(int depth, int backstep, int deviationTicks) =>
+    float minDeviation = syminfo.mintick * deviationTicks
+    float zigHighPoint = ta.pivothigh(high, depth, backstep)
+    float zigLowPoint = ta.pivotlow(low, depth, backstep)
+    int confirmedHighBar = bar_index - backstep
+    int confirmedLowBar = bar_index - backstep
+
+    var float latestAcceptedHigh = na
+    var int latestAcceptedHighBar = na
+    var float latestAcceptedLow = na
+    var int latestAcceptedLowBar = na
+    var int lastAcceptedPivotType = 0
+    var float latestBullFibLow = na
+
+    if not na(zigHighPoint)
+        bool canAcceptHigh = lastAcceptedPivotType != 1 and (na(latestAcceptedLow) or math.abs(zigHighPoint - latestAcceptedLow) >= minDeviation)
+        if canAcceptHigh
+            latestAcceptedHigh := zigHighPoint
+            latestAcceptedHighBar := confirmedHighBar
+            lastAcceptedPivotType := 1
+            if not na(latestAcceptedLow) and latestAcceptedLowBar < latestAcceptedHighBar
+                latestBullFibLow := latestAcceptedLow
+        else if lastAcceptedPivotType == 1 and (na(latestAcceptedHigh) or zigHighPoint > latestAcceptedHigh)
+            latestAcceptedHigh := zigHighPoint
+            latestAcceptedHighBar := confirmedHighBar
+            if not na(latestAcceptedLow) and latestAcceptedLowBar < latestAcceptedHighBar
+                latestBullFibLow := latestAcceptedLow
+
+    if not na(zigLowPoint)
+        bool canAcceptLow = lastAcceptedPivotType != -1 and (na(latestAcceptedHigh) or math.abs(latestAcceptedHigh - zigLowPoint) >= minDeviation)
+        if canAcceptLow
+            latestAcceptedLow := zigLowPoint
+            latestAcceptedLowBar := confirmedLowBar
+            lastAcceptedPivotType := -1
+        else if lastAcceptedPivotType == -1 and (na(latestAcceptedLow) or zigLowPoint < latestAcceptedLow)
+            latestAcceptedLow := zigLowPoint
+            latestAcceptedLowBar := confirmedLowBar
+
+    latestBullFibLow
+
+f_latestBullFibHigh(int depth, int backstep, int deviationTicks) =>
+    float minDeviation = syminfo.mintick * deviationTicks
+    float zigHighPoint = ta.pivothigh(high, depth, backstep)
+    float zigLowPoint = ta.pivotlow(low, depth, backstep)
+    int confirmedHighBar = bar_index - backstep
+    int confirmedLowBar = bar_index - backstep
+
+    var float latestAcceptedHigh = na
+    var int latestAcceptedHighBar = na
+    var float latestAcceptedLow = na
+    var int latestAcceptedLowBar = na
+    var int lastAcceptedPivotType = 0
+    var float latestBullFibHigh = na
+
+    if not na(zigHighPoint)
+        bool canAcceptHigh = lastAcceptedPivotType != 1 and (na(latestAcceptedLow) or math.abs(zigHighPoint - latestAcceptedLow) >= minDeviation)
+        if canAcceptHigh
+            latestAcceptedHigh := zigHighPoint
+            latestAcceptedHighBar := confirmedHighBar
+            lastAcceptedPivotType := 1
+            if not na(latestAcceptedLow) and latestAcceptedLowBar < latestAcceptedHighBar
+                latestBullFibHigh := latestAcceptedHigh
+        else if lastAcceptedPivotType == 1 and (na(latestAcceptedHigh) or zigHighPoint > latestAcceptedHigh)
+            latestAcceptedHigh := zigHighPoint
+            latestAcceptedHighBar := confirmedHighBar
+            if not na(latestAcceptedLow) and latestAcceptedLowBar < latestAcceptedHighBar
+                latestBullFibHigh := latestAcceptedHigh
+
+    if not na(zigLowPoint)
+        bool canAcceptLow = lastAcceptedPivotType != -1 and (na(latestAcceptedHigh) or math.abs(latestAcceptedHigh - zigLowPoint) >= minDeviation)
+        if canAcceptLow
+            latestAcceptedLow := zigLowPoint
+            latestAcceptedLowBar := confirmedLowBar
+            lastAcceptedPivotType := -1
+        else if lastAcceptedPivotType == -1 and (na(latestAcceptedLow) or zigLowPoint < latestAcceptedLow)
+            latestAcceptedLow := zigLowPoint
+            latestAcceptedLowBar := confirmedLowBar
+
+    latestBullFibHigh
+
+f_bullishRsiPivotDivergence(int rsiLength, int pivotLeft, int pivotRight) =>
+    float rsiValue = ta.rsi(close, rsiLength)
+    float pricePivotLow = ta.pivotlow(low, pivotLeft, pivotRight)
+    float rsiPivotLow = ta.pivotlow(rsiValue, pivotLeft, pivotRight)
+    int pricePivotBar = not na(pricePivotLow) ? bar_index - pivotRight : na
+    int rsiPivotBar = not na(rsiPivotLow) ? bar_index - pivotRight : na
+    float latestPricePivot = ta.valuewhen(not na(pricePivotLow), pricePivotLow, 0)
+    float previousPricePivot = ta.valuewhen(not na(pricePivotLow), pricePivotLow, 1)
+    float latestRsiPivot = ta.valuewhen(not na(rsiPivotLow), rsiPivotLow, 0)
+    float previousRsiPivot = ta.valuewhen(not na(rsiPivotLow), rsiPivotLow, 1)
+    bool pivotsAligned = not na(pricePivotLow) and not na(rsiPivotLow) and pricePivotBar == rsiPivotBar
+    bool bullishDivergence = pivotsAligned and not na(previousPricePivot) and not na(previousRsiPivot) and latestPricePivot < previousPricePivot and latestRsiPivot > previousRsiPivot
+
+    bullishDivergence
+
+string bigTf = switch bigPeriodInput
+    "月" => "M"
+    "週" => "W"
+    "日" => "D"
+    => "240"
+
+string midTf = switch bigPeriodInput
+    "月" => "W"
+    "週" => "D"
+    "日" => "240"
+    => "60"
+
+string smallTf = switch bigPeriodInput
+    "月" => "D"
+    "週" => "240"
+    "日" => "60"
+    => "15"
+
+string microTf = switch bigPeriodInput
+    "月" => "240"
+    "週" => "60"
+    "日" => "15"
+    => "5"
+
+string normalizedCurrentTf = timeframe.period == "5" ? "5" : timeframe.period == "15" ? "15" : timeframe.period == "60" ? "60" : timeframe.period == "240" ? "240" : timeframe.period == "D" ? "D" : timeframe.period == "W" ? "W" : timeframe.period == "M" ? "M" : timeframe.period
+bool isMicroChart = normalizedCurrentTf == microTf
+
+bigState = request.security(syminfo.tickerid, bigTf, f_structureState(depthInput, backstepInput, deviationInput), barmerge.gaps_off, barmerge.lookahead_off)
+midState = request.security(syminfo.tickerid, midTf, f_structureState(depthInput, backstepInput, deviationInput), barmerge.gaps_off, barmerge.lookahead_off)
+midBullFibLow = request.security(syminfo.tickerid, midTf, f_latestBullFibLow(depthInput, backstepInput, deviationInput), barmerge.gaps_off, barmerge.lookahead_off)
+midBullFibHigh = request.security(syminfo.tickerid, midTf, f_latestBullFibHigh(depthInput, backstepInput, deviationInput), barmerge.gaps_off, barmerge.lookahead_off)
+float smallClose = request.security(syminfo.tickerid, smallTf, close, barmerge.gaps_off, barmerge.lookahead_off)
+float smallHigh = request.security(syminfo.tickerid, smallTf, high, barmerge.gaps_off, barmerge.lookahead_off)
+float smallLow = request.security(syminfo.tickerid, smallTf, low, barmerge.gaps_off, barmerge.lookahead_off)
+microBullDiv = request.security(syminfo.tickerid, microTf, f_bullishRsiPivotDivergence(rsiLengthInput, rsiPivotLeftInput, rsiPivotRightInput), barmerge.gaps_off, barmerge.lookahead_off)
+float midClose = request.security(syminfo.tickerid, midTf, close, barmerge.gaps_off, barmerge.lookahead_off)
+
+bool bigIsLong = bigState == STATE_L
+bool midIsLong = midState == STATE_L
+float midRange = midBullFibHigh - midBullFibLow
+bool midFibValid = not na(midBullFibLow) and not na(midBullFibHigh) and midRange > 0
+
+float fib50 = midFibValid ? midBullFibHigh - midRange * 0.5 : na
+float fib618 = midFibValid ? midBullFibHigh - midRange * 0.618 : na
+float fib66 = midFibValid ? midBullFibHigh - midRange * 0.66 : na
+float ext1382 = midFibValid ? midBullFibHigh + midRange * 0.382 : na
+float ext1618 = midFibValid ? midBullFibHigh + midRange * 0.618 : na
+
+bool zoneTouched = midFibValid and smallHigh >= fib66 and smallLow <= fib50
+
+var int setupState = SETUP_IDLE
+var float lockedMidLow = na
+var float lockedMidHigh = na
+var float lockedFib50 = na
+var float lockedFib618 = na
+var float lockedFib66 = na
+var float lockedTp1 = na
+var float lockedTp2 = na
+var float lockedStop = na
+var bool partialExitPlaced = false
+var bool fullExitPlaced = false
+var label timeframeWarningLabel = na
+
+if not isMicroChart
+    if na(timeframeWarningLabel)
+        timeframeWarningLabel := label.new(bar_index, high, "請切換到微(P)週期執行策略", style=label.style_label_down, color=color.orange, textcolor=color.white)
+    else
+        label.set_x(timeframeWarningLabel, bar_index)
+        label.set_y(timeframeWarningLabel, high)
+else if not na(timeframeWarningLabel)
+    label.delete(timeframeWarningLabel)
+    timeframeWarningLabel := na
+
+bool midInvalidatesSetup = not midIsLong or (not na(lockedMidLow) and midClose < lockedMidLow)
+bool shouldResetSetup = false
+
+if strategy.position_size == 0 and (not isMicroChart or not bigIsLong or not midIsLong or not midFibValid)
+    shouldResetSetup := true
+else if strategy.position_size == 0
+    if setupState == SETUP_IDLE and bigIsLong and midIsLong
+        setupState := SETUP_TREND_OK
+
+    if setupState == SETUP_TREND_OK and zoneTouched
+        lockedMidLow := midBullFibLow
+        lockedMidHigh := midBullFibHigh
+        lockedFib50 := fib50
+        lockedFib618 := fib618
+        lockedFib66 := fib66
+        lockedTp1 := midBullFibHigh
+        lockedTp2 := (ext1382 + ext1618) / 2.0
+        lockedStop := lockedMidLow - syminfo.mintick * stopBufferTicksInput
+        setupState := SETUP_ZONE_READY
+
+    bool priceInsideLockedZone = setupState == SETUP_ZONE_READY and not na(lockedFib50) and close <= lockedFib50 and close >= lockedFib66
+    bool lockedSetupInvalid = setupState == SETUP_ZONE_READY and (midInvalidatesSetup or close <= lockedStop)
+    if lockedSetupInvalid
+        shouldResetSetup := true
+
+    float entryPrice = close + syminfo.mintick * slippageTicksInput
+    float riskPerUnit = entryPrice - lockedStop
+    float qty = riskPerUnit > 0 ? riskDollarInput / riskPerUnit : na
+    bool entryValid = setupState == SETUP_ZONE_READY and priceInsideLockedZone and microBullDiv and not na(qty) and qty > 0 and entryPrice > lockedStop and not na(lockedTp1) and not na(lockedTp2)
+
+    if entryValid
+        strategy.entry("Long", strategy.long, qty=qty)
+        setupState := SETUP_IN_POSITION
+        partialExitPlaced := false
+        fullExitPlaced := false
+
+if strategy.position_size > 0
+    setupState := SETUP_IN_POSITION
+
+    if not partialExitPlaced and not na(lockedTp1) and not na(lockedStop)
+        strategy.exit("TP1", "Long", stop=lockedStop, limit=lockedTp1, qty_percent=50)
+        partialExitPlaced := true
+
+    if not fullExitPlaced and not na(lockedTp2) and not na(lockedStop)
+        strategy.exit("TP2", "Long", stop=lockedStop, limit=lockedTp2, qty_percent=50)
+        fullExitPlaced := true
+
+if strategy.position_size == 0 and strategy.position_size[1] > 0
+    shouldResetSetup := true
+
+if shouldResetSetup
+    setupState := SETUP_IDLE
+    lockedMidLow := na
+    lockedMidHigh := na
+    lockedFib50 := na
+    lockedFib618 := na
+    lockedFib66 := na
+    lockedTp1 := na
+    lockedTp2 := na
+    lockedStop := na
+    partialExitPlaced := false
+    fullExitPlaced := false
+
+plot(showDebugPlotsInput and isMicroChart ? lockedFib50 : na, "Fib 0.5", color=color.new(color.yellow, 0), linewidth=1, style=plot.style_linebr)
+plot(showDebugPlotsInput and isMicroChart ? lockedFib618 : na, "Fib 0.618", color=color.new(color.orange, 0), linewidth=1, style=plot.style_linebr)
+plot(showDebugPlotsInput and isMicroChart ? lockedFib66 : na, "Fib 0.66", color=color.new(color.red, 0), linewidth=1, style=plot.style_linebr)
+plot(showDebugPlotsInput and isMicroChart ? lockedMidLow : na, "中(P)有效低點", color=color.new(color.red, 50), linewidth=1, style=plot.style_linebr)
+plot(showDebugPlotsInput and isMicroChart ? lockedMidHigh : na, "中(P)有效高點", color=color.new(color.green, 50), linewidth=1, style=plot.style_linebr)
+plot(showDebugPlotsInput and isMicroChart ? lockedTp2 : na, "延伸均值目標", color=color.new(color.aqua, 0), linewidth=1, style=plot.style_linebr)
+
+plotshape(showDebugPlotsInput and isMicroChart and microBullDiv and setupState == SETUP_ZONE_READY, title="RSI Bullish Divergence", style=shape.triangleup, location=location.belowbar, color=color.new(color.lime, 0), size=size.tiny, text="RSI")
+bgcolor(showDebugPlotsInput and isMicroChart and setupState == SETUP_ZONE_READY ? color.new(color.green, 92) : na)
