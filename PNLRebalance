@@ -651,6 +651,30 @@ calculateRebalanceInfo(float nowRatio, float targetRatio, float remain, float to
     string rebalanceText = fm.fString(rebalanceValue, 0) + "\t【" + fm.ratioString(diffRatio) + "】"
     [diffRatio, rebalanceValue, rebalanceText]
 
+// 依幣價的整數部分位數決定數量顯示格式
+formatRebalanceQty(float qty, float price) =>
+    float absQty = math.abs(qty)
+    float absPrice = math.abs(price)
+    string output = if absPrice >= 10000
+        fm.fString(absQty, 3)
+    else if absPrice >= 1000
+        fm.fString(absQty, 2)
+    else if absPrice >= 100
+        fm.fString(absQty, 1)
+    else
+        fm.fString(math.round(absQty), 0)
+    output
+
+// 將再平衡金額轉成資產買賣數量文字
+appendRebalanceQtyText(string rebalanceText, float rebalanceValue, float price, bool needsUsdConversion, string unitLabel) =>
+    float convertedValue = needsUsdConversion ? math.abs(rebalanceValue) / pUsd_Twd : math.abs(rebalanceValue)
+    float qty = price > 0 ? convertedValue / price : na
+    string output = rebalanceText
+    if rebalanceValue != 0 and not na(qty)
+        string action = rebalanceValue > 0 ? "買進 " : "賣出 "
+        output += "\t" + action + formatRebalanceQty(qty, price) + " " + unitLabel
+    output
+
 // ============================================================================
 // 資產顯示函數
 // ============================================================================
@@ -1043,6 +1067,7 @@ color cryptoColor = math.abs(cryptoDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_
 // ============================================================================
 // 台股資產再平衡
 [_0050DiffRatio, _0050RebalanceValue, _0050RebalanceText] = calculateRebalanceInfo(now0050Ratio, _0050Ratio, remain0050, totalAssets)
+_0050RebalanceText := appendRebalanceQtyText(_0050RebalanceText, _0050RebalanceValue, p0050 * twdEx, false, "股")
 
 // 加密資產再平衡
 [btcDiffRatio, btcRebalanceValue, btcRebalaneText] = calculateRebalanceInfo(nowBTCRatio, btcRatio, remainBTC, totalAssets)
@@ -1050,6 +1075,11 @@ color cryptoColor = math.abs(cryptoDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_
 [adaDiffRatio, adaRebalanceValue, adaRebalaneText] = calculateRebalanceInfo(nowADARatio, adaRatio, remainADA, totalAssets)
 [bnbDiffRatio, bnbRebalanceValue, bnbRebalaneText] = calculateRebalanceInfo(nowBNBRatio, bnbRatio, remainBNB, totalAssets)
 [croDiffRatio, croRebalanceValue, croRebalaneText] = calculateRebalanceInfo(nowCRORatio, croRatio, remainCRO, totalAssets)
+btcRebalaneText := appendRebalanceQtyText(btcRebalaneText, btcRebalanceValue, pBTC, INPUT_DISPLAY_CURRENCY == TWD, "顆")
+ethRebalaneText := appendRebalanceQtyText(ethRebalaneText, ethRebalanceValue, pETH, INPUT_DISPLAY_CURRENCY == TWD, "顆")
+adaRebalaneText := appendRebalanceQtyText(adaRebalaneText, adaRebalanceValue, pADA, INPUT_DISPLAY_CURRENCY == TWD, "顆")
+bnbRebalaneText := appendRebalanceQtyText(bnbRebalaneText, bnbRebalanceValue, pBNB, INPUT_DISPLAY_CURRENCY == TWD, "顆")
+croRebalaneText := appendRebalanceQtyText(croRebalaneText, croRebalanceValue, pCRO, INPUT_DISPLAY_CURRENCY == TWD, "顆")
 // [arbDiffRatio, arbRebalanceValue, arbRebalaneText] = calculateRebalanceInfo(nowARBRatio, arbRatio, remainARB, totalAssets)
 // [opDiffRatio, opRebalanceValue, opRebalaneText] = calculateRebalanceInfo(nowOPRatio, opRatio, remainOP, totalAssets)
 
