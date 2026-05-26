@@ -48,21 +48,21 @@ var float CRO_CRYPTO_RATIO = 10
 // ============================================================================
 // 銀行現金設定
 // ============================================================================
-var float BANK1_AVAL = 8062 + 120000  // LineBank (TWD)
+var float BANK1_AVAL = 2193 + 100000  // LineBank (TWD)
 var float BANK2_AVAL = 0 + 0         // Bankee (TWD)  
-var float BANK3_AVAL = 35592           // 台新 (TWD)
-var float BANK4_AVAL = 5348            // 樂天 (TWD)
+var float BANK3_AVAL = 44044           // 台新 (TWD)
+var float BANK4_AVAL = 10569            // 樂天 (TWD)
 var float BITO_AVAL = 0                // 幣託 (USD)
 
 // ============================================================================
 // 交易所設定
 // ============================================================================
-var float PIONEX_OTHER_USD = 2000                       // 網格
+var float PIONEX_OTHER_USD = 0                       // 網格
 var float BYBIT_EXCHANGE_USD = (0 + 0) + 0 + 0        // bybit(主 + 副) + wulin
 var float BINANCE_EXCHANGE_USD = 0 + 0              // binance
-var float CRYPTO_DOT_COM_EXCHANGE_USD = 391            // EX.Crypto.com
+var float CRYPTO_DOT_COM_EXCHANGE_USD = 980            // EX.Crypto.com
 var float OKX_EXCHANGE_USD = (28 + 1470)                    // OKX
-var float PIONEX_EXCHANGE_USD = (12340 + 0 + PIONEX_OTHER_USD)  // 派網 (期限套利+交易帳戶+其餘)
+var float PIONEX_EXCHANGE_USD = (15621 + 0 + PIONEX_OTHER_USD)  // 派網 (期限套利+交易帳戶+其餘)
 var float KRAKEN_EXCHANGE_USD = 0                                // Kraken
 var float EXCHANGE_USD =
       BYBIT_EXCHANGE_USD +
@@ -77,7 +77,7 @@ var float EXCHANGE_USD =
 // 其他設定
 // ============================================================================
 var float VISA_AVAL = 24000        // Visa (USD) 出金
-var float DEBT = -652619 - 310993  // 負債(TWD)
+var float DEBT = -641014 - 306436  // 負債(TWD)
 
 // ============================================================================
 // 台股資產設定
@@ -92,12 +92,12 @@ var float _0050_INCOME = 344242
 // ============================================================================
 
 // === AUTO-GENERATED START ===
-// updated_at: 2026-04-25T03:49:15.315Z
+// updated_at: 2026-05-26T06:23:46.566Z
 var string[] symbols = array.from("BTC", "ETH", "ADA", "BNB", "CRO")
 var float[] buyQtys = array.from(0.5263, 8.61, 32448.8785, 16.54, 122800)
 var float[] buyCosts = array.from(24532, 19986, 10551.14, 7872.07, 14439.48)
-var float[] sellQtys = array.from(0.3263, 0.272993, 5299, 4.71, 20178)
-var float[] sellIncomes = array.from(9755.4, 11714.68, 5299, 5579, 5959.89)
+var float[] sellQtys = array.from(0.3263, 0.522993, 5299, 6.667, 20178)
+var float[] sellIncomes = array.from(9755.4, 12294.93, 5299, 6877.65, 5959.89)
 // === AUTO-GENERATED END ===
 
 // symbols 對應 index
