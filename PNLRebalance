@@ -1400,6 +1400,7 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2026, 3, 8, -341457)) //-10.5%
         array.push(rdArray, newData(2026, 4, 2, -346325)) //-10.7%
         array.push(rdArray, newData(2026, 4, 25, -206524)) //-6.4%
+        array.push(rdArray, newData(2026, 5, 26, -266784)) //-8.2%
 
 // 選擇要繪製的值（平滑化或原始值）
 plotValue = INPUT_SMOOTHING_ENABLED and not na(smoothedVariation) ? smoothedVariation : (not na(filledVariation) ? filledVariation : recordAssetsVariation)
