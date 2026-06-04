@@ -58,12 +58,12 @@ var float BITO_AVAL = 0                // 幣託 (USD)
 // 交易所設定
 // ============================================================================
 // === AUTO-GENERATED USD START ===
-// updated_at: 2026-06-04T05:36:53.419Z
+// updated_at: 2026-06-04T05:57:25.986Z
 var float BYBIT_EXCHANGE_USD = 0
 var float BINANCE_EXCHANGE_USD = 0
-var float CRYPTO_DOT_COM_EXCHANGE_USD = 0
-var float OKX_EXCHANGE_USD = 0
-var float PIONEX_EXCHANGE_USD = 0
+var float CRYPTO_DOT_COM_EXCHANGE_USD = 980
+var float OKX_EXCHANGE_USD = 28
+var float PIONEX_EXCHANGE_USD = 15000
 var float KRAKEN_EXCHANGE_USD = 0
 var float EXCHANGE_USD =
       BYBIT_EXCHANGE_USD +
@@ -94,12 +94,12 @@ var float _0050_INCOME = 344242
 // ============================================================================
 
 // === AUTO-GENERATED START ===
-// updated_at: 2026-05-26T06:23:46.566Z
+// updated_at: 2026-06-04T05:57:25.986Z
 var string[] symbols = array.from("BTC", "ETH", "ADA", "BNB", "CRO")
-var float[] buyQtys = array.from(0.5263, 8.61, 32448.8785, 16.54, 122800)
-var float[] buyCosts = array.from(24532, 19986, 10551.14, 7872.07, 14439.48)
-var float[] sellQtys = array.from(0.3263, 0.522993, 5299, 6.667, 20178)
-var float[] sellIncomes = array.from(9755.4, 12294.93, 5299, 6877.65, 5959.89)
+var float[] buyQtys = array.from(0.5995, 8.4969, 32448.8785, 16.54, 122800)
+var float[] buyCosts = array.from(29416, 19986, 10551.14, 7872.07, 14439.48)
+var float[] sellQtys = array.from(0.3263, 1.931373, 5299, 6.667, 20178)
+var float[] sellIncomes = array.from(9755.4, 15139.85, 5299, 6877.65, 5959.89)
 // === AUTO-GENERATED END ===
 
 // symbols 對應 index
