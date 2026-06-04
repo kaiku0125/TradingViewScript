@@ -13,22 +13,25 @@ Required inputs:
 
 If either value is missing, ask the user before running the sync.
 
-1. Treat Google Sheets as the source of truth for holdings.
+1. Treat Google Sheets as the source of truth for both holdings and exchange usd balances.
 2. Do not run `update_holdings_pine.py` until the user has provided a token.
 3. If the user only says `Update Holdings`, ask exactly:
    - `1. token=?`
    - `2. create commit after sync: yes/no?`
-4. Use `update_holdings_pine.py` to fetch holdings from the Google Apps Script endpoint.
+4. Use `update_holdings_pine.py` to fetch holdings and usd balances from the Google Apps Script endpoint.
 5. By default, update both:
    - `generated/holdings.pine`
    - `PNLRebalance`
-6. Replace only the block between:
+6. Replace the crypto holdings block between:
    - `// === AUTO-GENERATED START ===`
    - `// === AUTO-GENERATED END ===`
-7. Do not manually rewrite holdings arrays if they can be produced by the script.
-8. Do not modify non-auto-generated portfolio logic unless the user explicitly asks.
-9. Create a commit after sync only if the user explicitly says yes.
-10. If the user wants a commit but does not specify a commit message, use:
+7. Replace the exchange usd block between:
+   - `// === AUTO-GENERATED USD START ===`
+   - `// === AUTO-GENERATED USD END ===`
+8. Do not manually rewrite holdings arrays or exchange usd values if they can be produced by the script.
+9. Missing exchanges in the `usd` sheet should default to `0`.
+10. Create a commit after sync only if the user explicitly says yes.
+11. If the user wants a commit but does not specify a commit message, use:
     - `[update] Update assets`
 
 ## Main Workflow: Update Pnl(更新損益)
@@ -87,9 +90,11 @@ python3 update_pnl_history.py --pnl-value "<CURRENT_PNL>"
 After updating holdings, verify:
 
 1. `generated/holdings.pine` was regenerated.
-2. `PNLRebalance` auto-generated block was updated.
-3. The generated arrays match the expected symbols and values from the payload.
-4. No `input.float(defval=runtime_value)` pattern was introduced for generated positions or costs.
+2. `PNLRebalance` crypto holdings auto-generated block was updated.
+3. `PNLRebalance` exchange usd auto-generated block was updated.
+4. The generated arrays match the expected symbols and values from the payload.
+5. The generated exchange usd values match the `usd` sheet, and missing exchanges default to `0`.
+6. No `input.float(defval=runtime_value)` pattern was introduced for generated positions or costs.
 
 After updating pnl, verify:
 

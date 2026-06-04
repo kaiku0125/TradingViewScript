@@ -60,20 +60,66 @@ const HoldingsService = (() => {
       }))
       .filter(item => item.symbol);
 
+    return holdings;
+  }
+
+  function getUsdData() {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const usdSheet = ss.getSheetByName("usd");
+
+    if (!usdSheet) {
+      throw new Error('找不到 "usd" 工作表');
+    }
+
+    const data = usdSheet.getDataRange().getValues();
+
+    if (data.length < 2) {
+      throw new Error('"usd" 工作表沒有資料');
+    }
+
+    const headers = data[0].map(h => String(h).trim());
+    const rows = data.slice(1);
+
+    const colIndex = {};
+    headers.forEach((header, index) => {
+      colIndex[header] = index;
+    });
+
+    const requiredColumns = [
+      "exchange",
+      "usd_balance"
+    ];
+
+    requiredColumns.forEach(col => {
+      if (colIndex[col] === undefined) {
+        throw new Error(`usd 缺少欄位: ${col}`);
+      }
+    });
+
+    return rows
+      .map(row => ({
+        exchange: String(row[colIndex["exchange"]] || "").trim().toLowerCase(),
+        usd_balance: Number(formatNumber(row[colIndex["usd_balance"]] || 0, 2))
+      }))
+      .filter(item => item.exchange);
+  }
+
+  function getPortfolioData() {
     return {
       updated_at: new Date().toISOString(),
-      holdings
+      holdings: getHoldingsData(),
+      usd_balances: getUsdData()
     };
   }
 
   return {
-    getHoldingsData
+    getPortfolioData
   };
 })();
 
 function debugGetHoldingsData() {
   try {
-    const result = HoldingsService.getHoldingsData();
+    const result = HoldingsService.getPortfolioData();
 
     Logger.log("=== debugGetHoldingsData start ===");
     Logger.log(JSON.stringify(result, null, 2));
@@ -96,7 +142,6 @@ function doGet(e) {
   }
 
   return ContentService
-    .createTextOutput(JSON.stringify(HoldingsService.getHoldingsData()))
+    .createTextOutput(JSON.stringify(HoldingsService.getPortfolioData()))
     .setMimeType(ContentService.MimeType.JSON);
 }
-

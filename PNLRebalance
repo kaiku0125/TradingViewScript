@@ -57,13 +57,14 @@ var float BITO_AVAL = 0                // 幣託 (USD)
 // ============================================================================
 // 交易所設定
 // ============================================================================
-var float PIONEX_OTHER_USD = 0                       // 網格
-var float BYBIT_EXCHANGE_USD = (0 + 0) + 0 + 0        // bybit(主 + 副) + wulin
-var float BINANCE_EXCHANGE_USD = 0 + 0              // binance
-var float CRYPTO_DOT_COM_EXCHANGE_USD = 980            // EX.Crypto.com
-var float OKX_EXCHANGE_USD = (28 + 1470)                    // OKX
-var float PIONEX_EXCHANGE_USD = (15621 + 0 + PIONEX_OTHER_USD)  // 派網 (期限套利+交易帳戶+其餘)
-var float KRAKEN_EXCHANGE_USD = 0                                // Kraken
+// === AUTO-GENERATED USD START ===
+// updated_at: 2026-06-04T05:36:53.419Z
+var float BYBIT_EXCHANGE_USD = 0
+var float BINANCE_EXCHANGE_USD = 0
+var float CRYPTO_DOT_COM_EXCHANGE_USD = 0
+var float OKX_EXCHANGE_USD = 0
+var float PIONEX_EXCHANGE_USD = 0
+var float KRAKEN_EXCHANGE_USD = 0
 var float EXCHANGE_USD =
       BYBIT_EXCHANGE_USD +
       BINANCE_EXCHANGE_USD +
@@ -71,6 +72,7 @@ var float EXCHANGE_USD =
       OKX_EXCHANGE_USD +
       PIONEX_EXCHANGE_USD +
       KRAKEN_EXCHANGE_USD
+// === AUTO-GENERATED USD END ===
 
 
 // ============================================================================
