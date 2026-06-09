@@ -1,2 +1,3 @@
 generated/
 .pycache/
+.env.local

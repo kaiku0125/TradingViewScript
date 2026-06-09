@@ -4,11 +4,13 @@ import argparse
 import ast
 import json
 import math
+import os
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
+from urllib.parse import urlencode
 from urllib.request import urlopen
 from zoneinfo import ZoneInfo
 
@@ -19,6 +21,7 @@ import update_pnl_history as pnl_history
 DEFAULT_PNL_FILE = Path("PNLRebalance")
 DEFAULT_GENERATED_FILE = Path("generated/holdings.pine")
 DEFAULT_COMMIT_MESSAGE = "[update] Update assets"
+DEFAULT_ENV_FILE = Path(".env.local")
 TAIPEI_TZ = ZoneInfo("Asia/Taipei")
 CRYPTO_PRICE_SOURCE_MAP = {
     "BTC": ("BTC/USD", "https://api.coinbase.com/v2/prices/BTC-USD/spot", ("data", "amount")),
@@ -60,6 +63,22 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--commit", action="store_true")
     parser.add_argument("--commit-message", default=DEFAULT_COMMIT_MESSAGE)
     return parser.parse_args()
+
+
+def load_local_env(path: Path) -> None:
+    if not path.exists():
+        return
+
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if value and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1]
+        os.environ.setdefault(key, value)
 
 
 def fetch_json(url: str) -> Any:
@@ -275,8 +294,9 @@ def write_pnl_history(pnl_path: Path, pnl_value: float, ratio: float) -> str:
     content = pnl_path.read_text(encoding="utf-8")
     year, month, day = pnl_history.get_default_date()
     comment = format_ratio(ratio)
+    rounded_pnl_value = round(pnl_value)
     updated_content, summary = pnl_history.update_history_content(
-        content, pnl_value, year, month, day, comment
+        content, rounded_pnl_value, year, month, day, comment
     )
     pnl_path.write_text(updated_content, encoding="utf-8")
     return summary
@@ -291,6 +311,98 @@ def maybe_commit(pnl_path: Path, message: str) -> bool:
     return True
 
 
+def build_summary_lines(
+    holdings_updated: bool,
+    generated_updated: bool,
+    pnl_updated: bool,
+    commit_created: bool,
+    holdings_summary: list[str],
+    usd_summary: list[str],
+    pnl_history_summary: str,
+    snapshot: MarketSnapshot,
+) -> list[str]:
+    taipei_now = datetime.now(TAIPEI_TZ).strftime("%Y-%m-%d")
+    pnl_content = DEFAULT_PNL_FILE.read_text(encoding="utf-8")
+    lines = [
+        "Weekly holdings and pnl sync",
+        f"Date: {taipei_now}",
+        f"Holdings fetched successfully: yes",
+        f"generated/holdings.pine updated: {'yes' if generated_updated else 'no'}",
+        f"PNLRebalance updated: {'yes' if pnl_updated else 'no'}",
+        f"Commit created: {'yes' if commit_created else 'no'}",
+    ]
+    if not holdings_updated:
+        lines.append("Holdings changed: no")
+
+    lines.extend(
+        [
+            "",
+            "Price snapshot:",
+        ]
+    )
+    for label, value in snapshot.prices.items():
+        lines.append(f"{label} = {format_price(value)}")
+
+    lines.extend(
+        [
+            "",
+            f"speculationPNL = {format_twd(snapshot.speculation_pnl_twd)}",
+            f"Ratio = {format_ratio(snapshot.speculation_pnl_ratio)}",
+            "",
+            "Open positions:",
+        ]
+    )
+    for label, value in snapshot.positions.items():
+        if is_meaningful_zero(value) and label != "0050":
+            continue
+        lines.append(f"{label}: {format_price(value)}")
+
+    lines.extend(["", "Unrealized pnl by asset:"])
+    for label, value in snapshot.unrealized_pnl_twd.items():
+        lines.append(f"{label}: {format_signed_twd(value)}")
+
+    if snapshot.unsupported_symbols:
+        lines.extend(["", "Unsupported symbols:"])
+        for symbol in snapshot.unsupported_symbols:
+            lines.append(f"- {symbol}")
+
+    lines.extend(
+        [
+            "",
+            "Key inputs:",
+            f"Exchange USD balance: {format_price(snapshot.exchange_usd)} USD",
+            f"Cash: {snapshot.cash_twd:,.0f} TWD",
+            f"ALL_CRYPTO_COST = {format_price(parse_numeric_constant(pnl_content, 'ALL_CRYPTO_COST'))}",
+            f"ALL_STOCKS_COST = {format_price(parse_numeric_constant(pnl_content, 'ALL_STOCKS_COST'))}",
+            f"INPUT_CRYPTO_COM_VISA = {format_price(parse_numeric_constant(pnl_content, 'VISA_AVAL'))}",
+            "",
+            "Holdings summary:",
+        ]
+    )
+    for line in holdings_summary:
+        lines.append(f"- {line}")
+    lines.append("USD summary:")
+    for line in usd_summary:
+        lines.append(f"- {line}")
+    lines.append("PNL history summary:")
+    lines.append(f"- {pnl_history_summary}")
+    return lines
+
+
+def send_telegram_message(message: str) -> None:
+    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+    if not bot_token or not chat_id:
+        return
+
+    payload = urlencode({"chat_id": chat_id, "text": message})
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    with urlopen(url, data=payload.encode("utf-8")) as response:
+        body = json.loads(response.read().decode("utf-8"))
+    if not body.get("ok"):
+        raise RuntimeError(f"Telegram sendMessage failed: {body}")
+
+
 def print_summary(
     holdings_updated: bool,
     generated_updated: bool,
@@ -301,56 +413,21 @@ def print_summary(
     pnl_history_summary: str,
     snapshot: MarketSnapshot,
 ) -> None:
-    taipei_now = datetime.now(TAIPEI_TZ).strftime("%Y-%m-%d")
-    pnl_content = DEFAULT_PNL_FILE.read_text(encoding="utf-8")
-    print(f"Holdings fetched successfully: yes")
-    print(f"generated/holdings.pine updated: {'yes' if generated_updated else 'no'}")
-    print(f"PNLRebalance updated: {'yes' if pnl_updated else 'no'}")
-    print(f"Commit created: {'yes' if commit_created else 'no'}")
-    if not holdings_updated:
-        print("Holdings changed: no")
-    print("")
-    print(f"Price snapshot for {taipei_now}:")
-    for label, value in snapshot.prices.items():
-        print(f"{label} = {format_price(value)}")
-    print("")
-    print('Current pnl mapped to "speculationPNL":')
-    print(format_twd(snapshot.speculation_pnl_twd))
-    print(f"Ratio = {format_ratio(snapshot.speculation_pnl_ratio)}")
-    print("")
-    print("Open positions:")
-    for label, value in snapshot.positions.items():
-        if is_meaningful_zero(value) and label != "0050":
-            continue
-        print(f"{label}: {format_price(value)}")
-    print("")
-    print("Unrealized pnl by asset:")
-    for label, value in snapshot.unrealized_pnl_twd.items():
-        print(f"{label}: {format_signed_twd(value)}")
-    if snapshot.unsupported_symbols:
-        print("")
-        print("Unsupported symbols:")
-        for symbol in snapshot.unsupported_symbols:
-            print(f"- {symbol}")
-    print("")
-    print("Key inputs:")
-    print(f"Exchange USD balance: {format_price(snapshot.exchange_usd)} USD")
-    print(f"Cash: {snapshot.cash_twd:,.0f} TWD")
-    print(f"ALL_CRYPTO_COST = {format_price(parse_numeric_constant(pnl_content, 'ALL_CRYPTO_COST'))}")
-    print(f"ALL_STOCKS_COST = {format_price(parse_numeric_constant(pnl_content, 'ALL_STOCKS_COST'))}")
-    print(f"INPUT_CRYPTO_COM_VISA = {format_price(parse_numeric_constant(pnl_content, 'VISA_AVAL'))}")
-    print("")
-    print("Holdings summary:")
-    for line in holdings_summary:
-        print(f"- {line}")
-    print("USD summary:")
-    for line in usd_summary:
-        print(f"- {line}")
-    print("PNL history summary:")
-    print(f"- {pnl_history_summary}")
+    for line in build_summary_lines(
+        holdings_updated=holdings_updated,
+        generated_updated=generated_updated,
+        pnl_updated=pnl_updated,
+        commit_created=commit_created,
+        holdings_summary=holdings_summary,
+        usd_summary=usd_summary,
+        pnl_history_summary=pnl_history_summary,
+        snapshot=snapshot,
+    ):
+        print(line)
 
 
 def main() -> int:
+    load_local_env(DEFAULT_ENV_FILE)
     args = parse_args()
     output_path = Path(args.output)
     pnl_path = Path(args.pnl_file)
@@ -385,7 +462,7 @@ def main() -> int:
     if args.commit and holdings_changed:
         commit_created = maybe_commit(pnl_path, args.commit_message)
 
-    print_summary(
+    summary_lines = build_summary_lines(
         holdings_updated=holdings_changed,
         generated_updated=True,
         pnl_updated=True,
@@ -395,8 +472,15 @@ def main() -> int:
         pnl_history_summary=pnl_history_summary,
         snapshot=snapshot,
     )
+    print("\n".join(summary_lines))
+    send_telegram_message("\n".join(summary_lines))
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except Exception as exc:
+        load_local_env(DEFAULT_ENV_FILE)
+        send_telegram_message(f"Weekly holdings and pnl sync failed\nError: {exc}")
+        raise
