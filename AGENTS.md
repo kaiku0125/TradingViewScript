@@ -74,6 +74,31 @@ Preferred command for pnl sync:
 python3 update_pnl_history.py --pnl-value "<CURRENT_PNL>"
 ```
 
+Preferred command for the full weekly sync workflow:
+
+```bash
+python3 weekly_holdings_pnl_sync.py --token "0125" --commit
+```
+
+## Manual Trigger Alias
+If the user types `/sync`, treat it as a request to run the full weekly sync workflow immediately.
+
+- Run:
+
+```bash
+python3 weekly_holdings_pnl_sync.py --token "0125" --commit
+```
+
+- This should:
+  - fetch holdings from Google Sheets
+  - update `generated/holdings.pine`
+  - update `PNLRebalance`
+  - calculate current `speculationPNL`
+  - update pnl history
+  - send Telegram summary on a best-effort basis
+  - create a commit when holdings changed, usd balances changed, or today's pnl history has not been recorded yet
+  - skip commit when holdings and usd balances are unchanged and today's pnl history already exists
+
 ## PNLRebalance Rules
 - `PNLRebalance` reads holdings from the auto-generated arrays.
 - For crypto assets, use the generated arrays as the canonical source.

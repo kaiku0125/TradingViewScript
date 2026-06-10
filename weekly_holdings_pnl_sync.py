@@ -376,6 +376,14 @@ def write_pnl_history(pnl_path: Path, pnl_value: float, ratio: float) -> str:
     return summary
 
 
+def has_history_entry_for_date(pnl_path: Path, year: int, month: int, day: int) -> bool:
+    content = pnl_path.read_text(encoding="utf-8")
+    lines = content.splitlines()
+    start_index, end_index = pnl_history.find_history_block(lines)
+    entries = pnl_history.parse_history_entries(lines, start_index, end_index)
+    return any(entry.same_date(year, month, day) for entry in entries)
+
+
 def maybe_commit(pnl_path: Path, message: str) -> bool:
     subprocess.run(["git", "add", str(pnl_path)], check=True)
     diff_result = subprocess.run(["git", "diff", "--cached", "--quiet"])
@@ -534,6 +542,7 @@ def main() -> int:
     current_holdings_hash = stable_hash(current_holdings)
     current_usd_hash = stable_hash(current_usd)
     checked_at = now_taipei_iso()
+    history_year, history_month, history_day = pnl_history.get_default_date()
     holdings_changed = previous_state.last_holdings_hash != current_holdings_hash
     usd_changed = previous_state.last_usd_hash != current_usd_hash
 
@@ -550,6 +559,10 @@ def main() -> int:
     holdings_summary = holdings_sync.summarize_holdings_changes(previous_holdings, current_holdings)
     usd_summary = holdings_sync.summarize_usd_changes(previous_usd, current_usd)
     source_changed = holdings_changed or usd_changed
+    has_today_history = has_history_entry_for_date(
+        pnl_path, history_year, history_month, history_day
+    )
+    should_write_pnl_history = source_changed or not has_today_history
 
     generated_updated = False
     pnl_updated = False
@@ -566,13 +579,17 @@ def main() -> int:
         pnl_updated = True
 
     snapshot = calculate_market_snapshot(payload, pnl_path.read_text(encoding="utf-8"))
-    if source_changed:
+    if should_write_pnl_history:
         pnl_history_summary = write_pnl_history(
             pnl_path, snapshot.speculation_pnl_twd, snapshot.speculation_pnl_ratio
         )
+        pnl_updated = True
+    elif not source_changed:
+        pnl_history_summary = "skipped because today's pnl history already exists"
 
     commit_created = False
-    if args.commit and source_changed:
+    should_commit = source_changed or not has_today_history
+    if args.commit and should_commit:
         commit_created = maybe_commit(pnl_path, args.commit_message)
 
     save_state(state_path, state)
