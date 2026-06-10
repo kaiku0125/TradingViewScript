@@ -6,10 +6,11 @@ import json
 import math
 import os
 import subprocess
+import hashlib
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from urllib.parse import urlencode
 from urllib.request import urlopen
 from zoneinfo import ZoneInfo
@@ -22,6 +23,7 @@ DEFAULT_PNL_FILE = Path("PNLRebalance")
 DEFAULT_GENERATED_FILE = Path("generated/holdings.pine")
 DEFAULT_COMMIT_MESSAGE = "[update] Update assets"
 DEFAULT_ENV_FILE = Path(".env.local")
+DEFAULT_STATE_FILE = Path(".weekly_holdings_pnl_sync_state.json")
 TAIPEI_TZ = ZoneInfo("Asia/Taipei")
 CRYPTO_PRICE_SOURCE_MAP = {
     "BTC": ("BTC/USD", "https://api.coinbase.com/v2/prices/BTC-USD/spot", ("data", "amount")),
@@ -52,6 +54,15 @@ class MarketSnapshot:
     speculation_pnl_ratio: float
 
 
+@dataclass
+class SyncState:
+    last_checked_at: Optional[str]
+    last_source_updated_at: Optional[str]
+    last_holdings_hash: Optional[str]
+    last_usd_hash: Optional[str]
+    last_result: Optional[str]
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Update holdings, compute current speculationPNL, append pnl history, and conditionally commit."
@@ -60,6 +71,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--url", default=holdings_sync.DEFAULT_URL)
     parser.add_argument("--output", default=str(DEFAULT_GENERATED_FILE))
     parser.add_argument("--pnl-file", default=str(DEFAULT_PNL_FILE))
+    parser.add_argument("--state-file", default=str(DEFAULT_STATE_FILE))
     parser.add_argument("--commit", action="store_true")
     parser.add_argument("--commit-message", default=DEFAULT_COMMIT_MESSAGE)
     return parser.parse_args()
@@ -86,11 +98,63 @@ def fetch_json(url: str) -> Any:
         return json.loads(response.read().decode("utf-8"))
 
 
+def stable_hash(value: Any) -> str:
+    payload = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def load_state(path: Path) -> SyncState:
+    if not path.exists():
+        return SyncState(None, None, None, None, None)
+
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return SyncState(
+        last_checked_at=data.get("last_checked_at"),
+        last_source_updated_at=data.get("last_source_updated_at"),
+        last_holdings_hash=data.get("last_holdings_hash"),
+        last_usd_hash=data.get("last_usd_hash"),
+        last_result=data.get("last_result"),
+    )
+
+
+def save_state(path: Path, state: SyncState) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "last_checked_at": state.last_checked_at,
+                "last_source_updated_at": state.last_source_updated_at,
+                "last_holdings_hash": state.last_holdings_hash,
+                "last_usd_hash": state.last_usd_hash,
+                "last_result": state.last_result,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def now_taipei_iso() -> str:
+    return datetime.now(TAIPEI_TZ).isoformat(timespec="seconds")
+
+
 def extract_nested_value(payload: Any, path: tuple[str, ...]) -> float:
     current = payload
     for key in path:
         current = current[key]
     return float(current)
+
+
+def first_valid_float(values: list[Any], field_name: str) -> float:
+    for value in values:
+        if value in (None, "", "-"):
+            continue
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            continue
+    raise ValueError(f"Could not find a valid float for {field_name}")
 
 
 def fetch_market_prices(symbols: list[str]) -> tuple[Dict[str, float], Dict[str, str], list[str]]:
@@ -112,7 +176,17 @@ def fetch_market_prices(symbols: list[str]) -> tuple[Dict[str, float], Dict[str,
     msg_array = twse.get("msgArray", [])
     if not msg_array:
         raise ValueError("TWSE response missing msgArray for 0050")
-    prices["0050"] = float(msg_array[0]["z"])
+    twse_row = msg_array[0]
+    prices["0050"] = first_valid_float(
+        [
+            twse_row.get("z"),
+            twse_row.get("y"),
+            twse_row.get("o"),
+            twse_row.get("h"),
+            twse_row.get("l"),
+        ],
+        "0050",
+    )
 
     usd_rates = fetch_json(FIXED_PRICE_SOURCE_MAP["USD/TWD"][1])
     twd_rate = usd_rates.get("rates", {}).get("TWD")
@@ -320,12 +394,18 @@ def build_summary_lines(
     usd_summary: list[str],
     pnl_history_summary: str,
     snapshot: MarketSnapshot,
+    state_result: str,
+    source_updated_at: Optional[str],
+    state_checked_at: str,
 ) -> list[str]:
     taipei_now = datetime.now(TAIPEI_TZ).strftime("%Y-%m-%d")
     pnl_content = DEFAULT_PNL_FILE.read_text(encoding="utf-8")
     lines = [
         "Weekly holdings and pnl sync",
         f"Date: {taipei_now}",
+        f"Last checked at: {state_checked_at}",
+        f"Source updated_at: {source_updated_at or 'unknown'}",
+        f"State result: {state_result}",
         f"Holdings fetched successfully: yes",
         f"generated/holdings.pine updated: {'yes' if generated_updated else 'no'}",
         f"PNLRebalance updated: {'yes' if pnl_updated else 'no'}",
@@ -403,6 +483,13 @@ def send_telegram_message(message: str) -> None:
         raise RuntimeError(f"Telegram sendMessage failed: {body}")
 
 
+def notify_telegram_best_effort(message: str) -> None:
+    try:
+        send_telegram_message(message)
+    except Exception as exc:
+        print(f"Telegram notification skipped: {exc}")
+
+
 def print_summary(
     holdings_updated: bool,
     generated_updated: bool,
@@ -431,9 +518,11 @@ def main() -> int:
     args = parse_args()
     output_path = Path(args.output)
     pnl_path = Path(args.pnl_file)
+    state_path = Path(args.state_file)
 
     previous_holdings = holdings_sync.load_existing_holdings(output_path)
     previous_usd = holdings_sync.load_existing_usd(output_path)
+    previous_state = load_state(state_path)
 
     payload = holdings_sync.fetch_holdings(args.url, args.token)
     if payload.get("error"):
@@ -441,39 +530,68 @@ def main() -> int:
 
     current_holdings = payload.get("holdings", [])
     current_usd = holdings_sync.build_usd_snapshot(payload)
-    holdings_block = holdings_sync.build_holdings_pine(payload)
-    usd_block = holdings_sync.build_usd_pine(payload)
-    output_content = holdings_sync.build_output_content(holdings_block, usd_block)
+    source_updated_at = payload.get("updated_at")
+    current_holdings_hash = stable_hash(current_holdings)
+    current_usd_hash = stable_hash(current_usd)
+    checked_at = now_taipei_iso()
+    holdings_changed = previous_state.last_holdings_hash != current_holdings_hash
+    usd_changed = previous_state.last_usd_hash != current_usd_hash
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(output_content, encoding="utf-8")
-    holdings_sync.update_pnl_file(pnl_path, holdings_block, usd_block)
+    state_result = "changed" if (holdings_changed or usd_changed) else "no_change"
 
-    snapshot = calculate_market_snapshot(payload, pnl_path.read_text(encoding="utf-8"))
-    pnl_history_summary = write_pnl_history(
-        pnl_path, snapshot.speculation_pnl_twd, snapshot.speculation_pnl_ratio
+    state = SyncState(
+        last_checked_at=checked_at,
+        last_source_updated_at=source_updated_at,
+        last_holdings_hash=current_holdings_hash,
+        last_usd_hash=current_usd_hash,
+        last_result=state_result,
     )
 
     holdings_summary = holdings_sync.summarize_holdings_changes(previous_holdings, current_holdings)
     usd_summary = holdings_sync.summarize_usd_changes(previous_usd, current_usd)
-    holdings_changed = any("No holdings values changed" not in line for line in holdings_summary)
+    source_changed = holdings_changed or usd_changed
+
+    generated_updated = False
+    pnl_updated = False
+    holdings_block = holdings_sync.build_holdings_pine(payload)
+    usd_block = holdings_sync.build_usd_pine(payload)
+    pnl_history_summary = "skipped because source data did not change"
+
+    if source_changed:
+        output_content = holdings_sync.build_output_content(holdings_block, usd_block)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(output_content, encoding="utf-8")
+        holdings_sync.update_pnl_file(pnl_path, holdings_block, usd_block)
+        generated_updated = True
+        pnl_updated = True
+
+    snapshot = calculate_market_snapshot(payload, pnl_path.read_text(encoding="utf-8"))
+    if source_changed:
+        pnl_history_summary = write_pnl_history(
+            pnl_path, snapshot.speculation_pnl_twd, snapshot.speculation_pnl_ratio
+        )
 
     commit_created = False
-    if args.commit and holdings_changed:
+    if args.commit and source_changed:
         commit_created = maybe_commit(pnl_path, args.commit_message)
 
+    save_state(state_path, state)
+
     summary_lines = build_summary_lines(
-        holdings_updated=holdings_changed,
-        generated_updated=True,
-        pnl_updated=True,
+        holdings_updated=source_changed,
+        generated_updated=generated_updated,
+        pnl_updated=pnl_updated,
         commit_created=commit_created,
         holdings_summary=holdings_summary,
         usd_summary=usd_summary,
         pnl_history_summary=pnl_history_summary,
         snapshot=snapshot,
+        state_result=state_result,
+        source_updated_at=source_updated_at,
+        state_checked_at=checked_at,
     )
     print("\n".join(summary_lines))
-    send_telegram_message("\n".join(summary_lines))
+    notify_telegram_best_effort("\n".join(summary_lines))
     return 0
 
 
@@ -482,5 +600,5 @@ if __name__ == "__main__":
         raise SystemExit(main())
     except Exception as exc:
         load_local_env(DEFAULT_ENV_FILE)
-        send_telegram_message(f"Weekly holdings and pnl sync failed\nError: {exc}")
+        notify_telegram_best_effort(f"Weekly holdings and pnl sync failed\nError: {exc}")
         raise

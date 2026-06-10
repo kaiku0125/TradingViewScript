@@ -1,3 +1,4 @@
 generated/
 .pycache/
 .env.local
+.weekly_holdings_pnl_sync_state.json
