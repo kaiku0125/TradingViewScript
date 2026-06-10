@@ -58,11 +58,11 @@ var float BITO_AVAL = 0                // 幣託 (USD)
 // 交易所設定
 // ============================================================================
 // === AUTO-GENERATED USD START ===
-// updated_at: 2026-06-04T05:57:25.986Z
+// updated_at: 2026-06-10T05:14:00.778Z
 var float BYBIT_EXCHANGE_USD = 0
 var float BINANCE_EXCHANGE_USD = 0
 var float CRYPTO_DOT_COM_EXCHANGE_USD = 980
-var float OKX_EXCHANGE_USD = 28
+var float OKX_EXCHANGE_USD = 0
 var float PIONEX_EXCHANGE_USD = 15000
 var float KRAKEN_EXCHANGE_USD = 0
 var float EXCHANGE_USD =
@@ -94,10 +94,10 @@ var float _0050_INCOME = 344242
 // ============================================================================
 
 // === AUTO-GENERATED START ===
-// updated_at: 2026-06-04T05:57:25.986Z
+// updated_at: 2026-06-10T05:14:00.778Z
 var string[] symbols = array.from("BTC", "ETH", "ADA", "BNB", "CRO")
-var float[] buyQtys = array.from(0.5995, 8.4969, 32448.8785, 16.54, 122800)
-var float[] buyCosts = array.from(29416, 19986, 10551.14, 7872.07, 14439.48)
+var float[] buyQtys = array.from(0.6, 8.4969, 32448.8785, 16.54, 122800)
+var float[] buyCosts = array.from(29445, 19986, 10551.14, 7872.07, 14439.48)
 var float[] sellQtys = array.from(0.3263, 1.931373, 5299, 6.667, 20178)
 var float[] sellIncomes = array.from(9755.4, 15139.85, 5299, 6877.65, 5959.89)
 // === AUTO-GENERATED END ===
@@ -1404,6 +1404,7 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2026, 4, 25, -206524)) //-6.4%
         array.push(rdArray, newData(2026, 5, 26, -266784)) //-8.2%
         array.push(rdArray, newData(2026, 6, 4, -512191)) //-15.8%
+        array.push(rdArray, newData(2026, 6, 10, -601616)) //-18.56%
 
 // 選擇要繪製的值（平滑化或原始值）
 plotValue = INPUT_SMOOTHING_ENABLED and not na(smoothedVariation) ? smoothedVariation : (not na(filledVariation) ? filledVariation : recordAssetsVariation)
