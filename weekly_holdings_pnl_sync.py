@@ -24,6 +24,7 @@ DEFAULT_GENERATED_FILE = Path("generated/holdings.pine")
 DEFAULT_COMMIT_MESSAGE = "[update] Update assets"
 DEFAULT_ENV_FILE = Path(".env.local")
 DEFAULT_STATE_FILE = Path(".weekly_holdings_pnl_sync_state.json")
+EXPECTED_BRANCH = "update/routine"
 TAIPEI_TZ = ZoneInfo("Asia/Taipei")
 CRYPTO_PRICE_SOURCE_MAP = {
     "BTC": ("BTC/USD", "https://api.coinbase.com/v2/prices/BTC-USD/spot", ("data", "amount")),
@@ -137,6 +138,49 @@ def save_state(path: Path, state: SyncState) -> None:
 
 def now_taipei_iso() -> str:
     return datetime.now(TAIPEI_TZ).isoformat(timespec="seconds")
+
+
+def get_current_branch() -> str:
+    result = subprocess.run(
+        ["git", "branch", "--show-current"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
+
+def worktree_is_dirty() -> bool:
+    result = subprocess.run(
+        ["git", "status", "--porcelain"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return bool(result.stdout.strip())
+
+
+def branch_exists(branch_name: str) -> bool:
+    result = subprocess.run(
+        ["git", "branch", "--list", branch_name],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return bool(result.stdout.strip())
+
+
+def ensure_expected_branch() -> None:
+    current_branch = get_current_branch()
+    if current_branch != EXPECTED_BRANCH:
+        if worktree_is_dirty():
+            raise SystemExit(
+                f"Cannot switch to '{EXPECTED_BRANCH}' from '{current_branch}' because the worktree has uncommitted changes."
+            )
+        if branch_exists(EXPECTED_BRANCH):
+            subprocess.run(["git", "checkout", EXPECTED_BRANCH], check=True)
+        else:
+            subprocess.run(["git", "checkout", "-b", EXPECTED_BRANCH], check=True)
 
 
 def extract_nested_value(payload: Any, path: tuple[str, ...]) -> float:
@@ -523,6 +567,7 @@ def print_summary(
 
 def main() -> int:
     load_local_env(DEFAULT_ENV_FILE)
+    ensure_expected_branch()
     args = parse_args()
     output_path = Path(args.output)
     pnl_path = Path(args.pnl_file)
