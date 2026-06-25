@@ -80,6 +80,12 @@ Preferred command for the full weekly sync workflow:
 python3 weekly_holdings_pnl_sync.py --token "0125" --commit
 ```
 
+Preferred command for trade history sync:
+
+```bash
+python3 trade_history/update_trade_history.py
+```
+
 ## Manual Trigger Alias
 If the user types `/sync`, treat it as a request to run the full weekly sync workflow immediately.
 
@@ -98,6 +104,55 @@ python3 weekly_holdings_pnl_sync.py --token "0125" --commit
   - send Telegram summary on a best-effort basis
   - create a commit when holdings changed, usd balances changed, or today's pnl history has not been recorded yet
   - skip commit when holdings and usd balances are unchanged and today's pnl history already exists
+
+If the user types `/更新交易紀錄`, treat it as a request to update local trade history artifacts immediately.
+
+- Run:
+
+```bash
+python3 trade_history/update_trade_history.py
+```
+
+- This should:
+  - refresh `generated/trade_rows.json` from the live Google Sheet tabs before conversion
+  - ensure the snapshot includes `fetched_at` metadata
+  - generate `generated/trades.json`
+  - generate `generated/trades.csv`
+  - preserve raw values without calculations
+
+## Trade History Workflow
+When the user asks to update trade history, sync trade history, regenerate trade rows, or types `/更新交易紀錄`, follow this process:
+
+1. Treat the Google Sheet as the source of truth.
+2. Use the Codex Google Drive connector to read the live Google Sheet tabs before running the local converter.
+3. Refresh `generated/trade_rows.json` from the live Google Sheet response before running the local converter.
+4. The local Python scripts do not fetch Google Sheets by themselves. In Codex mode, the agent must refresh the snapshot first in the same turn.
+3. Include snapshot metadata at top level:
+   - `fetched_at`
+   - `spreadsheet_url`
+   - `tabs`
+4. Keep `tabs` as the raw row snapshot keyed by tab name.
+5. Only after the snapshot is refreshed, run:
+
+```bash
+python3 trade_history/update_trade_history.py
+```
+
+6. Do not rely on an old local snapshot when the Google Sheet can be refreshed in the current turn.
+
+### Codex Route
+For `/更新交易紀錄`, default to the Codex route:
+
+1. Read the latest live rows from Google Sheets through the connector.
+2. Overwrite `generated/trade_rows.json` with the fresh snapshot.
+3. Run `python3 trade_history/update_trade_history.py`.
+4. Summarize:
+   - whether live rows were fetched successfully
+   - which tabs were refreshed
+   - whether `generated/trades.json` was updated
+   - whether `generated/trades.csv` was updated
+
+Do not ask the user to manually refresh the snapshot first when the connector is available.
 
 ## PNLRebalance Rules
 - `PNLRebalance` reads holdings from the auto-generated arrays.

@@ -4,13 +4,13 @@ import argparse
 import csv
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 
 Trade = Dict[str, Any]
 SheetRows = Dict[str, List[List[Any]]]
 
-DEFAULT_INPUT = Path("generated/006208_rows.json")
+DEFAULT_INPUT = Path("generated/trade_rows.json")
 DEFAULT_JSON_OUTPUT = Path("generated/trades.json")
 DEFAULT_CSV_OUTPUT = Path("generated/trades.csv")
 
@@ -43,6 +43,34 @@ TAB_MAPPINGS = [
             "price": "J",
         },
     },
+    {
+        "tab": "BTC",
+        "symbol": "BTC",
+        "market": "CRYPTO",
+        "side": "BUY",
+        "start_row": 3,
+        "stop_on_empty_qty": True,
+        "columns": {
+            "date": "A",
+            "qty": "D",
+            "amount": "B",
+            "price": "C",
+        },
+    },
+    {
+        "tab": "BTC",
+        "symbol": "BTC",
+        "market": "CRYPTO",
+        "side": "SELL",
+        "start_row": 3,
+        "stop_on_empty_qty": True,
+        "columns": {
+            "date": "K",
+            "qty": "J",
+            "amount": "H",
+            "price": "I",
+        },
+    },
 ]
 
 
@@ -59,7 +87,9 @@ def normalize_cell(value: Any) -> Any:
     return value
 
 
-def get_cell(row: List[Any], col: str) -> Any:
+def get_cell(row: List[Any], col: Any) -> Any:
+    if not col:
+        return ""
     idx = col_to_index(col)
     if idx >= len(row):
         return ""
@@ -109,6 +139,17 @@ def build_trades(sheet_rows_by_tab: SheetRows) -> List[Trade]:
     return trades
 
 
+def normalize_snapshot_payload(payload: Dict[str, Any]) -> Tuple[SheetRows, Dict[str, Any]]:
+    if "tabs" in payload and isinstance(payload["tabs"], dict):
+        metadata = {
+            "fetched_at": payload.get("fetched_at", ""),
+            "spreadsheet_url": payload.get("spreadsheet_url", ""),
+        }
+        return payload["tabs"], metadata
+
+    return payload, {}
+
+
 def write_json(trades: List[Trade], output_path: Path) -> None:
     output_path.write_text(
         json.dumps(trades, ensure_ascii=False, indent=2) + "\n",
@@ -135,12 +176,15 @@ def main() -> int:
 
     input_path = Path(args.input)
     payload = json.loads(input_path.read_text(encoding="utf-8"))
-    trades = build_trades(payload)
+    sheet_rows_by_tab, metadata = normalize_snapshot_payload(payload)
+    trades = build_trades(sheet_rows_by_tab)
 
     write_json(trades, Path(args.json_output))
     write_csv(trades, Path(args.csv_output))
 
     print(f"Input: {input_path}")
+    if metadata.get("fetched_at"):
+        print(f"Snapshot fetched_at: {metadata['fetched_at']}")
     print(f"Trades generated: {len(trades)}")
     print(f"JSON output: {args.json_output}")
     print(f"CSV output: {args.csv_output}")
