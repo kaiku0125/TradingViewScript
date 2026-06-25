@@ -1,0 +1,146 @@
+//@version=6
+indicator("Trade History Labels", overlay = true, max_labels_count = 500)
+
+type Trade
+    string symbol
+    string market
+    string side
+    int year
+    int month
+    int day
+    float qty
+    float amount
+    string price
+
+var string TZ = "Asia/Taipei"
+var array<Trade> trades = array.new<Trade>()
+var color BUY_LABEL_COLOR = color.rgb(0, 102, 51)
+var color SELL_LABEL_COLOR = color.rgb(153, 0, 0)
+
+add_trade(string symbol, string market, string side, int year, int month, int day, float qty, float amount, string price) =>
+    array.push(trades, Trade.new(symbol, market, side, year, month, day, qty, amount, price))
+
+format_number(float value) =>
+    str.tostring(value)
+
+current_symbol() =>
+    syminfo.ticker
+
+has_trade_date(Trade trade) =>
+    trade.year > 0 and trade.month > 0 and trade.day > 0
+
+date_key(int year_value, int month_value, int day_value) =>
+    year_value * 10000 + month_value * 100 + day_value
+
+trade_date_key(Trade trade) =>
+    date_key(trade.year, trade.month, trade.day)
+
+bar_start_date_key() =>
+    date_key(year(time, TZ), month(time, TZ), dayofmonth(time, TZ))
+
+bar_end_date_key() =>
+    date_key(year(time_close - 1, TZ), month(time_close - 1, TZ), dayofmonth(time_close - 1, TZ))
+
+is_trade_in_bar(Trade trade) =>
+    has_trade_date(trade) and
+     trade_date_key(trade) >= bar_start_date_key() and
+     trade_date_key(trade) <= bar_end_date_key()
+
+trade_text(Trade trade) =>
+    trade.side +
+     "\ndate: " + str.format("{0}-{1}-{2}", trade.year, trade.month, trade.day) +
+     "\nqty: " + format_number(trade.qty) +
+     "\namount: " + format_number(trade.amount) +
+     "\nprice: " + trade.price
+
+trade_marker_text(Trade trade) =>
+    trade.side == "BUY" ? "B" : "S"
+
+if barstate.isfirst
+    // Replace this block with generated trades later.
+    add_trade("006208", "TW", "BUY", 0, 0, 0, 400, 27780, "--")
+    add_trade("006208", "TW", "BUY", 0, 0, 0, 3000, 214179, "--")
+
+    add_trade("006208", "TW", "SELL", 0, 0, 0, 400, 28128, "--")
+    add_trade("006208", "TW", "SELL", 0, 0, 0, 100, 9249, "--")
+    add_trade("006208", "TW", "SELL", 0, 0, 0, 100, 9144, "--")
+    add_trade("006208", "TW", "SELL", 0, 0, 0, 100, 9279, "--")
+    add_trade("006208", "TW", "SELL", 0, 0, 0, 100, 9334, "--")
+    add_trade("006208", "TW", "SELL", 0, 0, 0, 100, 9364, "--")
+    add_trade("006208", "TW", "SELL", 0, 0, 0, 100, 9389, "--")
+    add_trade("006208", "TW", "SELL", 0, 0, 0, 100, 9444, "--")
+    add_trade("006208", "TW", "SELL", 0, 0, 0, 100, 9539, "--")
+    add_trade("006208", "TW", "SELL", 0, 0, 0, 100, 9729, "--")
+    add_trade("006208", "TW", "SELL", 0, 0, 0, 100, 9789, "--")
+    add_trade("006208", "TW", "SELL", 0, 0, 0, 100, 9889, "--")
+    add_trade("006208", "TW", "SELL", 0, 0, 0, 100, 10103, "--")
+    add_trade("006208", "TW", "SELL", 0, 0, 0, 100, 10203, "--")
+    add_trade("006208", "TW", "SELL", 0, 0, 0, 100, 10491, "--")
+    add_trade("006208", "TW", "SELL", 0, 0, 0, 100, 10527, "--")
+    add_trade("006208", "TW", "SELL", 0, 0, 0, 100, 10870, "--")
+    add_trade("006208", "TW", "SELL", 0, 0, 0, 100, 10981, "--")
+    add_trade("006208", "TW", "SELL", 0, 0, 0, 100, 11081, "--")
+    add_trade("006208", "TW", "SELL", 2024, 7, 4, 100, 11191, "--")
+    add_trade("006208", "TW", "SELL", 2024, 7, 8, 100, 11301, "--")
+    add_trade("006208", "TW", "SELL", 2024, 7, 8, 100, 11491, "--")
+    add_trade("006208", "TW", "SELL", 2024, 10, 15, 100, 11406, "--")
+    add_trade("006208", "TW", "SELL", 2024, 10, 18, 100, 11641, "--")
+    add_trade("006208", "TW", "SELL", 2025, 1, 7, 100, 11906, "--")
+    add_trade("006208", "TW", "SELL", 2025, 1, 20, 100, 11646, "--")
+    add_trade("006208", "TW", "SELL", 2025, 2, 14, 500, 57127, "--")
+
+float buy_qty_sum = 0.0
+float buy_amount_sum = 0.0
+int buy_count = 0
+string buy_tooltip = ""
+
+float sell_qty_sum = 0.0
+float sell_amount_sum = 0.0
+int sell_count = 0
+string sell_tooltip = ""
+
+for index = 0 to array.size(trades) - 1
+    trade = array.get(trades, index)
+    if trade.symbol == current_symbol() and is_trade_in_bar(trade)
+        if trade.side == "BUY"
+            buy_count += 1
+            buy_qty_sum += trade.qty
+            buy_amount_sum += trade.amount
+            buy_tooltip += (buy_tooltip == "" ? "" : "\n\n") + trade_text(trade)
+        else
+            sell_count += 1
+            sell_qty_sum += trade.qty
+            sell_amount_sum += trade.amount
+            sell_tooltip += (sell_tooltip == "" ? "" : "\n\n") + trade_text(trade)
+
+if buy_count > 0
+    label.new(
+         bar_index,
+         low,
+         "B",
+         yloc = yloc.belowbar,
+         style = label.style_label_up,
+         color = BUY_LABEL_COLOR,
+         textcolor = color.white,
+         size = size.small,
+         tooltip = "BUY trades: " + str.tostring(buy_count) +
+            "\nqty sum: " + format_number(buy_qty_sum) +
+            "\namount sum: " + format_number(buy_amount_sum) +
+            "\n\n" + buy_tooltip
+     )
+
+if sell_count > 0
+    label.new(
+         bar_index,
+         high,
+         "S",
+         yloc = yloc.abovebar,
+         style = label.style_label_down,
+         color = SELL_LABEL_COLOR,
+         textcolor = color.white,
+         size = size.small,
+         tooltip = "SELL trades: " + str.tostring(sell_count) +
+            "\nqty sum: " + format_number(sell_qty_sum) +
+            "\namount sum: " + format_number(sell_amount_sum) +
+            "\n\n" + sell_tooltip
+     )
