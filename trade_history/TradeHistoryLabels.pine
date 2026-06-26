@@ -1,5 +1,15 @@
 //@version=6
+import kaiku0125/FormatSDK/1 as fm
+
 indicator("Trade History Labels", overlay = true, max_labels_count = 500)
+
+var string AVG_LINE_LAST_BAR_RIGHT = "從最新 K 棒向右延伸"
+var string AVG_LINE_FULL_CHART = "貫穿整個圖表"
+string input_avg_line_mode = input.string(
+ title = "均價線顯示方式",
+ defval = AVG_LINE_FULL_CHART,
+ options = [AVG_LINE_LAST_BAR_RIGHT, AVG_LINE_FULL_CHART]
+)
 
 type Trade
     string symbol
@@ -14,14 +24,37 @@ type Trade
 
 var string TZ = "Asia/Taipei"
 var array<Trade> trades = array.new<Trade>()
-var color BUY_LABEL_COLOR = color.rgb(0, 102, 51)
-var color SELL_LABEL_COLOR = color.rgb(153, 0, 0)
+var color BUY_LABEL_COLOR = color.rgb(0, 76, 38)
+var color SELL_LABEL_COLOR = color.rgb(128, 0, 0)
+var line avg_buy_line = na
+var line avg_sell_line = na
+var label avg_buy_label = na
+var label avg_sell_label = na
 
 add_trade(string symbol, string market, string side, int year, int month, int day, float qty, float amount, string price) =>
     array.push(trades, Trade.new(symbol, market, side, year, month, day, qty, amount, price))
 
 format_number(float value) =>
     str.tostring(value)
+
+avg_price_precision(float value) =>
+    abs_value = math.abs(value)
+    if abs_value >= 1000
+        0
+    else if abs_value >= 100
+        1
+    else if abs_value >= 1
+        2
+    else if abs_value >= 0.1
+        3
+    else
+        4
+
+format_avg_price(float value) =>
+    fm.fString(value, avg_price_precision(value))
+
+avg_line_extend_mode() =>
+    input_avg_line_mode == AVG_LINE_FULL_CHART ? extend.both : extend.right
 
 current_symbol() =>
     str.upper(syminfo.ticker)
@@ -564,6 +597,11 @@ load_generated_trades() =>
 if barstate.isfirst
     load_generated_trades()
 
+float total_buy_qty_sum = 0.0
+float total_buy_amount_sum = 0.0
+float total_sell_qty_sum = 0.0
+float total_sell_amount_sum = 0.0
+
 float buy_qty_sum = 0.0
 float buy_amount_sum = 0.0
 int buy_count = 0
@@ -576,17 +614,86 @@ string sell_tooltip = ""
 
 for index = 0 to array.size(trades) - 1
     trade = array.get(trades, index)
-    if symbol_matches_chart(trade) and is_trade_in_bar(trade)
+    if symbol_matches_chart(trade)
         if trade.side == "BUY"
-            buy_count += 1
-            buy_qty_sum += trade.qty
-            buy_amount_sum += trade.amount
-            buy_tooltip += (buy_tooltip == "" ? "" : "\n\n") + trade_text(trade)
+            total_buy_qty_sum += trade.qty
+            total_buy_amount_sum += trade.amount
         else
-            sell_count += 1
-            sell_qty_sum += trade.qty
-            sell_amount_sum += trade.amount
-            sell_tooltip += (sell_tooltip == "" ? "" : "\n\n") + trade_text(trade)
+            total_sell_qty_sum += trade.qty
+            total_sell_amount_sum += trade.amount
+
+        if is_trade_in_bar(trade)
+            if trade.side == "BUY"
+                buy_count += 1
+                buy_qty_sum += trade.qty
+                buy_amount_sum += trade.amount
+                buy_tooltip += (buy_tooltip == "" ? "" : "\n\n") + trade_text(trade)
+            else
+                sell_count += 1
+                sell_qty_sum += trade.qty
+                sell_amount_sum += trade.amount
+                sell_tooltip += (sell_tooltip == "" ? "" : "\n\n") + trade_text(trade)
+
+float avg_buy_price = total_buy_qty_sum > 0 ? total_buy_amount_sum / total_buy_qty_sum : na
+float avg_sell_price = total_sell_qty_sum > 0 ? total_sell_amount_sum / total_sell_qty_sum : na
+
+if barstate.islast
+    if not na(avg_buy_line)
+        line.delete(avg_buy_line)
+    if not na(avg_sell_line)
+        line.delete(avg_sell_line)
+    if not na(avg_buy_label)
+        label.delete(avg_buy_label)
+    if not na(avg_sell_label)
+        label.delete(avg_sell_label)
+
+    if not na(avg_buy_price)
+        avg_buy_line := line.new(
+             bar_index - 1,
+             avg_buy_price,
+             bar_index,
+             avg_buy_price,
+             xloc = xloc.bar_index,
+             extend = avg_line_extend_mode(),
+             color = BUY_LABEL_COLOR,
+             style = line.style_dashed,
+             width = 2
+         )
+        avg_buy_label := label.new(
+             bar_index + 20,
+             avg_buy_price,
+             "Avg Buy " + format_avg_price(avg_buy_price),
+             xloc = xloc.bar_index,
+             yloc = yloc.price,
+             style = label.style_label_left,
+             color = BUY_LABEL_COLOR,
+             textcolor = color.white,
+             size = size.small
+         )
+
+    if not na(avg_sell_price)
+        avg_sell_line := line.new(
+             bar_index - 1,
+             avg_sell_price,
+             bar_index,
+             avg_sell_price,
+             xloc = xloc.bar_index,
+             extend = avg_line_extend_mode(),
+             color = SELL_LABEL_COLOR,
+             style = line.style_dashed,
+             width = 2
+         )
+        avg_sell_label := label.new(
+             bar_index + 20,
+             avg_sell_price,
+             "Avg Sell " + format_avg_price(avg_sell_price),
+             xloc = xloc.bar_index,
+             yloc = yloc.price,
+             style = label.style_label_left,
+             color = SELL_LABEL_COLOR,
+             textcolor = color.white,
+             size = size.small
+         )
 
 if buy_count > 0
     label.new(
@@ -601,6 +708,7 @@ if buy_count > 0
          tooltip = "BUY trades: " + str.tostring(buy_count) +
             "\nqty sum: " + format_number(buy_qty_sum) +
             "\namount sum: " + format_number(buy_amount_sum) +
+            "\navg buy price: " + format_avg_price(avg_buy_price) +
             "\n\n" + buy_tooltip
      )
 
@@ -617,5 +725,6 @@ if sell_count > 0
          tooltip = "SELL trades: " + str.tostring(sell_count) +
             "\nqty sum: " + format_number(sell_qty_sum) +
             "\namount sum: " + format_number(sell_amount_sum) +
+            "\navg sell price: " + format_avg_price(avg_sell_price) +
             "\n\n" + sell_tooltip
      )
