@@ -117,6 +117,41 @@ const HoldingsService = (() => {
   };
 })();
 
+const TradeHistoryService = (() => {
+  const TRADE_HISTORY_TABS = ["006208", "BTC", "ETH", "ADA", "平台幣"];
+
+  function getSheetDisplayValuesOrEmpty(ss, sheetName) {
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      return [];
+    }
+    return sheet.getDataRange().getDisplayValues();
+  }
+
+  function getTradeHistoryData() {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const tabs = {};
+
+    TRADE_HISTORY_TABS.forEach(sheetName => {
+      tabs[sheetName] = getSheetDisplayValuesOrEmpty(ss, sheetName);
+    });
+
+    return {
+      fetched_at: Utilities.formatDate(
+        new Date(),
+        "Asia/Taipei",
+        "yyyy-MM-dd'T'HH:mm:ssZ"
+      ),
+      spreadsheet_url: ss.getUrl(),
+      tabs
+    };
+  }
+
+  return {
+    getTradeHistoryData
+  };
+})();
+
 function debugGetHoldingsData() {
   try {
     const result = HoldingsService.getPortfolioData();
@@ -133,15 +168,41 @@ function debugGetHoldingsData() {
   }
 }
 
+function debugGetTradeHistoryData() {
+  try {
+    const result = TradeHistoryService.getTradeHistoryData();
+
+    Logger.log("=== debugGetTradeHistoryData start ===");
+    Logger.log(JSON.stringify(result, null, 2));
+    Logger.log("=== debugGetTradeHistoryData end ===");
+
+    return result;
+  } catch (error) {
+    Logger.log("debugGetTradeHistoryData error: " + error.message);
+    Logger.log(error.stack);
+    throw error;
+  }
+}
+
 function doGet(e) {
   const token = e?.parameter?.token;
+  const mode = String(e?.parameter?.mode || "holdings").trim().toLowerCase();
   if (token !== "0125") {
     return ContentService
       .createTextOutput(JSON.stringify({ error: "unauthorized" }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  let payload;
+  if (mode === "trade_history") {
+    payload = TradeHistoryService.getTradeHistoryData();
+  } else if (mode === "holdings") {
+    payload = HoldingsService.getPortfolioData();
+  } else {
+    payload = { error: "unsupported_mode", mode };
+  }
+
   return ContentService
-    .createTextOutput(JSON.stringify(HoldingsService.getPortfolioData()))
+    .createTextOutput(JSON.stringify(payload))
     .setMimeType(ContentService.MimeType.JSON);
 }

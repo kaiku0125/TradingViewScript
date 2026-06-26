@@ -83,13 +83,26 @@ python3 weekly_holdings_pnl_sync.py --token "0125" --commit
 Preferred command for trade history sync:
 
 ```bash
+python3 refresh_trade_rows.py --token "$HOLDINGS_WEB_APP_TOKEN"
+python3 trade_history/update_trade_history.py
+```
+
+Preferred command for live trade rows refresh only:
+
+```bash
+python3 refresh_trade_rows.py --token "$HOLDINGS_WEB_APP_TOKEN"
+```
+
+Preferred command for trade history conversion only after snapshot refresh:
+
+```bash
 python3 trade_history/update_trade_history.py
 ```
 
 ## Manual Update Shortcuts
 Use these shortcuts when the user wants a manual update from Codex:
 
-### `/更新部位`
+### `/更新持倉`
 - Codex route:
   1. Ask for `token` and `create commit after sync: yes/no?` if missing.
   2. Run:
@@ -114,18 +127,20 @@ python3 update_pnl_history.py --pnl-value "<CURRENT_PNL>"
 
 ### `/更新交易紀錄`
 - Preferred Codex route:
-  1. Read the latest live rows from Google Sheets through the connector.
-  2. Overwrite `generated/trade_rows.json` with the fresh snapshot.
+  1. Refresh `generated/trade_rows.json` from the Apps Script endpoint.
+  2. If Apps Script is unavailable in the current context, use the Codex connector fallback.
   3. Run:
 
 ```bash
+python3 refresh_trade_rows.py --token "$HOLDINGS_WEB_APP_TOKEN"
 python3 trade_history/update_trade_history.py
 ```
 
 - Local shell route:
-  - only when `generated/trade_rows.json` has already been refreshed and includes `fetched_at`
+  - refresh snapshot first, then run conversion
 
 ```bash
+python3 refresh_trade_rows.py --token "$HOLDINGS_WEB_APP_TOKEN"
 python3 trade_history/update_trade_history.py
 ```
 
@@ -144,21 +159,23 @@ python3 weekly_holdings_pnl_sync.py --token "0125" --commit
   - update `PNLRebalance`
   - calculate current `speculationPNL`
   - update pnl history
-  - try trade history sync using the local `generated/trade_rows.json` snapshot
+  - refresh live trade rows from Apps Script
+  - update trade history artifacts from the fresh snapshot
   - send Telegram summary on a best-effort basis
   - create a commit when holdings changed, usd balances changed, today's pnl history has not been recorded yet, or `trade_history/TradeHistoryLabels.pine` changed
-  - skip trade history sync when `generated/trade_rows.json` is missing `fetched_at` or is stale for the current Asia/Taipei date
+  - report a trade history refresh failure in summary without blocking holdings / pnl sync
 
 If the user types `/更新交易紀錄`, treat it as a request to update local trade history artifacts immediately.
 
 - Run:
 
 ```bash
+python3 refresh_trade_rows.py --token "$HOLDINGS_WEB_APP_TOKEN"
 python3 trade_history/update_trade_history.py
 ```
 
 - This should:
-  - refresh `generated/trade_rows.json` from the live Google Sheet tabs before conversion
+  - refresh `generated/trade_rows.json` from the Apps Script endpoint before conversion
   - ensure the snapshot includes `fetched_at` metadata
   - generate `generated/trades.json`
   - generate `generated/trades.csv`
@@ -168,29 +185,30 @@ python3 trade_history/update_trade_history.py
 When the user asks to update trade history, sync trade history, regenerate trade rows, or types `/更新交易紀錄`, follow this process:
 
 1. Treat the Google Sheet as the source of truth.
-2. Use the Codex Google Drive connector to read the live Google Sheet tabs before running the local converter.
-3. Refresh `generated/trade_rows.json` from the live Google Sheet response before running the local converter.
-4. The local Python scripts do not fetch Google Sheets by themselves. In Codex mode, the agent must refresh the snapshot first in the same turn.
-3. Include snapshot metadata at top level:
+2. Prefer the Apps Script endpoint for live refresh before running the local converter.
+3. Refresh `generated/trade_rows.json` from the live response before running the local converter.
+4. The local converter does not fetch Google Sheets by itself. The snapshot must be refreshed first in the same turn.
+5. Include snapshot metadata at top level:
    - `fetched_at`
    - `spreadsheet_url`
    - `tabs`
-4. Keep `tabs` as the raw row snapshot keyed by tab name.
-5. Only after the snapshot is refreshed, run:
+6. Keep `tabs` as the raw row snapshot keyed by tab name.
+7. Only after the snapshot is refreshed, run:
 
 ```bash
 python3 trade_history/update_trade_history.py
 ```
 
-6. Do not rely on an old local snapshot when the Google Sheet can be refreshed in the current turn.
+8. Do not rely on an old local snapshot when the Apps Script endpoint or Codex connector can be refreshed in the current turn.
 
 ### Codex Route
 For `/更新交易紀錄`, default to the Codex route:
 
-1. Read the latest live rows from Google Sheets through the connector.
-2. Overwrite `generated/trade_rows.json` with the fresh snapshot.
-3. Run `python3 trade_history/update_trade_history.py`.
-4. Summarize:
+1. Run `python3 refresh_trade_rows.py --token "$HOLDINGS_WEB_APP_TOKEN"` when the Apps Script endpoint is available.
+2. If the Apps Script endpoint is unavailable in the current context, read the latest live rows from Google Sheets through the connector.
+3. Overwrite `generated/trade_rows.json` with the fresh snapshot.
+4. Run `python3 trade_history/update_trade_history.py`.
+5. Summarize:
    - whether live rows were fetched successfully
    - which tabs were refreshed
    - whether `generated/trades.json` was updated
