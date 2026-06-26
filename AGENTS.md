@@ -14,11 +14,11 @@ Required inputs:
 If either value is missing, ask the user before running the sync.
 
 1. Treat Google Sheets as the source of truth for both holdings and exchange usd balances.
-2. Do not run `update_holdings_pine.py` until the user has provided a token.
+2. Do not run `holdings/update_holdings_pine.py` until the user has provided a token.
 3. If the user only says `Update Holdings`, ask exactly:
    - `1. token=?`
    - `2. create commit after sync: yes/no?`
-4. Use `update_holdings_pine.py` to fetch holdings and usd balances from the Google Apps Script endpoint.
+4. Use `holdings/update_holdings_pine.py` to fetch holdings and usd balances from the Google Apps Script endpoint.
 5. By default, update both:
    - `generated/holdings.pine`
    - `PNLRebalance`
@@ -59,13 +59,13 @@ If either value is missing, ask the user before running the update.
 Preferred command for holdings sync:
 
 ```bash
-python3 update_holdings_pine.py --token "$HOLDINGS_WEB_APP_TOKEN"
+python3 holdings/update_holdings_pine.py --token "$HOLDINGS_WEB_APP_TOKEN"
 ```
 
 If the user wants to generate the Pine block without modifying `PNLRebalance`:
 
 ```bash
-python3 update_holdings_pine.py --token "$HOLDINGS_WEB_APP_TOKEN" --skip-pnl-update
+python3 holdings/update_holdings_pine.py --token "$HOLDINGS_WEB_APP_TOKEN" --skip-pnl-update
 ```
 
 Preferred command for pnl sync:
@@ -108,13 +108,13 @@ Use these shortcuts when the user wants a manual update from Codex:
   2. Run:
 
 ```bash
-python3 update_holdings_pine.py --token "$HOLDINGS_WEB_APP_TOKEN"
+python3 holdings/update_holdings_pine.py --token "$HOLDINGS_WEB_APP_TOKEN"
 ```
 
 - Generate only `generated/holdings.pine` without updating `PNLRebalance`:
 
 ```bash
-python3 update_holdings_pine.py --token "$HOLDINGS_WEB_APP_TOKEN" --skip-pnl-update
+python3 holdings/update_holdings_pine.py --token "$HOLDINGS_WEB_APP_TOKEN" --skip-pnl-update
 ```
 
 ### `/更新損益`
@@ -251,7 +251,7 @@ After a successful holdings sync, the agent should create a commit only if the u
 - Do not include `generated/` artifacts in commits.
 - Commit only the files that belong to the holdings sync workflow, such as:
   - `PNLRebalance`
-  - `update_holdings_pine.py`
+  - `holdings/update_holdings_pine.py`
   - `AGENTS.md`
   - `.gitignore`
 - Before committing, check for unrelated local changes and avoid bundling them into the same commit.

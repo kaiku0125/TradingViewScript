@@ -16,7 +16,7 @@ from urllib.parse import urlencode
 from urllib.request import urlopen
 from zoneinfo import ZoneInfo
 
-import update_holdings_pine as holdings_sync
+from holdings import update_holdings_pine as holdings_sync
 import update_pnl_history as pnl_history
 
 

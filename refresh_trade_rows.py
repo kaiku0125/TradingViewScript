@@ -7,7 +7,7 @@ from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
-import update_holdings_pine as holdings_sync
+from holdings import update_holdings_pine as holdings_sync
 
 
 DEFAULT_OUTPUT = Path("generated/trade_rows.json")
