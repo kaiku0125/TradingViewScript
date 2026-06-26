@@ -55,6 +55,54 @@ If either value is missing, ask the user before running the update.
 8. If the user wants a commit but does not specify a commit message, use:
    - `[update] Update pnl`
 
+## Main Workflow: Grid Parameters(網格參數)
+When the user asks for grid parameters, grid setup, `/網格參數`, or asset-specific grid planning such as `/網格參數 BTC`, follow this process:
+
+Required inputs:
+- asset symbol
+- setup context
+
+If the user only says `/網格參數` without a symbol, ask exactly:
+- `1. asset symbol=?`
+- `2. setup context=? (止跌盤整 / 一般盤整 / 其他)`
+
+If the user says `/網格參數 BTC` and no further context, ask exactly:
+- `1. timeframe=?`
+- `2. 前低=?`
+- `3. 目標價=?`
+- `4. 手續費率=?`
+
+Workflow rules:
+1. Use `grid/README.md` as the canonical workflow and questionnaire reference.
+2. Use `grid/ASSET_TEMPLATE.md` as the canonical per-asset recording template.
+3. Treat the user's described market structure as the first-class assumption for parameter discussion.
+4. When the user has not provided enough information to estimate a range, ask follow-up questions instead of inventing precise upper and lower bounds.
+5. When proposing a grid range, explicitly separate:
+   - trigger context
+   - upper bound
+   - lower bound
+   - grid count
+   - spacing method
+   - fee impact
+   - stop condition
+6. For the current default setup:
+   - lower bound = `previous low - 1 * ATR(14)`
+   - upper bound = `user target price`
+   - mode = `aggressive`
+   - spacing method = `ATR-based`
+   - spacing value = `0.35 * ATR(14)`
+   - theoretical grid count = `round((upper - lower) / (0.35 * ATR(14)))`
+7. If `ATR(14)` is not provided by the user, fetch recent OHLC data and calculate the latest ATR(14) before proposing the range.
+8. Always clarify the timeframe because ATR depends on timeframe.
+9. Include the user-provided fee rate in the evaluation.
+10. When evaluating spacing, calculate:
+   - spacing percent range versus lower bound, reference price, and upper bound
+   - round-trip fee percent = `2 * fee_rate_percent`
+   - net spacing percent range = `spacing percent range - round-trip fee percent`
+11. Prefer volatility-aware language such as `ATR`, recent swing high/low, consolidation range, and prior resistance/support when explaining the bounds.
+12. Record reusable parameter systems and notes under `grid/`.
+13. Do not treat a grid-parameter request as a holdings or pnl sync request unless the user explicitly asks for both.
+
 ## Commands
 Preferred command for holdings sync:
 
@@ -209,3 +257,10 @@ When completing this workflow, summarize:
 - whether `PNLRebalance` was updated
 - whether a commit was created
 - any blockers such as missing token, malformed payload, or missing markers
+
+For grid-parameter discussions, summarize:
+- asset symbol
+- setup context
+- whether enough inputs were provided
+- which parameter fields are still missing
+- where the parameter system is recorded under `grid/`
