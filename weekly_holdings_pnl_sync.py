@@ -7,6 +7,7 @@ import math
 import os
 import subprocess
 import hashlib
+import sys
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -24,6 +25,8 @@ DEFAULT_GENERATED_FILE = Path("generated/holdings.pine")
 DEFAULT_COMMIT_MESSAGE = "[update] Update assets"
 DEFAULT_ENV_FILE = Path(".env.local")
 DEFAULT_STATE_FILE = Path(".weekly_holdings_pnl_sync_state.json")
+DEFAULT_TRADE_SNAPSHOT_FILE = Path("generated/trade_rows.json")
+DEFAULT_TRADE_HISTORY_PINE_FILE = Path("trade_history/TradeHistoryLabels.pine")
 EXPECTED_BRANCH = "update/routine"
 TAIPEI_TZ = ZoneInfo("Asia/Taipei")
 CRYPTO_PRICE_SOURCE_MAP = {
@@ -138,6 +141,10 @@ def save_state(path: Path, state: SyncState) -> None:
 
 def now_taipei_iso() -> str:
     return datetime.now(TAIPEI_TZ).isoformat(timespec="seconds")
+
+
+def taipei_today() -> str:
+    return datetime.now(TAIPEI_TZ).strftime("%Y-%m-%d")
 
 
 def get_current_branch() -> str:
@@ -429,7 +436,10 @@ def has_history_entry_for_date(pnl_path: Path, year: int, month: int, day: int) 
 
 
 def maybe_commit(pnl_path: Path, message: str) -> bool:
-    subprocess.run(["git", "add", str(pnl_path)], check=True)
+    subprocess.run(
+        ["git", "add", str(pnl_path), str(DEFAULT_TRADE_HISTORY_PINE_FILE)],
+        check=True,
+    )
     diff_result = subprocess.run(["git", "diff", "--cached", "--quiet"])
     if diff_result.returncode == 0:
         return False
@@ -437,14 +447,76 @@ def maybe_commit(pnl_path: Path, message: str) -> bool:
     return True
 
 
+def load_trade_snapshot_fetched_at(path: Path) -> Optional[str]:
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    fetched_at = payload.get("fetched_at")
+    return str(fetched_at) if fetched_at else None
+
+
+def is_trade_snapshot_fresh_for_today(fetched_at: Optional[str]) -> bool:
+    if not fetched_at:
+        return False
+    try:
+        fetched_datetime = datetime.strptime(fetched_at, "%Y-%m-%dT%H:%M:%S%z")
+    except ValueError:
+        return False
+    return fetched_datetime.astimezone(TAIPEI_TZ).strftime("%Y-%m-%d") == taipei_today()
+
+
+def sync_trade_history(snapshot_path: Path) -> tuple[bool, str]:
+    fetched_at = load_trade_snapshot_fetched_at(snapshot_path)
+    if fetched_at is None:
+        return False, "skipped because generated/trade_rows.json is missing fetched_at metadata"
+    if not is_trade_snapshot_fresh_for_today(fetched_at):
+        return (
+            False,
+            f"skipped because trade snapshot is stale (fetched_at={fetched_at})",
+        )
+
+    before_content = (
+        DEFAULT_TRADE_HISTORY_PINE_FILE.read_text(encoding="utf-8")
+        if DEFAULT_TRADE_HISTORY_PINE_FILE.exists()
+        else ""
+    )
+    result = subprocess.run(
+        [sys.executable, "trade_history/update_trade_history.py"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        stderr = result.stderr.strip() or result.stdout.strip() or "unknown error"
+        return False, f"failed: {stderr}"
+
+    after_content = (
+        DEFAULT_TRADE_HISTORY_PINE_FILE.read_text(encoding="utf-8")
+        if DEFAULT_TRADE_HISTORY_PINE_FILE.exists()
+        else ""
+    )
+    updated = before_content != after_content
+    summary = (
+        f"updated from fresh snapshot ({fetched_at})"
+        if updated
+        else f"no changes from fresh snapshot ({fetched_at})"
+    )
+    return updated, summary
+
+
 def build_summary_lines(
     holdings_updated: bool,
     generated_updated: bool,
     pnl_updated: bool,
+    trade_history_updated: bool,
     commit_created: bool,
     holdings_summary: list[str],
     usd_summary: list[str],
     pnl_history_summary: str,
+    trade_history_summary: str,
     snapshot: MarketSnapshot,
     state_result: str,
     source_updated_at: Optional[str],
@@ -461,6 +533,7 @@ def build_summary_lines(
         f"Holdings fetched successfully: yes",
         f"generated/holdings.pine updated: {'yes' if generated_updated else 'no'}",
         f"PNLRebalance updated: {'yes' if pnl_updated else 'no'}",
+        f"TradeHistoryLabels.pine updated: {'yes' if trade_history_updated else 'no'}",
         f"Commit created: {'yes' if commit_created else 'no'}",
     ]
     if not holdings_updated:
@@ -518,6 +591,8 @@ def build_summary_lines(
         lines.append(f"- {line}")
     lines.append("PNL history summary:")
     lines.append(f"- {pnl_history_summary}")
+    lines.append("Trade history summary:")
+    lines.append(f"- {trade_history_summary}")
     return lines
 
 
@@ -546,20 +621,24 @@ def print_summary(
     holdings_updated: bool,
     generated_updated: bool,
     pnl_updated: bool,
+    trade_history_updated: bool,
     commit_created: bool,
     holdings_summary: list[str],
     usd_summary: list[str],
     pnl_history_summary: str,
+    trade_history_summary: str,
     snapshot: MarketSnapshot,
 ) -> None:
     for line in build_summary_lines(
         holdings_updated=holdings_updated,
         generated_updated=generated_updated,
         pnl_updated=pnl_updated,
+        trade_history_updated=trade_history_updated,
         commit_created=commit_created,
         holdings_summary=holdings_summary,
         usd_summary=usd_summary,
         pnl_history_summary=pnl_history_summary,
+        trade_history_summary=trade_history_summary,
         snapshot=snapshot,
     ):
         print(line)
@@ -611,9 +690,11 @@ def main() -> int:
 
     generated_updated = False
     pnl_updated = False
+    trade_history_updated = False
     holdings_block = holdings_sync.build_holdings_pine(payload)
     usd_block = holdings_sync.build_usd_pine(payload)
     pnl_history_summary = "skipped because source data did not change"
+    trade_history_summary = "not run yet"
 
     if source_changed:
         output_content = holdings_sync.build_output_content(holdings_block, usd_block)
@@ -632,8 +713,12 @@ def main() -> int:
     elif not source_changed:
         pnl_history_summary = "skipped because today's pnl history already exists"
 
+    trade_history_updated, trade_history_summary = sync_trade_history(
+        DEFAULT_TRADE_SNAPSHOT_FILE
+    )
+
     commit_created = False
-    should_commit = source_changed or not has_today_history
+    should_commit = source_changed or not has_today_history or trade_history_updated
     if args.commit and should_commit:
         commit_created = maybe_commit(pnl_path, args.commit_message)
 
@@ -643,10 +728,12 @@ def main() -> int:
         holdings_updated=source_changed,
         generated_updated=generated_updated,
         pnl_updated=pnl_updated,
+        trade_history_updated=trade_history_updated,
         commit_created=commit_created,
         holdings_summary=holdings_summary,
         usd_summary=usd_summary,
         pnl_history_summary=pnl_history_summary,
+        trade_history_summary=trade_history_summary,
         snapshot=snapshot,
         state_result=state_result,
         source_updated_at=source_updated_at,

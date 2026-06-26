@@ -86,6 +86,49 @@ Preferred command for trade history sync:
 python3 trade_history/update_trade_history.py
 ```
 
+## Manual Update Shortcuts
+Use these shortcuts when the user wants a manual update from Codex:
+
+### `/更新部位`
+- Codex route:
+  1. Ask for `token` and `create commit after sync: yes/no?` if missing.
+  2. Run:
+
+```bash
+python3 update_holdings_pine.py --token "$HOLDINGS_WEB_APP_TOKEN"
+```
+
+- Generate only `generated/holdings.pine` without updating `PNLRebalance`:
+
+```bash
+python3 update_holdings_pine.py --token "$HOLDINGS_WEB_APP_TOKEN" --skip-pnl-update
+```
+
+### `/更新損益`
+- Ask for `current pnl` and `create commit after sync: yes/no?` if missing.
+- Run:
+
+```bash
+python3 update_pnl_history.py --pnl-value "<CURRENT_PNL>"
+```
+
+### `/更新交易紀錄`
+- Preferred Codex route:
+  1. Read the latest live rows from Google Sheets through the connector.
+  2. Overwrite `generated/trade_rows.json` with the fresh snapshot.
+  3. Run:
+
+```bash
+python3 trade_history/update_trade_history.py
+```
+
+- Local shell route:
+  - only when `generated/trade_rows.json` has already been refreshed and includes `fetched_at`
+
+```bash
+python3 trade_history/update_trade_history.py
+```
+
 ## Manual Trigger Alias
 If the user types `/sync`, treat it as a request to run the full weekly sync workflow immediately.
 
@@ -101,9 +144,10 @@ python3 weekly_holdings_pnl_sync.py --token "0125" --commit
   - update `PNLRebalance`
   - calculate current `speculationPNL`
   - update pnl history
+  - try trade history sync using the local `generated/trade_rows.json` snapshot
   - send Telegram summary on a best-effort basis
-  - create a commit when holdings changed, usd balances changed, or today's pnl history has not been recorded yet
-  - skip commit when holdings and usd balances are unchanged and today's pnl history already exists
+  - create a commit when holdings changed, usd balances changed, today's pnl history has not been recorded yet, or `trade_history/TradeHistoryLabels.pine` changed
+  - skip trade history sync when `generated/trade_rows.json` is missing `fetched_at` or is stale for the current Asia/Taipei date
 
 If the user types `/更新交易紀錄`, treat it as a request to update local trade history artifacts immediately.
 
