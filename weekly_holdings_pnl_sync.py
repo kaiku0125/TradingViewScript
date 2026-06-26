@@ -25,6 +25,7 @@ DEFAULT_GENERATED_FILE = Path("generated/holdings.pine")
 DEFAULT_COMMIT_MESSAGE = "[update] Update assets"
 DEFAULT_ENV_FILE = Path(".env.local")
 DEFAULT_STATE_FILE = Path(".weekly_holdings_pnl_sync_state.json")
+DEFAULT_WEEKLY_REVIEW_SUMMARY_FILE = Path("generated/weekly_review_summary.md")
 DEFAULT_TRADE_SNAPSHOT_FILE = Path("generated/trade_rows.json")
 DEFAULT_TRADE_HISTORY_PINE_FILE = Path("trade_history/TradeHistoryLabels.pine")
 TRADE_ROWS_REFRESHER = Path("refresh_trade_rows.py")
@@ -66,6 +67,8 @@ class SyncState:
     last_holdings_hash: Optional[str]
     last_usd_hash: Optional[str]
     last_result: Optional[str]
+    last_total_assets_twd: Optional[float]
+    last_speculation_pnl_twd: Optional[float]
 
 
 def parse_args() -> argparse.Namespace:
@@ -110,7 +113,7 @@ def stable_hash(value: Any) -> str:
 
 def load_state(path: Path) -> SyncState:
     if not path.exists():
-        return SyncState(None, None, None, None, None)
+        return SyncState(None, None, None, None, None, None, None)
 
     data = json.loads(path.read_text(encoding="utf-8"))
     return SyncState(
@@ -119,6 +122,8 @@ def load_state(path: Path) -> SyncState:
         last_holdings_hash=data.get("last_holdings_hash"),
         last_usd_hash=data.get("last_usd_hash"),
         last_result=data.get("last_result"),
+        last_total_assets_twd=data.get("last_total_assets_twd"),
+        last_speculation_pnl_twd=data.get("last_speculation_pnl_twd"),
     )
 
 
@@ -131,6 +136,8 @@ def save_state(path: Path, state: SyncState) -> None:
                 "last_holdings_hash": state.last_holdings_hash,
                 "last_usd_hash": state.last_usd_hash,
                 "last_result": state.last_result,
+                "last_total_assets_twd": state.last_total_assets_twd,
+                "last_speculation_pnl_twd": state.last_speculation_pnl_twd,
             },
             ensure_ascii=False,
             indent=2,
@@ -508,6 +515,7 @@ def build_summary_lines(
     state_result: str,
     source_updated_at: Optional[str],
     state_checked_at: str,
+    previous_state: SyncState,
 ) -> list[str]:
     taipei_now = datetime.now(TAIPEI_TZ).strftime("%Y-%m-%d")
     pnl_content = DEFAULT_PNL_FILE.read_text(encoding="utf-8")
@@ -580,7 +588,81 @@ def build_summary_lines(
     lines.append(f"- {pnl_history_summary}")
     lines.append("Trade history summary:")
     lines.append(f"- {trade_history_summary}")
+    lines.extend(["", "-----", ""])
+    lines.extend(
+        build_notion_weekly_review_lines(
+            snapshot=snapshot,
+            holdings_summary=holdings_summary,
+            usd_summary=usd_summary,
+            previous_state=previous_state,
+        )
+    )
     return lines
+
+
+def build_notion_weekly_review_lines(
+    snapshot: MarketSnapshot,
+    holdings_summary: list[str],
+    usd_summary: list[str],
+    previous_state: SyncState,
+) -> list[str]:
+    week_label = datetime.now(TAIPEI_TZ).strftime("%Y-W%W")
+    top_profit_symbol: Optional[str] = None
+    top_profit_value: Optional[float] = None
+    if snapshot.unrealized_pnl_twd:
+        top_profit_symbol, top_profit_value = max(
+            snapshot.unrealized_pnl_twd.items(), key=lambda item: item[1]
+        )
+
+    total_asset_change_text = "首次執行，尚無上次同步基準"
+    if previous_state.last_total_assets_twd is not None:
+        total_asset_change_text = format_signed_twd(
+            snapshot.total_assets_twd - previous_state.last_total_assets_twd
+        )
+
+    biggest_profit_source_text = "本週無可用資料"
+    if top_profit_symbol is not None and top_profit_value is not None:
+        biggest_profit_source_text = (
+            f"{top_profit_symbol}（未實現損益 {format_signed_twd(top_profit_value)}）"
+        )
+
+    lines = [
+        "【可直接貼進 Notion 的中文週報摘要】",
+        f"週別：{week_label}",
+        "",
+        "1. 本週總資產變化（系統填入）",
+        f"- 本週總資產變化：{total_asset_change_text}",
+        f"- 目前總資產：{format_twd(snapshot.total_assets_twd)}",
+        f"- 目前 PNL：{format_twd(snapshot.speculation_pnl_twd)}",
+        f"- 目前報酬率：{format_ratio(snapshot.speculation_pnl_ratio)}",
+        "",
+        "2. 本週最大獲利來源（系統填入）",
+        f"- 最大獲利來源：{biggest_profit_source_text}",
+        f"- 交易所 USD 餘額：{format_price(snapshot.exchange_usd)} USD",
+        f"- 現金部位：{snapshot.cash_twd:,.0f} TWD",
+        "",
+        "3. 本週最大失誤（手動填寫）",
+        "- 本週最大失誤：",
+        "- 我在哪個判斷、節奏或配置上做錯？",
+        "- 如果重來一次，我會改哪一個決策？",
+        "",
+        "4. 下週調整計畫（手動填寫）",
+        "- 下週調整計畫：",
+        "- 哪個持倉需要持續觀察？",
+        "- 哪個配置需要微調？",
+        "",
+        "補充摘要",
+        "- Holdings 變化：",
+    ]
+    lines.extend(f"  - {line}" for line in holdings_summary)
+    lines.append("- USD Balance 變化：")
+    lines.extend(f"  - {line}" for line in usd_summary)
+    return lines
+
+
+def write_weekly_review_summary(path: Path, lines: list[str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def send_telegram_message(message: str) -> None:
@@ -627,6 +709,10 @@ def print_summary(
         pnl_history_summary=pnl_history_summary,
         trade_history_summary=trade_history_summary,
         snapshot=snapshot,
+        state_result="unknown",
+        source_updated_at=None,
+        state_checked_at=now_taipei_iso(),
+        previous_state=SyncState(None, None, None, None, None, None, None),
     ):
         print(line)
 
@@ -658,14 +744,6 @@ def main() -> int:
     usd_changed = previous_state.last_usd_hash != current_usd_hash
 
     state_result = "changed" if (holdings_changed or usd_changed) else "no_change"
-
-    state = SyncState(
-        last_checked_at=checked_at,
-        last_source_updated_at=source_updated_at,
-        last_holdings_hash=current_holdings_hash,
-        last_usd_hash=current_usd_hash,
-        last_result=state_result,
-    )
 
     holdings_summary = holdings_sync.summarize_holdings_changes(previous_holdings, current_holdings)
     usd_summary = holdings_sync.summarize_usd_changes(previous_usd, current_usd)
@@ -716,6 +794,15 @@ def main() -> int:
     if args.commit and should_commit:
         commit_created = maybe_commit(pnl_path, args.commit_message)
 
+    state = SyncState(
+        last_checked_at=checked_at,
+        last_source_updated_at=source_updated_at,
+        last_holdings_hash=current_holdings_hash,
+        last_usd_hash=current_usd_hash,
+        last_result=state_result,
+        last_total_assets_twd=snapshot.total_assets_twd,
+        last_speculation_pnl_twd=snapshot.speculation_pnl_twd,
+    )
     save_state(state_path, state)
 
     summary_lines = build_summary_lines(
@@ -732,6 +819,16 @@ def main() -> int:
         state_result=state_result,
         source_updated_at=source_updated_at,
         state_checked_at=checked_at,
+        previous_state=previous_state,
+    )
+    write_weekly_review_summary(
+        DEFAULT_WEEKLY_REVIEW_SUMMARY_FILE,
+        build_notion_weekly_review_lines(
+            snapshot=snapshot,
+            holdings_summary=holdings_summary,
+            usd_summary=usd_summary,
+            previous_state=previous_state,
+        ),
     )
     print("\n".join(summary_lines))
     notify_telegram_best_effort("\n".join(summary_lines))
