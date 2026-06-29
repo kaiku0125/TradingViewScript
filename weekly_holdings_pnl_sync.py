@@ -451,6 +451,21 @@ def maybe_commit(pnl_path: Path, message: str) -> bool:
     return True
 
 
+def build_commit_reasons(
+    source_changed: bool,
+    has_today_history: bool,
+    trade_history_updated: bool,
+) -> list[str]:
+    reasons: list[str] = []
+    if source_changed:
+        reasons.append("holdings or exchange USD values changed")
+    if not has_today_history:
+        reasons.append("today's pnl history entry was missing")
+    if trade_history_updated:
+        reasons.append("trade history labels changed")
+    return reasons
+
+
 def refresh_trade_history_snapshot(base_url: str, token: str) -> tuple[bool, str]:
     command = [
         sys.executable,
@@ -507,6 +522,7 @@ def build_summary_lines(
     pnl_updated: bool,
     trade_history_updated: bool,
     commit_created: bool,
+    commit_reasons: list[str],
     holdings_summary: list[str],
     usd_summary: list[str],
     pnl_history_summary: str,
@@ -530,6 +546,7 @@ def build_summary_lines(
         f"PNLRebalance updated: {'yes' if pnl_updated else 'no'}",
         f"TradeHistoryLabels.pine updated: {'yes' if trade_history_updated else 'no'}",
         f"Commit created: {'yes' if commit_created else 'no'}",
+        f"Commit trigger: {'; '.join(commit_reasons) if commit_reasons else 'none'}",
     ]
     if not holdings_updated:
         lines.append("Holdings changed: no")
@@ -790,8 +807,12 @@ def main() -> int:
         trade_history_summary = trade_rows_refresh_summary
 
     commit_created = False
-    should_commit = source_changed or not has_today_history or trade_history_updated
-    if args.commit and should_commit:
+    commit_reasons = build_commit_reasons(
+        source_changed=source_changed,
+        has_today_history=has_today_history,
+        trade_history_updated=trade_history_updated,
+    )
+    if args.commit and commit_reasons:
         commit_created = maybe_commit(pnl_path, args.commit_message)
 
     state = SyncState(
@@ -811,6 +832,7 @@ def main() -> int:
         pnl_updated=pnl_updated,
         trade_history_updated=trade_history_updated,
         commit_created=commit_created,
+        commit_reasons=commit_reasons,
         holdings_summary=holdings_summary,
         usd_summary=usd_summary,
         pnl_history_summary=pnl_history_summary,
