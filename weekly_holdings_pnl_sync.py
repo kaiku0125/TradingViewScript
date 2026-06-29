@@ -13,7 +13,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 from urllib.parse import urlencode
-from urllib.request import urlopen
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
 from holdings import update_holdings_pine as holdings_sync
@@ -28,6 +29,9 @@ DEFAULT_STATE_FILE = Path(".weekly_holdings_pnl_sync_state.json")
 DEFAULT_WEEKLY_REVIEW_SUMMARY_FILE = Path("generated/weekly_review_summary.md")
 DEFAULT_TRADE_SNAPSHOT_FILE = Path("generated/trade_rows.json")
 DEFAULT_TRADE_HISTORY_PINE_FILE = Path("trade_history/TradeHistoryLabels.pine")
+NOTION_API_BASE_URL = "https://api.notion.com/v1"
+NOTION_API_VERSION = "2022-06-28"
+DEFAULT_NOTION_WEEKLY_REVIEW_ICON = "🗓️"
 TRADE_ROWS_REFRESHER = Path("refresh_trade_rows.py")
 EXPECTED_BRANCH = "update/routine"
 TAIPEI_TZ = ZoneInfo("Asia/Taipei")
@@ -527,6 +531,7 @@ def build_summary_lines(
     usd_summary: list[str],
     pnl_history_summary: str,
     trade_history_summary: str,
+    notion_summary: str,
     snapshot: MarketSnapshot,
     state_result: str,
     source_updated_at: Optional[str],
@@ -605,6 +610,8 @@ def build_summary_lines(
     lines.append(f"- {pnl_history_summary}")
     lines.append("Trade history summary:")
     lines.append(f"- {trade_history_summary}")
+    lines.append("Notion weekly review summary:")
+    lines.append(f"- {notion_summary}")
     lines.extend(["", "-----", ""])
     lines.extend(
         build_notion_weekly_review_lines(
@@ -682,6 +689,122 @@ def write_weekly_review_summary(path: Path, lines: list[str]) -> None:
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def notion_headers(token: str) -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "Notion-Version": NOTION_API_VERSION,
+    }
+
+
+def notion_request(method: str, path: str, token: str, payload: Optional[dict[str, Any]] = None) -> dict[str, Any]:
+    data = None
+    if payload is not None:
+        data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    request = Request(
+        f"{NOTION_API_BASE_URL}{path}",
+        data=data,
+        headers=notion_headers(token),
+        method=method,
+    )
+    try:
+        with urlopen(request, timeout=20) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Notion API {method} {path} failed: {body}") from exc
+
+
+def notion_text_block(block_type: str, text: str) -> dict[str, Any]:
+    return {
+        "object": "block",
+        "type": block_type,
+        block_type: {
+            "rich_text": [
+                {
+                    "type": "text",
+                    "text": {"content": text},
+                }
+            ]
+        },
+    }
+
+
+def notion_review_blocks(lines: list[str]) -> list[dict[str, Any]]:
+    blocks: list[dict[str, Any]] = []
+    for line in lines:
+        if not line:
+            blocks.append(notion_text_block("paragraph", ""))
+        elif line.startswith("週別："):
+            blocks.append(notion_text_block("paragraph", line))
+        elif line[0].isdigit() and ". " in line:
+            blocks.append(notion_text_block("heading_2", line))
+        elif line == "補充摘要":
+            blocks.append(notion_text_block("heading_2", line))
+        elif line.startswith("- "):
+            blocks.append(notion_text_block("bulleted_list_item", line[2:]))
+        elif line.startswith("  - "):
+            blocks.append(notion_text_block("bulleted_list_item", line[4:]))
+        else:
+            blocks.append(notion_text_block("paragraph", line))
+    return blocks
+
+
+def notion_child_page_exists(parent_page_id: str, title: str, token: str) -> bool:
+    start_cursor: Optional[str] = None
+    while True:
+        query = f"?start_cursor={start_cursor}" if start_cursor else ""
+        payload = notion_request(
+            "GET",
+            f"/blocks/{parent_page_id}/children{query}",
+            token,
+        )
+        for block in payload.get("results", []):
+            child_page = block.get("child_page")
+            if child_page and child_page.get("title") == title:
+                return True
+        if not payload.get("has_more"):
+            return False
+        start_cursor = payload.get("next_cursor")
+
+
+def create_notion_weekly_review(title: str, lines: list[str]) -> str:
+    token = os.environ.get("NOTION_TOKEN")
+    parent_page_id = os.environ.get("NOTION_PAGE_ID")
+    icon = os.environ.get("NOTION_WEEKLY_REVIEW_ICON", DEFAULT_NOTION_WEEKLY_REVIEW_ICON)
+    if not token or not parent_page_id:
+        return "skipped because NOTION_TOKEN or NOTION_PAGE_ID is missing"
+
+    if notion_child_page_exists(parent_page_id, title, token):
+        return f"skipped because {title} already exists"
+
+    payload = {
+        "parent": {"type": "page_id", "page_id": parent_page_id},
+        "properties": {
+            "title": {
+                "title": [
+                    {
+                        "type": "text",
+                        "text": {"content": title},
+                    }
+                ]
+            }
+        },
+        "children": notion_review_blocks(lines),
+    }
+    if icon:
+        payload["icon"] = {"type": "emoji", "emoji": icon}
+    result = notion_request("POST", "/pages", token, payload)
+    return f"created {title}: {result.get('url', 'unknown url')}"
+
+
+def sync_notion_weekly_review_best_effort(title: str, lines: list[str]) -> str:
+    try:
+        return create_notion_weekly_review(title, lines)
+    except Exception as exc:
+        return f"skipped because Notion sync failed: {exc}"
+
+
 def send_telegram_message(message: str) -> None:
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
@@ -721,10 +844,12 @@ def print_summary(
         pnl_updated=pnl_updated,
         trade_history_updated=trade_history_updated,
         commit_created=commit_created,
+        commit_reasons=[],
         holdings_summary=holdings_summary,
         usd_summary=usd_summary,
         pnl_history_summary=pnl_history_summary,
         trade_history_summary=trade_history_summary,
+        notion_summary="not run from print_summary helper",
         snapshot=snapshot,
         state_result="unknown",
         source_updated_at=None,
@@ -826,6 +951,18 @@ def main() -> int:
     )
     save_state(state_path, state)
 
+    weekly_review_lines = build_notion_weekly_review_lines(
+        snapshot=snapshot,
+        holdings_summary=holdings_summary,
+        usd_summary=usd_summary,
+        previous_state=previous_state,
+    )
+    weekly_review_title = f"Weekly Review {datetime.now(TAIPEI_TZ).strftime('%Y-W%W')}"
+    notion_summary = sync_notion_weekly_review_best_effort(
+        weekly_review_title,
+        weekly_review_lines[1:],
+    )
+
     summary_lines = build_summary_lines(
         holdings_updated=source_changed,
         generated_updated=generated_updated,
@@ -837,21 +974,14 @@ def main() -> int:
         usd_summary=usd_summary,
         pnl_history_summary=pnl_history_summary,
         trade_history_summary=trade_history_summary,
+        notion_summary=notion_summary,
         snapshot=snapshot,
         state_result=state_result,
         source_updated_at=source_updated_at,
         state_checked_at=checked_at,
         previous_state=previous_state,
     )
-    write_weekly_review_summary(
-        DEFAULT_WEEKLY_REVIEW_SUMMARY_FILE,
-        build_notion_weekly_review_lines(
-            snapshot=snapshot,
-            holdings_summary=holdings_summary,
-            usd_summary=usd_summary,
-            previous_state=previous_state,
-        ),
-    )
+    write_weekly_review_summary(DEFAULT_WEEKLY_REVIEW_SUMMARY_FILE, weekly_review_lines)
     print("\n".join(summary_lines))
     notify_telegram_best_effort("\n".join(summary_lines))
     return 0
