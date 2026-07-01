@@ -70,6 +70,7 @@ class SyncState:
     last_source_updated_at: Optional[str]
     last_holdings_hash: Optional[str]
     last_usd_hash: Optional[str]
+    last_cash_liability_hash: Optional[str]
     last_result: Optional[str]
     last_total_assets_twd: Optional[float]
     last_speculation_pnl_twd: Optional[float]
@@ -117,7 +118,7 @@ def stable_hash(value: Any) -> str:
 
 def load_state(path: Path) -> SyncState:
     if not path.exists():
-        return SyncState(None, None, None, None, None, None, None)
+        return SyncState(None, None, None, None, None, None, None, None)
 
     data = json.loads(path.read_text(encoding="utf-8"))
     return SyncState(
@@ -125,6 +126,7 @@ def load_state(path: Path) -> SyncState:
         last_source_updated_at=data.get("last_source_updated_at"),
         last_holdings_hash=data.get("last_holdings_hash"),
         last_usd_hash=data.get("last_usd_hash"),
+        last_cash_liability_hash=data.get("last_cash_liability_hash"),
         last_result=data.get("last_result"),
         last_total_assets_twd=data.get("last_total_assets_twd"),
         last_speculation_pnl_twd=data.get("last_speculation_pnl_twd"),
@@ -139,6 +141,7 @@ def save_state(path: Path, state: SyncState) -> None:
                 "last_source_updated_at": state.last_source_updated_at,
                 "last_holdings_hash": state.last_holdings_hash,
                 "last_usd_hash": state.last_usd_hash,
+                "last_cash_liability_hash": state.last_cash_liability_hash,
                 "last_result": state.last_result,
                 "last_total_assets_twd": state.last_total_assets_twd,
                 "last_speculation_pnl_twd": state.last_speculation_pnl_twd,
@@ -462,7 +465,7 @@ def build_commit_reasons(
 ) -> list[str]:
     reasons: list[str] = []
     if source_changed:
-        reasons.append("holdings or exchange USD values changed")
+        reasons.append("holdings, exchange USD, or cash/liability values changed")
     if not has_today_history:
         reasons.append("today's pnl history entry was missing")
     if trade_history_updated:
@@ -529,6 +532,7 @@ def build_summary_lines(
     commit_reasons: list[str],
     holdings_summary: list[str],
     usd_summary: list[str],
+    cash_liability_summary: list[str],
     pnl_history_summary: str,
     trade_history_summary: str,
     notion_summary: str,
@@ -606,6 +610,9 @@ def build_summary_lines(
     lines.append("USD summary:")
     for line in usd_summary:
         lines.append(f"- {line}")
+    lines.append("Cash/Liability summary:")
+    for line in cash_liability_summary:
+        lines.append(f"- {line}")
     lines.append("PNL history summary:")
     lines.append(f"- {pnl_history_summary}")
     lines.append("Trade history summary:")
@@ -618,6 +625,7 @@ def build_summary_lines(
             snapshot=snapshot,
             holdings_summary=holdings_summary,
             usd_summary=usd_summary,
+            cash_liability_summary=cash_liability_summary,
             previous_state=previous_state,
         )
     )
@@ -628,6 +636,7 @@ def build_notion_weekly_review_lines(
     snapshot: MarketSnapshot,
     holdings_summary: list[str],
     usd_summary: list[str],
+    cash_liability_summary: list[str],
     previous_state: SyncState,
 ) -> list[str]:
     week_label = datetime.now(TAIPEI_TZ).strftime("%Y-W%W")
@@ -681,6 +690,8 @@ def build_notion_weekly_review_lines(
     lines.extend(f"  - {line}" for line in holdings_summary)
     lines.append("- USD Balance 變化：")
     lines.extend(f"  - {line}" for line in usd_summary)
+    lines.append("- Cash/Liability 變化：")
+    lines.extend(f"  - {line}" for line in cash_liability_summary)
     return lines
 
 
@@ -834,6 +845,7 @@ def print_summary(
     commit_created: bool,
     holdings_summary: list[str],
     usd_summary: list[str],
+    cash_liability_summary: list[str],
     pnl_history_summary: str,
     trade_history_summary: str,
     snapshot: MarketSnapshot,
@@ -847,6 +859,7 @@ def print_summary(
         commit_reasons=[],
         holdings_summary=holdings_summary,
         usd_summary=usd_summary,
+        cash_liability_summary=cash_liability_summary,
         pnl_history_summary=pnl_history_summary,
         trade_history_summary=trade_history_summary,
         notion_summary="not run from print_summary helper",
@@ -854,7 +867,7 @@ def print_summary(
         state_result="unknown",
         source_updated_at=None,
         state_checked_at=now_taipei_iso(),
-        previous_state=SyncState(None, None, None, None, None, None, None),
+        previous_state=SyncState(None, None, None, None, None, None, None, None),
     ):
         print(line)
 
@@ -869,6 +882,7 @@ def main() -> int:
 
     previous_holdings = holdings_sync.load_existing_holdings(output_path)
     previous_usd = holdings_sync.load_existing_usd(output_path)
+    previous_cash_liability = holdings_sync.load_existing_cash_liability(output_path)
     previous_state = load_state(state_path)
 
     payload = holdings_sync.fetch_holdings(args.url, args.token)
@@ -877,19 +891,29 @@ def main() -> int:
 
     current_holdings = payload.get("holdings", [])
     current_usd = holdings_sync.build_usd_snapshot(payload)
+    current_cash_liability = holdings_sync.build_cash_liability_snapshot(payload)
     source_updated_at = payload.get("updated_at")
     current_holdings_hash = stable_hash(current_holdings)
     current_usd_hash = stable_hash(current_usd)
+    current_cash_liability_hash = stable_hash(current_cash_liability)
     checked_at = now_taipei_iso()
     history_year, history_month, history_day = pnl_history.get_default_date()
     holdings_changed = previous_state.last_holdings_hash != current_holdings_hash
     usd_changed = previous_state.last_usd_hash != current_usd_hash
+    cash_liability_changed = (
+        previous_state.last_cash_liability_hash != current_cash_liability_hash
+    )
 
-    state_result = "changed" if (holdings_changed or usd_changed) else "no_change"
+    state_result = (
+        "changed" if (holdings_changed or usd_changed or cash_liability_changed) else "no_change"
+    )
 
     holdings_summary = holdings_sync.summarize_holdings_changes(previous_holdings, current_holdings)
     usd_summary = holdings_sync.summarize_usd_changes(previous_usd, current_usd)
-    source_changed = holdings_changed or usd_changed
+    cash_liability_summary = holdings_sync.summarize_cash_liability_changes(
+        previous_cash_liability, current_cash_liability
+    )
+    source_changed = holdings_changed or usd_changed or cash_liability_changed
     has_today_history = has_history_entry_for_date(
         pnl_path, history_year, history_month, history_day
     )
@@ -900,14 +924,19 @@ def main() -> int:
     trade_history_updated = False
     holdings_block = holdings_sync.build_holdings_pine(payload)
     usd_block = holdings_sync.build_usd_pine(payload)
+    cash_liability_block = holdings_sync.build_cash_liability_pine(payload)
     pnl_history_summary = "skipped because source data did not change"
     trade_history_summary = "not run yet"
 
     if source_changed:
-        output_content = holdings_sync.build_output_content(holdings_block, usd_block)
+        output_content = holdings_sync.build_output_content(
+            holdings_block, usd_block, cash_liability_block
+        )
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(output_content, encoding="utf-8")
-        holdings_sync.update_pnl_file(pnl_path, holdings_block, usd_block)
+        holdings_sync.update_pnl_file(
+            pnl_path, holdings_block, usd_block, cash_liability_block
+        )
         generated_updated = True
         pnl_updated = True
 
@@ -945,6 +974,7 @@ def main() -> int:
         last_source_updated_at=source_updated_at,
         last_holdings_hash=current_holdings_hash,
         last_usd_hash=current_usd_hash,
+        last_cash_liability_hash=current_cash_liability_hash,
         last_result=state_result,
         last_total_assets_twd=snapshot.total_assets_twd,
         last_speculation_pnl_twd=snapshot.speculation_pnl_twd,
@@ -955,6 +985,7 @@ def main() -> int:
         snapshot=snapshot,
         holdings_summary=holdings_summary,
         usd_summary=usd_summary,
+        cash_liability_summary=cash_liability_summary,
         previous_state=previous_state,
     )
     weekly_review_title = f"Weekly Review {datetime.now(TAIPEI_TZ).strftime('%Y-W%W')}"
@@ -972,6 +1003,7 @@ def main() -> int:
         commit_reasons=commit_reasons,
         holdings_summary=holdings_summary,
         usd_summary=usd_summary,
+        cash_liability_summary=cash_liability_summary,
         pnl_history_summary=pnl_history_summary,
         trade_history_summary=trade_history_summary,
         notion_summary=notion_summary,

@@ -4,6 +4,11 @@
 This repository maintains TradingView Pine scripts for portfolio tracking and rebalancing.
 The primary recurring workflow is syncing holdings data from Google Sheets into `PNLRebalance`.
 
+## Workflow Documentation Rule
+If any workflow, automation, sync path, trigger, payload shape, generated block, or scheduled behavior is added or changed, `AGENTS.md` must be updated in the same change.
+
+The scheduled weekly sync and manual `/sync` must use the same workflow entrypoint and produce the same side effects.
+
 ## Main Workflow: Update Holdings(更新持倉)
 When the user asks to update holdings, refresh positions, sync the Pine block, or regenerate the auto-generated section, follow this process:
 
@@ -13,7 +18,7 @@ Required inputs:
 
 If either value is missing, ask the user before running the sync.
 
-1. Treat Google Sheets as the source of truth for both holdings and exchange usd balances.
+1. Treat Google Sheets as the source of truth for holdings, exchange usd balances, and `cash_liability`.
 2. Do not run `holdings/update_holdings_pine.py` until the user has provided a token.
 3. If the user only says `Update Holdings`, ask exactly:
    - `1. token=?`
@@ -28,10 +33,14 @@ If either value is missing, ask the user before running the sync.
 7. Replace the exchange usd block between:
    - `// === AUTO-GENERATED USD START ===`
    - `// === AUTO-GENERATED USD END ===`
-8. Do not manually rewrite holdings arrays or exchange usd values if they can be produced by the script.
-9. Missing exchanges in the `usd` sheet should default to `0`.
-10. Create a commit after sync only if the user explicitly says yes.
-11. If the user wants a commit but does not specify a commit message, use:
+8. Replace the cash / liability block between:
+   - `// === AUTO-GENERATED CASH LIABILITY START ===`
+   - `// === AUTO-GENERATED CASH LIABILITY END ===`
+9. Aggregate any `DEBT*` rows from `cash_liability` into a single generated `DEBT` value in `PNLRebalance`.
+10. Do not manually rewrite holdings arrays, exchange usd values, or cash / liability values if they can be produced by the script.
+11. Missing exchanges in the `usd` sheet should default to `0`.
+12. Create a commit after sync only if the user explicitly says yes.
+13. If the user wants a commit but does not specify a commit message, use:
     - `[update] Update assets`
 
 ## Main Workflow: Update Pnl(更新損益)
@@ -147,6 +156,8 @@ python3 trade_history/update_trade_history.py
 ## Manual Trigger Alias
 If the user types `/sync`, treat it as a request to run the full weekly sync workflow immediately.
 
+- `/sync` and the scheduled weekly sync must run the same command and the same workflow behavior.
+
 - Run:
 
 ```bash
@@ -155,14 +166,17 @@ python3 weekly_holdings_pnl_sync.py --token "0125" --commit
 
 - This should:
   - fetch holdings from Google Sheets
+  - fetch `cash_liability` from Google Sheets
   - update `generated/holdings.pine`
   - update `PNLRebalance`
   - calculate current `speculationPNL`
   - update pnl history
   - refresh live trade rows from Apps Script
   - update trade history artifacts from the fresh snapshot
+  - create Notion weekly review on a best-effort basis
   - send Telegram summary on a best-effort basis
-  - create a commit when holdings changed, usd balances changed, today's pnl history has not been recorded yet, or `trade_history/TradeHistoryLabels.pine` changed
+  - create a commit when holdings changed, usd balances changed, cash / liability values changed, today's pnl history has not been recorded yet, or `trade_history/TradeHistoryLabels.pine` changed
+  - skip creating a duplicate Notion weekly review if that week's page already exists
   - report a trade history refresh failure in summary without blocking holdings / pnl sync
 
 If the user types `/更新交易紀錄`, treat it as a request to update local trade history artifacts immediately.
@@ -271,3 +285,13 @@ When completing this workflow, summarize:
 - whether `PNLRebalance` was updated
 - whether a commit was created
 - any blockers such as missing token, malformed payload, or missing markers
+
+After any holdings sync, weekly sync, or trade history sync, explicitly tell the user which Pine scripts need to be copied back into TradingView for this run.
+
+- At minimum, evaluate whether these Pine scripts changed:
+  - `PNLRebalance`
+  - `trade_history/TradeHistoryLabels.pine`
+- If a file changed and should be updated in TradingView, list it under:
+  - `This run, copy back to TradingView:`
+- If a file did not change, list it under:
+  - `This run, no TradingView update needed:`
