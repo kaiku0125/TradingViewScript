@@ -49,7 +49,7 @@ var float CRO_CRYPTO_RATIO = 10
 // 銀行現金設定
 // ============================================================================
 // === AUTO-GENERATED CASH LIABILITY START ===
-// updated_at: manual
+// updated_at: 2026-07-01T06:29:34.987Z
 var float BANK1_AVAL = 102193  // LineBank (TWD)
 var float BANK2_AVAL = 0  // Bankee (TWD)
 var float BANK3_AVAL = 44044  // 台新 (TWD)
@@ -63,7 +63,7 @@ var float DEBT = -947450  // 負債(TWD)
 // 交易所設定
 // ============================================================================
 // === AUTO-GENERATED USD START ===
-// updated_at: 2026-06-10T05:14:00.778Z
+// updated_at: 2026-07-01T06:29:34.987Z
 var float BYBIT_EXCHANGE_USD = 0
 var float BINANCE_EXCHANGE_USD = 0
 var float CRYPTO_DOT_COM_EXCHANGE_USD = 980
@@ -97,12 +97,12 @@ var float _0050_INCOME = 344242
 // ============================================================================
 
 // === AUTO-GENERATED START ===
-// updated_at: 2026-06-10T05:14:00.778Z
+// updated_at: 2026-07-01T06:29:34.987Z
 var string[] symbols = array.from("BTC", "ETH", "ADA", "BNB", "CRO")
-var float[] buyQtys = array.from(0.6, 8.4969, 32448.8785, 16.54, 122800)
-var float[] buyCosts = array.from(29445, 19986, 10551.14, 7872.07, 14439.48)
+var float[] buyQtys = array.from(0.6, 8.4969, 38114.4585, 16.54, 122800)
+var float[] buyCosts = array.from(29445, 19986, 11551.14, 7872.07, 14439.48)
 var float[] sellQtys = array.from(0.3263, 1.931373, 5299, 6.667, 20178)
-var float[] sellIncomes = array.from(9755.4, 15139.85, 5299, 6877.65, 5959.89)
+var float[] sellIncomes = array.from(9755.4, 15139.85, 6119.53, 6877.65, 5959.89)
 // === AUTO-GENERATED END ===
 
 // symbols 對應 index
@@ -1412,6 +1412,7 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2026, 6, 22, -553344)) //-17.07%
         array.push(rdArray, newData(2026, 6, 26, -600427)) //-18.52%
         array.push(rdArray, newData(2026, 6, 29, -621961)) //-19.18%
+        array.push(rdArray, newData(2026, 7, 1, -620682)) //-19.15%
 
 // 選擇要繪製的值（平滑化或原始值）
 plotValue = INPUT_SMOOTHING_ENABLED and not na(smoothedVariation) ? smoothedVariation : (not na(filledVariation) ? filledVariation : recordAssetsVariation)
