@@ -104,11 +104,63 @@ const HoldingsService = (() => {
       .filter(item => item.exchange);
   }
 
+  function getCashLiabilityData() {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const cashLiabilitySheet = ss.getSheetByName("cash_liability");
+
+    if (!cashLiabilitySheet) {
+      throw new Error('找不到 "cash_liability" 工作表');
+    }
+
+    const data = cashLiabilitySheet.getDataRange().getValues();
+
+    if (data.length < 2) {
+      throw new Error('"cash_liability" 工作表沒有資料');
+    }
+
+    const headers = data[0].map(h => String(h).trim());
+    const rows = data.slice(1);
+
+    const colIndex = {};
+    headers.forEach((header, index) => {
+      colIndex[header] = index;
+    });
+
+    const requiredColumns = [
+      "key",
+      "value",
+      "currency"
+    ];
+
+    requiredColumns.forEach(col => {
+      if (colIndex[col] === undefined) {
+        throw new Error(`cash_liability 缺少欄位: ${col}`);
+      }
+    });
+
+    return rows
+      .map(row => {
+        const key = String(row[colIndex["key"]] || "").trim();
+        if (!key) {
+          return null;
+        }
+
+        return {
+          key,
+          value: Number(formatNumber(row[colIndex["value"]] || 0, 8)),
+          currency: String(row[colIndex["currency"]] || "").trim().toUpperCase(),
+          note: String(row[colIndex["note"]] || "").trim()
+        };
+      })
+      .filter(item => item && item.key);
+  }
+
   function getPortfolioData() {
     return {
       updated_at: new Date().toISOString(),
       holdings: getHoldingsData(),
-      usd_balances: getUsdData()
+      usd_balances: getUsdData(),
+      cash_liability: getCashLiabilityData()
     };
   }
 

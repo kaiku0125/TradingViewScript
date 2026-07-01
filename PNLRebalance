@@ -48,11 +48,16 @@ var float CRO_CRYPTO_RATIO = 10
 // ============================================================================
 // 銀行現金設定
 // ============================================================================
-var float BANK1_AVAL = 2193 + 100000  // LineBank (TWD)
-var float BANK2_AVAL = 0 + 0         // Bankee (TWD)  
-var float BANK3_AVAL = 44044           // 台新 (TWD)
-var float BANK4_AVAL = 10569            // 樂天 (TWD)
-var float BITO_AVAL = 0                // 幣託 (USD)
+// === AUTO-GENERATED CASH LIABILITY START ===
+// updated_at: manual
+var float BANK1_AVAL = 102193  // LineBank (TWD)
+var float BANK2_AVAL = 0  // Bankee (TWD)
+var float BANK3_AVAL = 44044  // 台新 (TWD)
+var float BANK4_AVAL = 10569  // 樂天 (TWD)
+var float BITO_AVAL = 0  // 幣託 (USD)
+var float VISA_AVAL = 24000  // Visa (USD) 出金
+var float DEBT = -947450  // 負債(TWD)
+// === AUTO-GENERATED CASH LIABILITY END ===
 
 // ============================================================================
 // 交易所設定
@@ -78,8 +83,6 @@ var float EXCHANGE_USD =
 // ============================================================================
 // 其他設定
 // ============================================================================
-var float VISA_AVAL = 24000        // Visa (USD) 出金
-var float DEBT = -641014 - 306436  // 負債(TWD)
 
 // ============================================================================
 // 台股資產設定
