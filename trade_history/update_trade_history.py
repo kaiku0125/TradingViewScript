@@ -14,6 +14,34 @@ CONVERTER = Path("trade_history/convert_sheet_rows_to_trades.py")
 PINE_GENERATOR = Path("trade_history/generate_trade_history_pine.py")
 
 
+def invalid_snapshot(reason: str) -> str:
+    return f"Invalid trade snapshot: {reason}"
+
+
+def validate_snapshot_payload(payload: object) -> None:
+    if not isinstance(payload, dict):
+        raise ValueError(invalid_snapshot("payload must be an object"))
+
+    fetched_at = payload.get("fetched_at")
+    if not isinstance(fetched_at, str) or not fetched_at.strip():
+        raise ValueError(invalid_snapshot("missing fetched_at"))
+
+    tabs = payload.get("tabs")
+    if not isinstance(tabs, dict) or not tabs:
+        raise ValueError(invalid_snapshot("tabs must be a non-empty object"))
+
+    spreadsheet_url = payload.get("spreadsheet_url")
+    if spreadsheet_url is not None and not isinstance(spreadsheet_url, str):
+        raise ValueError(invalid_snapshot("spreadsheet_url must be a string when present"))
+
+    for tab_name, rows in tabs.items():
+        if not isinstance(rows, list):
+            raise ValueError(invalid_snapshot(f"tab '{tab_name}' must contain a list of rows"))
+        for row_index, row in enumerate(rows, start=1):
+            if not isinstance(row, list):
+                raise ValueError(invalid_snapshot(f"tab '{tab_name}' row {row_index} must be a list"))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Update standardized trade history artifacts from local sheet row snapshots."
@@ -31,10 +59,10 @@ def main() -> int:
 
     if not args.skip_refresh_check:
         payload = json.loads(input_path.read_text(encoding="utf-8"))
-        if "fetched_at" not in payload:
-            raise SystemExit(
-                "Snapshot is missing fetched_at metadata. Refresh generated/trade_rows.json from Google Sheet before running."
-            )
+        try:
+            validate_snapshot_payload(payload)
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
 
     command = [
         sys.executable,

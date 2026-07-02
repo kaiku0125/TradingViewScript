@@ -206,14 +206,21 @@ When the user asks to update trade history, sync trade history, regenerate trade
    - `fetched_at`
    - `spreadsheet_url`
    - `tabs`
-6. Keep `tabs` as the raw row snapshot keyed by tab name.
-7. Only after the snapshot is refreshed, run:
+6. `generated/trade_rows.json` must pass snapshot schema validation before conversion starts.
+7. Hard fail the trade history sync when:
+   - `fetched_at` is missing
+   - `tabs` is missing
+   - `tabs` is not an object
+   - any tab rows are not a 2D row list
+8. Keep `tabs` as the raw row snapshot keyed by tab name.
+9. `spreadsheet_url` is optional metadata for snapshot validation and should not block conversion when omitted.
+10. Only after the snapshot is refreshed, run:
 
 ```bash
 python3 trade_history/update_trade_history.py
 ```
 
-8. Do not rely on an old local snapshot when the Apps Script endpoint or Codex connector can be refreshed in the current turn.
+11. Do not rely on an old local snapshot when the Apps Script endpoint or Codex connector can be refreshed in the current turn.
 
 ### Codex Route
 For `/更新交易紀錄`, default to the Codex route:

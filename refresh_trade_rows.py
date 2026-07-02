@@ -22,13 +22,30 @@ def fetch_trade_rows(base_url: str, token: str, mode: str) -> dict:
         return json.loads(response.read().decode("utf-8"))
 
 
-def validate_payload(payload: dict) -> None:
+def validate_payload(payload: object) -> None:
+    if not isinstance(payload, dict):
+        raise ValueError("Payload must be an object")
     if payload.get("error"):
         raise ValueError(f"Web app error: {payload['error']}")
-    if "fetched_at" not in payload:
+
+    fetched_at = payload.get("fetched_at")
+    if not isinstance(fetched_at, str) or not fetched_at.strip():
         raise ValueError("Payload is missing fetched_at")
-    if "tabs" not in payload or not isinstance(payload["tabs"], dict):
-        raise ValueError("Payload is missing tabs object")
+
+    tabs = payload.get("tabs")
+    if not isinstance(tabs, dict) or not tabs:
+        raise ValueError("Payload tabs must be a non-empty object")
+
+    spreadsheet_url = payload.get("spreadsheet_url")
+    if spreadsheet_url is not None and not isinstance(spreadsheet_url, str):
+        raise ValueError("Payload spreadsheet_url must be a string when present")
+
+    for tab_name, rows in tabs.items():
+        if not isinstance(rows, list):
+            raise ValueError(f"Payload tab '{tab_name}' must contain a list of rows")
+        for row_index, row in enumerate(rows, start=1):
+            if not isinstance(row, list):
+                raise ValueError(f"Payload tab '{tab_name}' row {row_index} must be a list")
 
 
 def main() -> int:
