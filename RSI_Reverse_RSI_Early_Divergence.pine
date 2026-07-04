@@ -208,12 +208,12 @@ if barstate.islast
     earlyBearLabel := na
     if showEarlyDiv and bullEarly
         earlyBullBar = bar_index - earlyLookbackRight
-        bullLabelText = " Bull\nFloor: " + str.tostring(bullFloor, format.mintick)
+        bullLabelText = " Bull ( >" + str.tostring(bullFloor, format.mintick) + " ) "
         earlyBullLine := line.new(prevPLbar, prevPLrsi, earlyBullBar, earlyRsi, color = bullColor, width = 2)
         earlyBullLabel := label.new(earlyBullBar, earlyRsi, bullLabelText, style = label.style_label_up, color = bullColor, textcolor = textColor)
     if showEarlyDiv and bearEarly
         earlyBearBar = bar_index - earlyLookbackRight
-        bearLabelText = " Bear\nCap: " + str.tostring(bearCap, format.mintick)
+        bearLabelText = " Bear ( <" + str.tostring(bearCap, format.mintick) + " ) "
         earlyBearLine := line.new(prevPHbar, prevPHrsi, earlyBearBar, earlyRsi, color = bearColor, width = 2)
         earlyBearLabel := label.new(earlyBearBar, earlyRsi, bearLabelText, style = label.style_label_down, color = bearColor, textcolor = textColor)
 
