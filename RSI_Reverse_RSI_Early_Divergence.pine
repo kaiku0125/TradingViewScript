@@ -1,0 +1,221 @@
+//@version=6
+indicator(title="Relative Strength Index with Reverse-RSI Early Divergence", shorttitle="RSI Early Div", format=format.price, precision=2)
+
+rsiLengthInput = input.int(14, minval=1, title="RSI Length", group="RSI Settings")
+rsiSourceInput = input.source(close, "Source", group="RSI Settings")
+calculateDivergence = input.bool(true, title="Calculate Divergence", group="RSI Settings", display = display.none, tooltip = "Calculating divergences is needed in order for divergence alerts to fire.")
+
+change = ta.change(rsiSourceInput)
+up = ta.rma(math.max(change, 0), rsiLengthInput)
+down = ta.rma(-math.min(change, 0), rsiLengthInput)
+rsi = down == 0 ? 100 : up == 0 ? 0 : 100 - (100 / (1 + up / down))
+
+rsiPlot = plot(rsi, "RSI", color=#7E57C2)
+rsiUpperBand = hline(70, "RSI Upper Band", color=#787B86)
+midline = hline(50, "RSI Middle Band", color=color.new(#787B86, 50))
+rsiLowerBand = hline(30, "RSI Lower Band", color=#787B86)
+fill(rsiUpperBand, rsiLowerBand, color=color.rgb(126, 87, 194, 90), title="RSI Background Fill")
+midLinePlot = plot(50, color = na, editable = false, display = display.none)
+fill(rsiPlot, midLinePlot, 100, 70, top_color = color.new(color.green, 0), bottom_color = color.new(color.green, 100),  title = "Overbought Gradient Fill")
+fill(rsiPlot, midLinePlot, 30,  0,  top_color = color.new(color.red, 100), bottom_color = color.new(color.red, 0),      title = "Oversold Gradient Fill")
+
+// Smoothing MA inputs
+GRP = "Smoothing"
+TT_BB = "Only applies when 'SMA + Bollinger Bands' is selected. Determines the distance between the SMA and the bands."
+maTypeInput = input.string("SMA", "Type", options = ["None", "SMA", "SMA + Bollinger Bands", "EMA", "SMMA (RMA)", "WMA", "VWMA"], group = GRP, display = display.none)
+var isBB = maTypeInput == "SMA + Bollinger Bands"
+maLengthInput = input.int(14, "Length", group = GRP, display = display.none, active = maTypeInput != "None")
+bbMultInput = input.float(2.0, "BB StdDev", minval = 0.001, maxval = 50, step = 0.5, tooltip = TT_BB, group = GRP, display = display.none, active = isBB)
+var enableMA = maTypeInput != "None"
+
+// Smoothing MA Calculation
+ma(source, length, MAtype) =>
+    switch MAtype
+        "SMA"                   => ta.sma(source, length)
+        "SMA + Bollinger Bands" => ta.sma(source, length)
+        "EMA"                   => ta.ema(source, length)
+        "SMMA (RMA)"            => ta.rma(source, length)
+        "WMA"                   => ta.wma(source, length)
+        "VWMA"                  => ta.vwma(source, length)
+
+// Smoothing MA plots
+smoothingMA = enableMA ? ma(rsi, maLengthInput, maTypeInput) : na
+smoothingStDev = isBB ? ta.stdev(rsi, maLengthInput) * bbMultInput : na
+plot(smoothingMA, "RSI-based MA", color=color.yellow, display = enableMA ? display.all : display.none, editable = enableMA)
+bbUpperBand = plot(smoothingMA + smoothingStDev, title = "Upper Bollinger Band", color=color.green, display = isBB ? display.all : display.none, editable = isBB)
+bbLowerBand = plot(smoothingMA - smoothingStDev, title = "Lower Bollinger Band", color=color.green, display = isBB ? display.all : display.none, editable = isBB)
+fill(bbUpperBand, bbLowerBand, color= isBB ? color.new(color.green, 90) : na, title="Bollinger Bands Background Fill", display = isBB ? display.all : display.none, editable = isBB)
+
+// Divergence
+lookbackRight = 5
+lookbackLeft = 5
+rangeUpper = 60
+rangeLower = 5
+bearColor = color.red
+bullColor = color.green
+textColor = color.white
+noneColor = color.new(color.white, 100)
+
+_inRange(bool cond) =>
+    bars = ta.barssince(cond)
+    rangeLower <= bars and bars <= rangeUpper
+
+plFound = false
+phFound = false
+
+bullCond = false
+bearCond = false
+
+rsiLBR = rsi[lookbackRight]
+lowLBR = low[lookbackRight]
+highLBR = high[lookbackRight]
+plFoundRaw = not na(ta.pivotlow(rsi, lookbackLeft, lookbackRight))
+phFoundRaw = not na(ta.pivothigh(rsi, lookbackLeft, lookbackRight))
+
+if calculateDivergence
+    //------------------------------------------------------------------------------
+    // Regular Bullish
+    // rsi: Higher Low
+    plFound := plFoundRaw
+    rsiHL = rsiLBR > ta.valuewhen(plFound, rsiLBR, 1) and _inRange(plFound[1])
+    // Price: Lower Low
+    priceLL = lowLBR < ta.valuewhen(plFound, lowLBR, 1)
+    bullCond := priceLL and rsiHL and plFound
+
+    //------------------------------------------------------------------------------
+    // Regular Bearish
+    // rsi: Lower High
+    phFound := phFoundRaw
+    rsiLH = rsiLBR < ta.valuewhen(phFound, rsiLBR, 1) and _inRange(phFound[1])
+    // Price: Higher High
+    priceHH = highLBR > ta.valuewhen(phFound, highLBR, 1)
+    bearCond := priceHH and rsiLH and phFound
+
+
+plot(
+     plFound   ? rsiLBR : na,
+     offset    = -lookbackRight,
+     title     = "Regular Bullish",
+     linewidth = 2,
+     color     = (bullCond ? bullColor : noneColor),
+     display   = display.pane,
+     editable  = calculateDivergence)
+
+plotshape(
+     bullCond  ? rsiLBR : na,
+     offset    = -lookbackRight,
+     title     = "Regular Bullish Label",
+     text      = " Bull ",
+     style     = shape.labelup,
+     location  = location.absolute,
+     color     = bullColor,
+     textcolor = textColor,
+     display   = display.pane,
+     editable  = calculateDivergence)
+
+plot(
+     phFound   ? rsiLBR : na,
+     offset    = -lookbackRight,
+     title     = "Regular Bearish",
+     linewidth = 2,
+     color     = (bearCond ? bearColor : noneColor),
+     display   = display.pane,
+     editable  = calculateDivergence)
+
+plotshape(
+     bearCond  ? rsiLBR : na,
+     offset    = -lookbackRight,
+     title     = "Regular Bearish Label",
+     text      = " Bear ",
+     style     = shape.labeldown,
+     location  = location.absolute,
+     color     = bearColor,
+     textcolor = textColor,
+     display   = display.pane,
+     editable  = calculateDivergence)
+
+alertcondition(bullCond, title='Regular Bullish Divergence', message="Found a new Regular Bullish Divergence, `Pivot Lookback Right` number of bars to the left of the current bar.")
+alertcondition(bearCond, title='Regular Bearish Divergence', message='Found a new Regular Bearish Divergence, `Pivot Lookback Right` number of bars to the left of the current bar.')
+
+// Reverse-RSI Early Divergence
+// This is an intrabar early-warning for the newest possible pivot one bar before the
+// standard lookbackRight confirmation. It can repaint while the realtime bar is
+// moving. The threshold is expressed in the RSI source units, so it is most meaningful
+// when Source is close.
+earlyDivGroup = "Reverse-RSI Early Divergence"
+showEarlyDiv = input.bool(true, "Show Early Divergence", group = earlyDivGroup)
+earlyLookbackRight = lookbackRight - 1
+
+f_priceForRSI(float targetRSI) =>
+    float result = na
+    float targetRS = na
+    float prevSource = rsiSourceInput[1]
+    float u1 = up[1]
+    float d1 = down[1]
+    float w = rsiLengthInput - 1.0
+    bool validTarget = not na(targetRSI) and targetRSI > 0 and targetRSI < 100
+    bool validState = not na(prevSource) and not na(u1) and not na(d1) and not (u1 == 0 and d1 == 0)
+    if validTarget and validState
+        targetRS := targetRSI / (100.0 - targetRSI)
+        if d1 == 0
+            result := prevSource + w * (d1 - u1 / targetRS)
+        else
+            baseRS = u1 / d1
+            requiredChange = targetRS >= baseRS ? w * (targetRS * d1 - u1) : w * (d1 - u1 / targetRS)
+            result := prevSource + requiredChange
+    result
+
+prevPLrsi = ta.valuewhen(plFoundRaw, rsiLBR, 0)
+prevPLprice = ta.valuewhen(plFoundRaw, lowLBR, 0)
+prevPLbar = ta.valuewhen(plFoundRaw, bar_index - lookbackRight, 0)
+prevPHrsi = ta.valuewhen(phFoundRaw, rsiLBR, 0)
+prevPHprice = ta.valuewhen(phFoundRaw, highLBR, 0)
+prevPHbar = ta.valuewhen(phFoundRaw, bar_index - lookbackRight, 0)
+
+earlyRsi = rsi[earlyLookbackRight]
+earlyLow = low[earlyLookbackRight]
+earlyHigh = high[earlyLookbackRight]
+
+earlyPLCandidate = not na(earlyRsi) and earlyRsi < ta.lowest(rsi[earlyLookbackRight + 1], lookbackLeft) and earlyRsi <= ta.lowest(rsi, earlyLookbackRight)
+earlyPHCandidate = not na(earlyRsi) and earlyRsi > ta.highest(rsi[earlyLookbackRight + 1], lookbackLeft) and earlyRsi >= ta.highest(rsi, earlyLookbackRight)
+
+bullFloor = f_priceForRSI(earlyRsi)
+bearCap = f_priceForRSI(earlyRsi)
+
+earlyBullRsiHL = earlyRsi > prevPLrsi and _inRange(plFoundRaw)
+earlyBullPriceLL = earlyLow < prevPLprice
+earlyBullZoneValid = not na(bullFloor) and not na(earlyLow) and bullFloor < earlyLow
+bullEarly = earlyPLCandidate and earlyBullPriceLL and earlyBullRsiHL and earlyBullZoneValid and close > bullFloor
+
+earlyBearRsiLH = earlyRsi < prevPHrsi and _inRange(phFoundRaw)
+earlyBearPriceHH = earlyHigh > prevPHprice
+earlyBearZoneValid = not na(bearCap) and not na(earlyHigh) and bearCap > earlyHigh
+bearEarly = earlyPHCandidate and earlyBearPriceHH and earlyBearRsiLH and earlyBearZoneValid and close < bearCap
+
+var line earlyBullLine = na
+var label earlyBullLabel = na
+var line earlyBearLine = na
+var label earlyBearLabel = na
+
+if barstate.islast
+    line.delete(earlyBullLine)
+    label.delete(earlyBullLabel)
+    line.delete(earlyBearLine)
+    label.delete(earlyBearLabel)
+    earlyBullLine := na
+    earlyBullLabel := na
+    earlyBearLine := na
+    earlyBearLabel := na
+    if showEarlyDiv and bullEarly
+        earlyBullBar = bar_index - earlyLookbackRight
+        bullLabelText = " Bull\nFloor: " + str.tostring(bullFloor, format.mintick)
+        earlyBullLine := line.new(prevPLbar, prevPLrsi, earlyBullBar, earlyRsi, color = bullColor, width = 2)
+        earlyBullLabel := label.new(earlyBullBar, earlyRsi, bullLabelText, style = label.style_label_up, color = bullColor, textcolor = textColor)
+    if showEarlyDiv and bearEarly
+        earlyBearBar = bar_index - earlyLookbackRight
+        bearLabelText = " Bear\nCap: " + str.tostring(bearCap, format.mintick)
+        earlyBearLine := line.new(prevPHbar, prevPHrsi, earlyBearBar, earlyRsi, color = bearColor, width = 2)
+        earlyBearLabel := label.new(earlyBearBar, earlyRsi, bearLabelText, style = label.style_label_down, color = bearColor, textcolor = textColor)
+
+alertcondition(bullEarly, title="Early Bullish Divergence", message="Early bullish divergence: close is above bullFloor and below the previous pivot low price.")
+alertcondition(bearEarly, title="Early Bearish Divergence", message="Early bearish divergence: close is below bearCap and above the previous pivot high price.")
