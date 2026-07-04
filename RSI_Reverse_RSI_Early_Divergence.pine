@@ -200,15 +200,15 @@ bearCap = f_priceForRSI(earlyRsi)
 
 earlyBullRsiHL = earlyRsi > prevPLrsi and _inRange(plFoundRaw)
 earlyBullPriceLL = earlyLow < prevPLprice
-earlyBullZoneValid = not na(bullFloor) and not na(earlyLow) and bullFloor < earlyLow
+earlyBullThresholdValid = not na(bullFloor)
 bullProtectsPivot = close > bullFloor
-bullEarly = earlyPLCandidate and earlyBullPriceLL and earlyBullRsiHL and earlyBullZoneValid and bullProtectsPivot
+bullEarly = earlyPLCandidate and earlyBullPriceLL and earlyBullRsiHL and earlyBullThresholdValid and bullProtectsPivot
 
 earlyBearRsiLH = earlyRsi < prevPHrsi and _inRange(phFoundRaw)
 earlyBearPriceHH = earlyHigh > prevPHprice
-earlyBearZoneValid = not na(bearCap) and not na(earlyHigh) and bearCap > earlyHigh
+earlyBearThresholdValid = not na(bearCap)
 bearProtectsPivot = close < bearCap
-bearEarly = earlyPHCandidate and earlyBearPriceHH and earlyBearRsiLH and earlyBearZoneValid and bearProtectsPivot
+bearEarly = earlyPHCandidate and earlyBearPriceHH and earlyBearRsiLH and earlyBearThresholdValid and bearProtectsPivot
 
 var line earlyBullLine = na
 var label earlyBullLabel = na
@@ -223,11 +223,11 @@ if showEarlyDebug
     table.cell(earlyDebugTable, 0, 1, "Bull", text_color = color.white)
     table.cell(earlyDebugTable, 1, 1, f_boolText(bullEarly) + " cand=" + f_boolText(earlyPLCandidate) + " priceLL=" + f_boolText(earlyBullPriceLL), text_color = bullEarly ? bullColor : color.white)
     table.cell(earlyDebugTable, 0, 2, "Bull RSI/Protect", text_color = color.white)
-    table.cell(earlyDebugTable, 1, 2, "rsiHL=" + f_boolText(earlyBullRsiHL) + " zone=" + f_boolText(earlyBullZoneValid) + " protect=" + f_boolText(bullProtectsPivot), text_color = color.white)
+    table.cell(earlyDebugTable, 1, 2, "rsiHL=" + f_boolText(earlyBullRsiHL) + " threshold=" + f_boolText(earlyBullThresholdValid) + " protect=" + f_boolText(bullProtectsPivot), text_color = color.white)
     table.cell(earlyDebugTable, 0, 3, "Bear", text_color = color.white)
     table.cell(earlyDebugTable, 1, 3, f_boolText(bearEarly) + " cand=" + f_boolText(earlyPHCandidate) + " priceHH=" + f_boolText(earlyBearPriceHH), text_color = bearEarly ? bearColor : color.white)
     table.cell(earlyDebugTable, 0, 4, "Bear RSI/Protect", text_color = color.white)
-    table.cell(earlyDebugTable, 1, 4, "rsiLH=" + f_boolText(earlyBearRsiLH) + " zone=" + f_boolText(earlyBearZoneValid) + " protect=" + f_boolText(bearProtectsPivot), text_color = color.white)
+    table.cell(earlyDebugTable, 1, 4, "rsiLH=" + f_boolText(earlyBearRsiLH) + " threshold=" + f_boolText(earlyBearThresholdValid) + " protect=" + f_boolText(bearProtectsPivot), text_color = color.white)
     table.cell(earlyDebugTable, 0, 5, "Close", text_color = color.white)
     table.cell(earlyDebugTable, 1, 5, f_formatPrice(close), text_color = color.white)
     table.cell(earlyDebugTable, 0, 6, "Bull floor", text_color = color.white)
