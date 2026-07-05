@@ -145,7 +145,7 @@ alertcondition(bearCond, title='Regular Bearish Divergence', message='Found a ne
 earlyDivGroup = "Reverse-RSI Early Divergence"
 showEarlyDiv = input.bool(true, "Show Early Divergence", group = earlyDivGroup)
 showEarlyDebug = input.bool(false, "Show Early Debug Table", group = earlyDivGroup)
-earlyLookbackRight = lookbackRight - 1
+earlyLookbackRight = input.int(4, "Early Pivot Lookback Right", minval = 1, maxval = 4, group = earlyDivGroup)
 
 f_priceForRSI(float targetRSI) =>
     float result = na
@@ -192,8 +192,13 @@ earlyLow = low[earlyLookbackRight]
 earlyHigh = high[earlyLookbackRight]
 
 earlyRightConfirmed = earlyLookbackRight - 1
-earlyPLCandidate = not na(earlyRsi) and earlyRsi < ta.lowest(rsi[earlyLookbackRight + 1], lookbackLeft) and earlyRsi <= ta.lowest(rsi[1], earlyRightConfirmed)
-earlyPHCandidate = not na(earlyRsi) and earlyRsi > ta.highest(rsi[earlyLookbackRight + 1], lookbackLeft) and earlyRsi >= ta.highest(rsi[1], earlyRightConfirmed)
+earlyPLRightConfirmed = true
+earlyPHRightConfirmed = true
+if earlyRightConfirmed > 0
+    earlyPLRightConfirmed := earlyRsi <= ta.lowest(rsi[1], earlyRightConfirmed)
+    earlyPHRightConfirmed := earlyRsi >= ta.highest(rsi[1], earlyRightConfirmed)
+earlyPLCandidate = not na(earlyRsi) and earlyRsi < ta.lowest(rsi[earlyLookbackRight + 1], lookbackLeft) and earlyPLRightConfirmed
+earlyPHCandidate = not na(earlyRsi) and earlyRsi > ta.highest(rsi[earlyLookbackRight + 1], lookbackLeft) and earlyPHRightConfirmed
 
 bullFloor = f_priceForRSI(earlyRsi)
 bearCap = f_priceForRSI(earlyRsi)
@@ -212,8 +217,12 @@ bearEarly = earlyPHCandidate and earlyBearPriceHH and earlyBearRsiLH and earlyBe
 
 var line earlyBullLine = na
 var label earlyBullLabel = na
+var float activeBullFloor = na
+var int activeBullBar = na
 var line earlyBearLine = na
 var label earlyBearLabel = na
+var float activeBearCap = na
+var int activeBearBar = na
 var table earlyDebugTable = table.new(position.bottom_right, 2, 7, bgcolor = color.new(color.black, 15), frame_color = color.new(color.white, 75), frame_width = 1)
 
 table.clear(earlyDebugTable, 0, 0, 1, 6)
@@ -233,23 +242,41 @@ if showEarlyDebug
     table.cell(earlyDebugTable, 0, 6, "Bar", text_color = color.white, text_size = size.small)
     table.cell(earlyDebugTable, 1, 6, str.tostring(bar_index) + " r" + str.tostring(earlyLookbackRight) + "/" + str.tostring(earlyRightConfirmed), text_color = color.white, text_size = size.small)
 
-line.delete(earlyBullLine)
-label.delete(earlyBullLabel)
-line.delete(earlyBearLine)
-label.delete(earlyBearLabel)
-earlyBullLine := na
-earlyBullLabel := na
-earlyBearLine := na
-earlyBearLabel := na
-if showEarlyDiv and bullEarly
+if not na(activeBullFloor) and (not showEarlyDiv or close <= activeBullFloor or bullCond)
+    line.delete(earlyBullLine)
+    label.delete(earlyBullLabel)
+    earlyBullLine := na
+    earlyBullLabel := na
+    activeBullFloor := na
+    activeBullBar := na
+
+if not na(activeBearCap) and (not showEarlyDiv or close >= activeBearCap or bearCond)
+    line.delete(earlyBearLine)
+    label.delete(earlyBearLabel)
+    earlyBearLine := na
+    earlyBearLabel := na
+    activeBearCap := na
+    activeBearBar := na
+
+if showEarlyDiv and bullEarly and not bullCond
     earlyBullBar = bar_index - earlyLookbackRight
-    bullLabelText = " Bull ( >" + f_formatPrice(bullFloor) + " ) "
-    earlyBullLine := line.new(prevPLbar, prevPLrsi, earlyBullBar, earlyRsi, color = bullColor, width = 2)
-    earlyBullLabel := label.new(earlyBullBar, earlyRsi, bullLabelText, style = label.style_label_up, color = bullColor, textcolor = textColor)
-if showEarlyDiv and bearEarly
+    if na(activeBullBar) or activeBullBar != earlyBullBar
+        line.delete(earlyBullLine)
+        label.delete(earlyBullLabel)
+        bullLabelText = " Bull ( >" + f_formatPrice(bullFloor) + " ) "
+        earlyBullLine := line.new(prevPLbar, prevPLrsi, earlyBullBar, earlyRsi, color = bullColor, width = 2)
+        earlyBullLabel := label.new(earlyBullBar, earlyRsi, bullLabelText, style = label.style_label_up, color = bullColor, textcolor = textColor)
+        activeBullFloor := bullFloor
+        activeBullBar := earlyBullBar
+if showEarlyDiv and bearEarly and not bearCond
     earlyBearBar = bar_index - earlyLookbackRight
-    bearLabelText = " Bear ( <" + f_formatPrice(bearCap) + " ) "
-    earlyBearLine := line.new(prevPHbar, prevPHrsi, earlyBearBar, earlyRsi, color = bearColor, width = 2)
-    earlyBearLabel := label.new(earlyBearBar, earlyRsi, bearLabelText, style = label.style_label_down, color = bearColor, textcolor = textColor)
+    if na(activeBearBar) or activeBearBar != earlyBearBar
+        line.delete(earlyBearLine)
+        label.delete(earlyBearLabel)
+        bearLabelText = " Bear ( <" + f_formatPrice(bearCap) + " ) "
+        earlyBearLine := line.new(prevPHbar, prevPHrsi, earlyBearBar, earlyRsi, color = bearColor, width = 2)
+        earlyBearLabel := label.new(earlyBearBar, earlyRsi, bearLabelText, style = label.style_label_down, color = bearColor, textcolor = textColor)
+        activeBearCap := bearCap
+        activeBearBar := earlyBearBar
 alertcondition(bullEarly, title="Early Bullish Divergence", message="Early bullish divergence: close is above bullFloor and below the previous pivot low price.")
 alertcondition(bearEarly, title="Early Bearish Divergence", message="Early bearish divergence: close is below bearCap and above the previous pivot high price.")
