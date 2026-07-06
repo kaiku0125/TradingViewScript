@@ -49,27 +49,27 @@ var float CRO_CRYPTO_RATIO = 10
 // 銀行現金設定
 // ============================================================================
 // === AUTO-GENERATED CASH LIABILITY START ===
-// updated_at: 2026-07-06T01:02:10.341Z
-var float BANK1_AVAL = 102498  // LineBank (TWD)
-var float BANK2_AVAL = 0  // Bankee (TWD)
-var float BANK3_AVAL = 19933  // 台新 (TWD)
-var float BANK4_AVAL = 5393  // 樂天 (TWD)
-var float BITO_AVAL = 0  // 幣託 (USD)
-var float VISA_AVAL = 24500  // Visa (USD) 出金
-var float DEBT = -931274  // 負債(TWD)
+// updated_at: 2026-07-06T02:43:35.222Z
+var float BANK1_AVAL = 102498.0  // LineBank (TWD)
+var float BANK2_AVAL = 0.0  // Bankee (TWD)
+var float BANK3_AVAL = 19933.0  // 台新 (TWD)
+var float BANK4_AVAL = 5393.0  // 樂天 (TWD)
+var float BITO_AVAL = 0.0  // 幣託 (USD)
+var float VISA_AVAL = 24500.0  // Visa (USD) 出金
+var float DEBT = -931274.0  // 負債(TWD)
 // === AUTO-GENERATED CASH LIABILITY END ===
 
 // ============================================================================
 // 交易所設定
 // ============================================================================
 // === AUTO-GENERATED USD START ===
-// updated_at: 2026-07-06T01:02:10.341Z
-var float BYBIT_EXCHANGE_USD = 0
-var float BINANCE_EXCHANGE_USD = 0
-var float CRYPTO_DOT_COM_EXCHANGE_USD = 980
-var float OKX_EXCHANGE_USD = 0
-var float PIONEX_EXCHANGE_USD = 13488
-var float KRAKEN_EXCHANGE_USD = 0
+// updated_at: 2026-07-06T02:43:35.222Z
+var float BYBIT_EXCHANGE_USD = 0.0
+var float BINANCE_EXCHANGE_USD = 0.0
+var float CRYPTO_DOT_COM_EXCHANGE_USD = 980.0
+var float OKX_EXCHANGE_USD = 0.0
+var float PIONEX_EXCHANGE_USD = 13488.0
+var float KRAKEN_EXCHANGE_USD = 0.0
 var float EXCHANGE_USD =
       BYBIT_EXCHANGE_USD +
       BINANCE_EXCHANGE_USD +
@@ -97,12 +97,12 @@ var float _0050_INCOME = 344242
 // ============================================================================
 
 // === AUTO-GENERATED START ===
-// updated_at: 2026-07-06T01:02:10.341Z
+// updated_at: 2026-07-06T02:43:35.222Z
 var string[] symbols = array.from("BTC", "ETH", "ADA", "BNB", "CRO")
-var float[] buyQtys = array.from(0.6, 12.55, 38114, 16.54, 122800)
-var float[] buyCosts = array.from(29445, 21486, 11551, 7872, 14439)
-var float[] sellQtys = array.from(0.3263, 4.7, 5299, 6.667, 20178)
-var float[] sellIncomes = array.from(9755, 15140, 6120, 6878, 5959.89)
+var float[] buyQtys = array.from(0.6, 12.55, 38114.0, 16.54, 122800.0)
+var float[] buyCosts = array.from(29445.0, 21486.0, 11551.0, 7872.0, 14439.0)
+var float[] sellQtys = array.from(0.3263, 4.7, 5299.0, 6.667, 20178.0)
+var float[] sellIncomes = array.from(9755.0, 15140.0, 6120.0, 6878.0, 5959.89)
 // === AUTO-GENERATED END ===
 
 // symbols 對應 index
