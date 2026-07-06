@@ -46,8 +46,11 @@ def fetch_holdings(base_url: str, token: str) -> dict:
         return json.loads(response.read().decode("utf-8"))
 
 
-def format_number(value: float) -> str:
-    return f"{value:.8f}".rstrip("0").rstrip(".")
+def format_number(value: float, *, force_decimal: bool = False) -> str:
+    formatted = f"{value:.8f}".rstrip("0").rstrip(".")
+    if force_decimal and "." not in formatted:
+        return f"{formatted}.0"
+    return formatted
 
 
 def build_holdings_pine(payload: dict) -> str:
@@ -56,10 +59,10 @@ def build_holdings_pine(payload: dict) -> str:
         raise ValueError("No holdings found in payload")
 
     symbols = ", ".join(f'"{item["symbol"]}"' for item in holdings)
-    buy_qtys = ", ".join(format_number(item["buy_qty"]) for item in holdings)
-    buy_costs = ", ".join(format_number(item["buy_cost"]) for item in holdings)
-    sell_qtys = ", ".join(format_number(item["sell_qty"]) for item in holdings)
-    sell_incomes = ", ".join(format_number(item["sell_income"]) for item in holdings)
+    buy_qtys = ", ".join(format_number(item["buy_qty"], force_decimal=True) for item in holdings)
+    buy_costs = ", ".join(format_number(item["buy_cost"], force_decimal=True) for item in holdings)
+    sell_qtys = ", ".join(format_number(item["sell_qty"], force_decimal=True) for item in holdings)
+    sell_incomes = ", ".join(format_number(item["sell_income"], force_decimal=True) for item in holdings)
 
     lines = [
         HOLDINGS_BLOCK_START,
@@ -88,12 +91,12 @@ def build_usd_pine(payload: dict) -> str:
     lines = [
         USD_BLOCK_START,
         f"// updated_at: {payload.get('updated_at', 'unknown')}",
-        f"var float BYBIT_EXCHANGE_USD = {format_number(balances['bybit'])}",
-        f"var float BINANCE_EXCHANGE_USD = {format_number(balances['binance'])}",
-        f"var float CRYPTO_DOT_COM_EXCHANGE_USD = {format_number(balances['crypto_com'])}",
-        f"var float OKX_EXCHANGE_USD = {format_number(balances['okx'])}",
-        f"var float PIONEX_EXCHANGE_USD = {format_number(balances['pionex'])}",
-        f"var float KRAKEN_EXCHANGE_USD = {format_number(balances['kraken'])}",
+        f"var float BYBIT_EXCHANGE_USD = {format_number(balances['bybit'], force_decimal=True)}",
+        f"var float BINANCE_EXCHANGE_USD = {format_number(balances['binance'], force_decimal=True)}",
+        f"var float CRYPTO_DOT_COM_EXCHANGE_USD = {format_number(balances['crypto_com'], force_decimal=True)}",
+        f"var float OKX_EXCHANGE_USD = {format_number(balances['okx'], force_decimal=True)}",
+        f"var float PIONEX_EXCHANGE_USD = {format_number(balances['pionex'], force_decimal=True)}",
+        f"var float KRAKEN_EXCHANGE_USD = {format_number(balances['kraken'], force_decimal=True)}",
         "var float EXCHANGE_USD =",
         "      BYBIT_EXCHANGE_USD +",
         "      BINANCE_EXCHANGE_USD +",
@@ -129,13 +132,13 @@ def build_cash_liability_pine(payload: dict) -> str:
     lines = [
         CASH_LIABILITY_BLOCK_START,
         f"// updated_at: {payload.get('updated_at', 'unknown')}",
-        f"var float BANK1_AVAL = {format_number(snapshot['BANK1_AVAL'])}  // LineBank (TWD)",
-        f"var float BANK2_AVAL = {format_number(snapshot['BANK2_AVAL'])}  // Bankee (TWD)",
-        f"var float BANK3_AVAL = {format_number(snapshot['BANK3_AVAL'])}  // 台新 (TWD)",
-        f"var float BANK4_AVAL = {format_number(snapshot['BANK4_AVAL'])}  // 樂天 (TWD)",
-        f"var float BITO_AVAL = {format_number(snapshot['BITO_AVAL'])}  // 幣託 (USD)",
-        f"var float VISA_AVAL = {format_number(snapshot['VISA_AVAL'])}  // Visa (USD) 出金",
-        f"var float DEBT = {format_number(snapshot['DEBT'])}  // 負債(TWD)",
+        f"var float BANK1_AVAL = {format_number(snapshot['BANK1_AVAL'], force_decimal=True)}  // LineBank (TWD)",
+        f"var float BANK2_AVAL = {format_number(snapshot['BANK2_AVAL'], force_decimal=True)}  // Bankee (TWD)",
+        f"var float BANK3_AVAL = {format_number(snapshot['BANK3_AVAL'], force_decimal=True)}  // 台新 (TWD)",
+        f"var float BANK4_AVAL = {format_number(snapshot['BANK4_AVAL'], force_decimal=True)}  // 樂天 (TWD)",
+        f"var float BITO_AVAL = {format_number(snapshot['BITO_AVAL'], force_decimal=True)}  // 幣託 (USD)",
+        f"var float VISA_AVAL = {format_number(snapshot['VISA_AVAL'], force_decimal=True)}  // Visa (USD) 出金",
+        f"var float DEBT = {format_number(snapshot['DEBT'], force_decimal=True)}  // 負債(TWD)",
         CASH_LIABILITY_BLOCK_END,
     ]
     return "\n".join(lines) + "\n"
