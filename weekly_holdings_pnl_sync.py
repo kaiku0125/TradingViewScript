@@ -7,15 +7,17 @@ import math
 import os
 import subprocess
 import hashlib
+import sys
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 from urllib.parse import urlencode
-from urllib.request import urlopen
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
-import update_holdings_pine as holdings_sync
+from holdings import update_holdings_pine as holdings_sync
 import update_pnl_history as pnl_history
 
 
@@ -23,7 +25,15 @@ DEFAULT_PNL_FILE = Path("PNLRebalance")
 DEFAULT_GENERATED_FILE = Path("generated/holdings.pine")
 DEFAULT_COMMIT_MESSAGE = "[update] Update assets"
 DEFAULT_ENV_FILE = Path(".env.local")
-DEFAULT_STATE_FILE = Path(".weekly_holdings_pnl_sync_state.json")
+DEFAULT_STATE_FILE = Path("generated/weekly_holdings_pnl_sync_state.json")
+DEFAULT_WEEKLY_REVIEW_SUMMARY_FILE = Path("generated/weekly_review_summary.md")
+DEFAULT_TRADE_SNAPSHOT_FILE = Path("generated/trade_rows.json")
+DEFAULT_TRADE_HISTORY_PINE_FILE = Path("trade_history/TradeHistoryLabels.pine")
+NOTION_API_BASE_URL = "https://api.notion.com/v1"
+NOTION_API_VERSION = "2022-06-28"
+DEFAULT_NOTION_WEEKLY_REVIEW_ICON = "🗓️"
+TRADE_ROWS_REFRESHER = Path("refresh_trade_rows.py")
+EXPECTED_BRANCH = "update/routine"
 TAIPEI_TZ = ZoneInfo("Asia/Taipei")
 CRYPTO_PRICE_SOURCE_MAP = {
     "BTC": ("BTC/USD", "https://api.coinbase.com/v2/prices/BTC-USD/spot", ("data", "amount")),
@@ -60,7 +70,10 @@ class SyncState:
     last_source_updated_at: Optional[str]
     last_holdings_hash: Optional[str]
     last_usd_hash: Optional[str]
+    last_cash_liability_hash: Optional[str]
     last_result: Optional[str]
+    last_total_assets_twd: Optional[float]
+    last_speculation_pnl_twd: Optional[float]
 
 
 def parse_args() -> argparse.Namespace:
@@ -105,7 +118,7 @@ def stable_hash(value: Any) -> str:
 
 def load_state(path: Path) -> SyncState:
     if not path.exists():
-        return SyncState(None, None, None, None, None)
+        return SyncState(None, None, None, None, None, None, None, None)
 
     data = json.loads(path.read_text(encoding="utf-8"))
     return SyncState(
@@ -113,7 +126,10 @@ def load_state(path: Path) -> SyncState:
         last_source_updated_at=data.get("last_source_updated_at"),
         last_holdings_hash=data.get("last_holdings_hash"),
         last_usd_hash=data.get("last_usd_hash"),
+        last_cash_liability_hash=data.get("last_cash_liability_hash"),
         last_result=data.get("last_result"),
+        last_total_assets_twd=data.get("last_total_assets_twd"),
+        last_speculation_pnl_twd=data.get("last_speculation_pnl_twd"),
     )
 
 
@@ -125,7 +141,10 @@ def save_state(path: Path, state: SyncState) -> None:
                 "last_source_updated_at": state.last_source_updated_at,
                 "last_holdings_hash": state.last_holdings_hash,
                 "last_usd_hash": state.last_usd_hash,
+                "last_cash_liability_hash": state.last_cash_liability_hash,
                 "last_result": state.last_result,
+                "last_total_assets_twd": state.last_total_assets_twd,
+                "last_speculation_pnl_twd": state.last_speculation_pnl_twd,
             },
             ensure_ascii=False,
             indent=2,
@@ -137,6 +156,49 @@ def save_state(path: Path, state: SyncState) -> None:
 
 def now_taipei_iso() -> str:
     return datetime.now(TAIPEI_TZ).isoformat(timespec="seconds")
+
+
+def get_current_branch() -> str:
+    result = subprocess.run(
+        ["git", "branch", "--show-current"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
+
+def worktree_is_dirty() -> bool:
+    result = subprocess.run(
+        ["git", "status", "--porcelain"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return bool(result.stdout.strip())
+
+
+def branch_exists(branch_name: str) -> bool:
+    result = subprocess.run(
+        ["git", "branch", "--list", branch_name],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return bool(result.stdout.strip())
+
+
+def ensure_expected_branch() -> None:
+    current_branch = get_current_branch()
+    if current_branch != EXPECTED_BRANCH:
+        if worktree_is_dirty():
+            raise SystemExit(
+                f"Cannot switch to '{EXPECTED_BRANCH}' from '{current_branch}' because the worktree has uncommitted changes."
+            )
+        if branch_exists(EXPECTED_BRANCH):
+            subprocess.run(["git", "checkout", EXPECTED_BRANCH], check=True)
+        else:
+            subprocess.run(["git", "checkout", "-b", EXPECTED_BRANCH], check=True)
 
 
 def extract_nested_value(payload: Any, path: tuple[str, ...]) -> float:
@@ -385,7 +447,10 @@ def has_history_entry_for_date(pnl_path: Path, year: int, month: int, day: int) 
 
 
 def maybe_commit(pnl_path: Path, message: str) -> bool:
-    subprocess.run(["git", "add", str(pnl_path)], check=True)
+    subprocess.run(
+        ["git", "add", str(pnl_path), str(DEFAULT_TRADE_HISTORY_PINE_FILE)],
+        check=True,
+    )
     diff_result = subprocess.run(["git", "diff", "--cached", "--quiet"])
     if diff_result.returncode == 0:
         return False
@@ -393,18 +458,89 @@ def maybe_commit(pnl_path: Path, message: str) -> bool:
     return True
 
 
+def build_commit_reasons(
+    source_changed: bool,
+    has_today_history: bool,
+    trade_history_updated: bool,
+) -> list[str]:
+    reasons: list[str] = []
+    if source_changed:
+        reasons.append("holdings, exchange USD, or cash/liability values changed")
+    if not has_today_history:
+        reasons.append("today's pnl history entry was missing")
+    if trade_history_updated:
+        reasons.append("trade history labels changed")
+    return reasons
+
+
+def refresh_trade_history_snapshot(base_url: str, token: str) -> tuple[bool, str]:
+    command = [
+        sys.executable,
+        str(TRADE_ROWS_REFRESHER),
+        "--url",
+        base_url,
+        "--token",
+        token,
+        "--output",
+        str(DEFAULT_TRADE_SNAPSHOT_FILE),
+    ]
+    result = subprocess.run(command, check=False, capture_output=True, text=True)
+    if result.returncode != 0:
+        stderr = result.stderr.strip() or result.stdout.strip() or "unknown error"
+        return False, f"failed to refresh live trade rows: {stderr}"
+    stdout = result.stdout.strip().replace("\n", " | ")
+    return True, stdout or "trade rows refreshed"
+
+
+def sync_trade_history(snapshot_path: Path) -> tuple[bool, str]:
+    before_content = (
+        DEFAULT_TRADE_HISTORY_PINE_FILE.read_text(encoding="utf-8")
+        if DEFAULT_TRADE_HISTORY_PINE_FILE.exists()
+        else ""
+    )
+    result = subprocess.run(
+        [sys.executable, "trade_history/update_trade_history.py"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        stderr = result.stderr.strip() or result.stdout.strip() or "unknown error"
+        return False, f"failed: {stderr}"
+
+    after_content = (
+        DEFAULT_TRADE_HISTORY_PINE_FILE.read_text(encoding="utf-8")
+        if DEFAULT_TRADE_HISTORY_PINE_FILE.exists()
+        else ""
+    )
+    updated = before_content != after_content
+    try:
+        payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        payload = {}
+    fetched_at = payload.get("fetched_at", "unknown")
+    summary = f"updated from live snapshot ({fetched_at})" if updated else f"no changes from live snapshot ({fetched_at})"
+    return updated, summary
+
+
 def build_summary_lines(
     holdings_updated: bool,
     generated_updated: bool,
     pnl_updated: bool,
+    trade_history_updated: bool,
     commit_created: bool,
+    commit_reasons: list[str],
     holdings_summary: list[str],
     usd_summary: list[str],
+    cash_liability_summary: list[str],
     pnl_history_summary: str,
+    trade_history_summary: str,
+    notion_summary: str,
     snapshot: MarketSnapshot,
     state_result: str,
     source_updated_at: Optional[str],
     state_checked_at: str,
+    previous_state: SyncState,
 ) -> list[str]:
     taipei_now = datetime.now(TAIPEI_TZ).strftime("%Y-%m-%d")
     pnl_content = DEFAULT_PNL_FILE.read_text(encoding="utf-8")
@@ -417,7 +553,9 @@ def build_summary_lines(
         f"Holdings fetched successfully: yes",
         f"generated/holdings.pine updated: {'yes' if generated_updated else 'no'}",
         f"PNLRebalance updated: {'yes' if pnl_updated else 'no'}",
+        f"TradeHistoryLabels.pine updated: {'yes' if trade_history_updated else 'no'}",
         f"Commit created: {'yes' if commit_created else 'no'}",
+        f"Commit trigger: {'; '.join(commit_reasons) if commit_reasons else 'none'}",
     ]
     if not holdings_updated:
         lines.append("Holdings changed: no")
@@ -472,9 +610,210 @@ def build_summary_lines(
     lines.append("USD summary:")
     for line in usd_summary:
         lines.append(f"- {line}")
+    lines.append("Cash/Liability summary:")
+    for line in cash_liability_summary:
+        lines.append(f"- {line}")
     lines.append("PNL history summary:")
     lines.append(f"- {pnl_history_summary}")
+    lines.append("Trade history summary:")
+    lines.append(f"- {trade_history_summary}")
+    lines.append("Notion weekly review summary:")
+    lines.append(f"- {notion_summary}")
+    lines.extend(["", "-----", ""])
+    lines.extend(
+        build_notion_weekly_review_lines(
+            snapshot=snapshot,
+            holdings_summary=holdings_summary,
+            usd_summary=usd_summary,
+            cash_liability_summary=cash_liability_summary,
+            previous_state=previous_state,
+        )
+    )
     return lines
+
+
+def build_notion_weekly_review_lines(
+    snapshot: MarketSnapshot,
+    holdings_summary: list[str],
+    usd_summary: list[str],
+    cash_liability_summary: list[str],
+    previous_state: SyncState,
+) -> list[str]:
+    week_label = datetime.now(TAIPEI_TZ).strftime("%Y-W%W")
+    top_profit_symbol: Optional[str] = None
+    top_profit_value: Optional[float] = None
+    if snapshot.unrealized_pnl_twd:
+        top_profit_symbol, top_profit_value = max(
+            snapshot.unrealized_pnl_twd.items(), key=lambda item: item[1]
+        )
+
+    total_asset_change_text = "首次執行，尚無上次同步基準"
+    if previous_state.last_total_assets_twd is not None:
+        total_asset_change_text = format_signed_twd(
+            snapshot.total_assets_twd - previous_state.last_total_assets_twd
+        )
+
+    biggest_profit_source_text = "本週無可用資料"
+    if top_profit_symbol is not None and top_profit_value is not None:
+        biggest_profit_source_text = (
+            f"{top_profit_symbol}（未實現損益 {format_signed_twd(top_profit_value)}）"
+        )
+
+    lines = [
+        "【可直接貼進 Notion 的中文週報摘要】",
+        f"週別：{week_label}",
+        "",
+        "1. 本週總資產變化（系統填入）",
+        f"- 本週總資產變化：{total_asset_change_text}",
+        f"- 目前總資產：{format_twd(snapshot.total_assets_twd)}",
+        f"- 目前 PNL：{format_twd(snapshot.speculation_pnl_twd)}",
+        f"- 目前報酬率：{format_ratio(snapshot.speculation_pnl_ratio)}",
+        "",
+        "2. 本週最大獲利來源（系統填入）",
+        f"- 最大獲利來源：{biggest_profit_source_text}",
+        f"- 交易所 USD 餘額：{format_price(snapshot.exchange_usd)} USD",
+        f"- 現金部位：{snapshot.cash_twd:,.0f} TWD",
+        "",
+        "3. 本週最大失誤（手動填寫）",
+        "- 本週最大失誤：",
+        "- 我在哪個判斷、節奏或配置上做錯？",
+        "- 如果重來一次，我會改哪一個決策？",
+        "",
+        "4. 下週調整計畫（手動填寫）",
+        "- 下週調整計畫：",
+        "- 哪個持倉需要持續觀察？",
+        "- 哪個配置需要微調？",
+        "",
+        "補充摘要",
+        "- Holdings 變化：",
+    ]
+    lines.extend(f"  - {line}" for line in holdings_summary)
+    lines.append("- USD Balance 變化：")
+    lines.extend(f"  - {line}" for line in usd_summary)
+    lines.append("- Cash/Liability 變化：")
+    lines.extend(f"  - {line}" for line in cash_liability_summary)
+    return lines
+
+
+def write_weekly_review_summary(path: Path, lines: list[str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def notion_headers(token: str) -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "Notion-Version": NOTION_API_VERSION,
+    }
+
+
+def notion_request(method: str, path: str, token: str, payload: Optional[dict[str, Any]] = None) -> dict[str, Any]:
+    data = None
+    if payload is not None:
+        data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    request = Request(
+        f"{NOTION_API_BASE_URL}{path}",
+        data=data,
+        headers=notion_headers(token),
+        method=method,
+    )
+    try:
+        with urlopen(request, timeout=20) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Notion API {method} {path} failed: {body}") from exc
+
+
+def notion_text_block(block_type: str, text: str) -> dict[str, Any]:
+    return {
+        "object": "block",
+        "type": block_type,
+        block_type: {
+            "rich_text": [
+                {
+                    "type": "text",
+                    "text": {"content": text},
+                }
+            ]
+        },
+    }
+
+
+def notion_review_blocks(lines: list[str]) -> list[dict[str, Any]]:
+    blocks: list[dict[str, Any]] = []
+    for line in lines:
+        if not line:
+            blocks.append(notion_text_block("paragraph", ""))
+        elif line.startswith("週別："):
+            blocks.append(notion_text_block("paragraph", line))
+        elif line[0].isdigit() and ". " in line:
+            blocks.append(notion_text_block("heading_2", line))
+        elif line == "補充摘要":
+            blocks.append(notion_text_block("heading_2", line))
+        elif line.startswith("- "):
+            blocks.append(notion_text_block("bulleted_list_item", line[2:]))
+        elif line.startswith("  - "):
+            blocks.append(notion_text_block("bulleted_list_item", line[4:]))
+        else:
+            blocks.append(notion_text_block("paragraph", line))
+    return blocks
+
+
+def notion_child_page_exists(parent_page_id: str, title: str, token: str) -> bool:
+    start_cursor: Optional[str] = None
+    while True:
+        query = f"?start_cursor={start_cursor}" if start_cursor else ""
+        payload = notion_request(
+            "GET",
+            f"/blocks/{parent_page_id}/children{query}",
+            token,
+        )
+        for block in payload.get("results", []):
+            child_page = block.get("child_page")
+            if child_page and child_page.get("title") == title:
+                return True
+        if not payload.get("has_more"):
+            return False
+        start_cursor = payload.get("next_cursor")
+
+
+def create_notion_weekly_review(title: str, lines: list[str]) -> str:
+    token = os.environ.get("NOTION_TOKEN")
+    parent_page_id = os.environ.get("NOTION_PAGE_ID")
+    icon = os.environ.get("NOTION_WEEKLY_REVIEW_ICON", DEFAULT_NOTION_WEEKLY_REVIEW_ICON)
+    if not token or not parent_page_id:
+        return "skipped because NOTION_TOKEN or NOTION_PAGE_ID is missing"
+
+    if notion_child_page_exists(parent_page_id, title, token):
+        return f"skipped because {title} already exists"
+
+    payload = {
+        "parent": {"type": "page_id", "page_id": parent_page_id},
+        "properties": {
+            "title": {
+                "title": [
+                    {
+                        "type": "text",
+                        "text": {"content": title},
+                    }
+                ]
+            }
+        },
+        "children": notion_review_blocks(lines),
+    }
+    if icon:
+        payload["icon"] = {"type": "emoji", "emoji": icon}
+    result = notion_request("POST", "/pages", token, payload)
+    return f"created {title}: {result.get('url', 'unknown url')}"
+
+
+def sync_notion_weekly_review_best_effort(title: str, lines: list[str]) -> str:
+    try:
+        return create_notion_weekly_review(title, lines)
+    except Exception as exc:
+        return f"skipped because Notion sync failed: {exc}"
 
 
 def send_telegram_message(message: str) -> None:
@@ -502,27 +841,40 @@ def print_summary(
     holdings_updated: bool,
     generated_updated: bool,
     pnl_updated: bool,
+    trade_history_updated: bool,
     commit_created: bool,
     holdings_summary: list[str],
     usd_summary: list[str],
+    cash_liability_summary: list[str],
     pnl_history_summary: str,
+    trade_history_summary: str,
     snapshot: MarketSnapshot,
 ) -> None:
     for line in build_summary_lines(
         holdings_updated=holdings_updated,
         generated_updated=generated_updated,
         pnl_updated=pnl_updated,
+        trade_history_updated=trade_history_updated,
         commit_created=commit_created,
+        commit_reasons=[],
         holdings_summary=holdings_summary,
         usd_summary=usd_summary,
+        cash_liability_summary=cash_liability_summary,
         pnl_history_summary=pnl_history_summary,
+        trade_history_summary=trade_history_summary,
+        notion_summary="not run from print_summary helper",
         snapshot=snapshot,
+        state_result="unknown",
+        source_updated_at=None,
+        state_checked_at=now_taipei_iso(),
+        previous_state=SyncState(None, None, None, None, None, None, None, None),
     ):
         print(line)
 
 
 def main() -> int:
     load_local_env(DEFAULT_ENV_FILE)
+    ensure_expected_branch()
     args = parse_args()
     output_path = Path(args.output)
     pnl_path = Path(args.pnl_file)
@@ -530,6 +882,7 @@ def main() -> int:
 
     previous_holdings = holdings_sync.load_existing_holdings(output_path)
     previous_usd = holdings_sync.load_existing_usd(output_path)
+    previous_cash_liability = holdings_sync.load_existing_cash_liability(output_path)
     previous_state = load_state(state_path)
 
     payload = holdings_sync.fetch_holdings(args.url, args.token)
@@ -538,27 +891,29 @@ def main() -> int:
 
     current_holdings = payload.get("holdings", [])
     current_usd = holdings_sync.build_usd_snapshot(payload)
+    current_cash_liability = holdings_sync.build_cash_liability_snapshot(payload)
     source_updated_at = payload.get("updated_at")
     current_holdings_hash = stable_hash(current_holdings)
     current_usd_hash = stable_hash(current_usd)
+    current_cash_liability_hash = stable_hash(current_cash_liability)
     checked_at = now_taipei_iso()
     history_year, history_month, history_day = pnl_history.get_default_date()
     holdings_changed = previous_state.last_holdings_hash != current_holdings_hash
     usd_changed = previous_state.last_usd_hash != current_usd_hash
+    cash_liability_changed = (
+        previous_state.last_cash_liability_hash != current_cash_liability_hash
+    )
 
-    state_result = "changed" if (holdings_changed or usd_changed) else "no_change"
-
-    state = SyncState(
-        last_checked_at=checked_at,
-        last_source_updated_at=source_updated_at,
-        last_holdings_hash=current_holdings_hash,
-        last_usd_hash=current_usd_hash,
-        last_result=state_result,
+    state_result = (
+        "changed" if (holdings_changed or usd_changed or cash_liability_changed) else "no_change"
     )
 
     holdings_summary = holdings_sync.summarize_holdings_changes(previous_holdings, current_holdings)
     usd_summary = holdings_sync.summarize_usd_changes(previous_usd, current_usd)
-    source_changed = holdings_changed or usd_changed
+    cash_liability_summary = holdings_sync.summarize_cash_liability_changes(
+        previous_cash_liability, current_cash_liability
+    )
+    source_changed = holdings_changed or usd_changed or cash_liability_changed
     has_today_history = has_history_entry_for_date(
         pnl_path, history_year, history_month, history_day
     )
@@ -566,15 +921,22 @@ def main() -> int:
 
     generated_updated = False
     pnl_updated = False
+    trade_history_updated = False
     holdings_block = holdings_sync.build_holdings_pine(payload)
     usd_block = holdings_sync.build_usd_pine(payload)
+    cash_liability_block = holdings_sync.build_cash_liability_pine(payload)
     pnl_history_summary = "skipped because source data did not change"
+    trade_history_summary = "not run yet"
 
     if source_changed:
-        output_content = holdings_sync.build_output_content(holdings_block, usd_block)
+        output_content = holdings_sync.build_output_content(
+            holdings_block, usd_block, cash_liability_block
+        )
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(output_content, encoding="utf-8")
-        holdings_sync.update_pnl_file(pnl_path, holdings_block, usd_block)
+        holdings_sync.update_pnl_file(
+            pnl_path, holdings_block, usd_block, cash_liability_block
+        )
         generated_updated = True
         pnl_updated = True
 
@@ -587,26 +949,71 @@ def main() -> int:
     elif not source_changed:
         pnl_history_summary = "skipped because today's pnl history already exists"
 
+    trade_rows_refreshed, trade_rows_refresh_summary = refresh_trade_history_snapshot(
+        args.url, args.token
+    )
+    if trade_rows_refreshed:
+        trade_history_updated, trade_history_summary = sync_trade_history(
+            DEFAULT_TRADE_SNAPSHOT_FILE
+        )
+        trade_history_summary = f"{trade_rows_refresh_summary}; {trade_history_summary}"
+    else:
+        trade_history_summary = trade_rows_refresh_summary
+
     commit_created = False
-    should_commit = source_changed or not has_today_history
-    if args.commit and should_commit:
+    commit_reasons = build_commit_reasons(
+        source_changed=source_changed,
+        has_today_history=has_today_history,
+        trade_history_updated=trade_history_updated,
+    )
+    if args.commit and commit_reasons:
         commit_created = maybe_commit(pnl_path, args.commit_message)
 
+    state = SyncState(
+        last_checked_at=checked_at,
+        last_source_updated_at=source_updated_at,
+        last_holdings_hash=current_holdings_hash,
+        last_usd_hash=current_usd_hash,
+        last_cash_liability_hash=current_cash_liability_hash,
+        last_result=state_result,
+        last_total_assets_twd=snapshot.total_assets_twd,
+        last_speculation_pnl_twd=snapshot.speculation_pnl_twd,
+    )
     save_state(state_path, state)
+
+    weekly_review_lines = build_notion_weekly_review_lines(
+        snapshot=snapshot,
+        holdings_summary=holdings_summary,
+        usd_summary=usd_summary,
+        cash_liability_summary=cash_liability_summary,
+        previous_state=previous_state,
+    )
+    weekly_review_title = f"Weekly Review {datetime.now(TAIPEI_TZ).strftime('%Y-W%W')}"
+    notion_summary = sync_notion_weekly_review_best_effort(
+        weekly_review_title,
+        weekly_review_lines[1:],
+    )
 
     summary_lines = build_summary_lines(
         holdings_updated=source_changed,
         generated_updated=generated_updated,
         pnl_updated=pnl_updated,
+        trade_history_updated=trade_history_updated,
         commit_created=commit_created,
+        commit_reasons=commit_reasons,
         holdings_summary=holdings_summary,
         usd_summary=usd_summary,
+        cash_liability_summary=cash_liability_summary,
         pnl_history_summary=pnl_history_summary,
+        trade_history_summary=trade_history_summary,
+        notion_summary=notion_summary,
         snapshot=snapshot,
         state_result=state_result,
         source_updated_at=source_updated_at,
         state_checked_at=checked_at,
+        previous_state=previous_state,
     )
+    write_weekly_review_summary(DEFAULT_WEEKLY_REVIEW_SUMMARY_FILE, weekly_review_lines)
     print("\n".join(summary_lines))
     notify_telegram_best_effort("\n".join(summary_lines))
     return 0
