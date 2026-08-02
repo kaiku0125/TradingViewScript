@@ -9,6 +9,47 @@ If any workflow, automation, sync path, trigger, payload shape, generated block,
 
 The scheduled weekly sync and manual `/sync` must use the same workflow entrypoint and produce the same side effects.
 
+## Bitcoin Smart DCA Engine Workflow
+
+`InvestmentEngine/bitcoin` is a long-term Bitcoin Adaptive DCA decision and record-keeping module. It is not a Pine Script strategy and must remain independent from the existing holdings, PNL, and trade-history generated blocks unless a future reviewed integration explicitly connects them.
+
+When working on this module:
+
+1. Treat `InvestmentEngine/bitcoin/README.md` as the project entrypoint and `InvestmentEngine/bitcoin/docs/ARCHITECTURE.md` as the current system-boundary reference.
+2. Do not implement strategy code, external integrations, scheduling, notifications, or automatic trading until the corresponding design phase has been reviewed and approved.
+3. Keep documentation, configuration, runtime code, generated data, and reports separated.
+4. Keep strategy parameters centralized; do not hard-code adjustable values across implementation files.
+5. Record every major strategy, architecture, data-model, integration, or workflow decision in `InvestmentEngine/bitcoin/decision_log.md` in the same change.
+6. Keep system recommendations separate from actual executed purchases in all future data models.
+7. Ensure future decision outputs are reproducible from a market snapshot, configuration version, and recorded decision reasons.
+8. Route every final suggested amount through the future budget and deadline guard. Notifications, dashboards, automations, and AI suggestions must not bypass it.
+9. Never store API keys, bot tokens, or other secrets in project documents, configuration committed to Git, journals, or reports.
+10. Work in reviewed stages. Stop after the requested stage and do not create later-stage files or implementation early.
+
+Current documentation stages:
+
+- Stage 1: project skeleton, `README.md`, `docs/ARCHITECTURE.md`, and `decision_log.md`
+- Stage 2: `SPEC.md` and `CONFIG.md`
+- Stage 2.1: weekly capacity, correlated-factor correction, BVIV direction guard, and canonical data-time contract
+- Stage 3: data model, Journal, Weekly Report, and Monthly Report templates
+- Stage 4: integrations, operations, and Roadmap
+
+Current approved Stage 2.1 design constraints:
+
+- Use Coinbase Exchange `BTC-USD` as the canonical BTC market-data basis. Do not silently mix or switch exchange sources.
+- Use a daily decision cutoff of 21:00 Asia/Taipei. Inputs observed after the cutoff must not affect that day's decision.
+- Treat ATR drop and absolute daily drop as one shock group, not independent additive weights.
+- Treat BVIV as a non-directional volatility modifier. In the v1.0 draft it may suppress but must not amplify the Adaptive amount.
+- Evaluate both daily and weekly future capacity. Mark an infeasible remaining plan explicitly instead of silently increasing hard limits.
+- Calculate `minimum_required_today` from the remaining current-week and future-week hard capacity, round that minimum upward to the currency unit, and include it in the final guard candidate.
+- A capacity-required minimum may override a weekly soft cap but must never override daily or weekly hard caps.
+- Compute `effective_weekly_soft_remaining` before calculating the final amount. Never apply the original weekly soft remainder first when `minimum_required_today` requires the reviewed soft-cap override.
+- Do not override daily or weekly hard caps automatically on the final day.
+- Stage 2.1 design was approved on 2026-08-02. Numeric weights, thresholds, multipliers, pacing ratios, and hard-cap amounts remain draft defaults pending backtesting or operational validation; do not describe them as proven effective.
+- Approval covers design documentation only. Do not start Stage 3, implementation, API integration, or scheduling without separate explicit approval.
+
+Any future workflow, automation, schedule, trigger, payload, storage contract, or external integration added to this module must also update this `AGENTS.md` section in the same change.
+
 ## Main Workflow: Update Holdings(更新持倉)
 When the user asks to update holdings, refresh positions, sync the Pine block, or regenerate the auto-generated section, follow this process:
 
