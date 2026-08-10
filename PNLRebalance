@@ -49,26 +49,26 @@ var float CRO_CRYPTO_RATIO = 10
 // 銀行現金設定
 // ============================================================================
 // === AUTO-GENERATED CASH LIABILITY START ===
-// updated_at: 2026-07-06T02:43:35.222Z
-var float BANK1_AVAL = 102498.0  // LineBank (TWD)
+// updated_at: 2026-08-10T01:21:03.386Z
+var float BANK1_AVAL = 110215.0  // LineBank (TWD)
 var float BANK2_AVAL = 0.0  // Bankee (TWD)
-var float BANK3_AVAL = 19933.0  // 台新 (TWD)
-var float BANK4_AVAL = 5393.0  // 樂天 (TWD)
+var float BANK3_AVAL = 94901.0  // 台新 (TWD)
+var float BANK4_AVAL = 10599.0  // 樂天 (TWD)
 var float BITO_AVAL = 0.0  // 幣託 (USD)
 var float VISA_AVAL = 24500.0  // Visa (USD) 出金
-var float DEBT = -931274.0  // 負債(TWD)
+var float DEBT = -915040.0  // 負債(TWD)
 // === AUTO-GENERATED CASH LIABILITY END ===
 
 // ============================================================================
 // 交易所設定
 // ============================================================================
 // === AUTO-GENERATED USD START ===
-// updated_at: 2026-07-06T02:43:35.222Z
+// updated_at: 2026-08-10T01:21:03.386Z
 var float BYBIT_EXCHANGE_USD = 0.0
 var float BINANCE_EXCHANGE_USD = 0.0
-var float CRYPTO_DOT_COM_EXCHANGE_USD = 980.0
+var float CRYPTO_DOT_COM_EXCHANGE_USD = 491.0
 var float OKX_EXCHANGE_USD = 0.0
-var float PIONEX_EXCHANGE_USD = 13488.0
+var float PIONEX_EXCHANGE_USD = 18029.0
 var float KRAKEN_EXCHANGE_USD = 0.0
 var float EXCHANGE_USD =
       BYBIT_EXCHANGE_USD +
@@ -97,7 +97,7 @@ var float _0050_INCOME = 344242
 // ============================================================================
 
 // === AUTO-GENERATED START ===
-// updated_at: 2026-07-06T02:43:35.222Z
+// updated_at: 2026-08-10T01:21:03.386Z
 var string[] symbols = array.from("BTC", "ETH", "ADA", "BNB", "CRO")
 var float[] buyQtys = array.from(0.6, 12.55, 38114.0, 16.54, 122800.0)
 var float[] buyCosts = array.from(29445.0, 21486.0, 11551.0, 7872.0, 14439.0)
@@ -1418,6 +1418,7 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2026, 7, 20, -368026)) //-11.35%
         array.push(rdArray, newData(2026, 7, 27, -360829)) //-11.13%
         array.push(rdArray, newData(2026, 8, 3, -384040)) //-11.85%
+        array.push(rdArray, newData(2026, 8, 10, -243230)) //-7.50%
 
 // 選擇要繪製的值（平滑化或原始值）
 plotValue = INPUT_SMOOTHING_ENABLED and not na(smoothedVariation) ? smoothedVariation : (not na(filledVariation) ? filledVariation : recordAssetsVariation)
