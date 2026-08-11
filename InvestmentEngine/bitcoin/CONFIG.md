@@ -209,7 +209,7 @@ Config 載入時必須驗證：
 - 因子、金額、容量、資料來源或 cutoff 變更必須同步更新 `SPEC.md` 與 `decision_log.md`。
 - Secrets 使用環境變數或秘密管理服務。
 - Gate 4A-1 machine-readable config 位於 `config/config.1.0-draft.2.json`，必須與本文件的 `1.0-draft.2` 值一致；Decimal 參數在 JSON 中保存為字串。
-- Machine config 已供 Journal core 載入 plan、storage 與 runtime path；策略參數的完整 runtime validation 留待 Gate 4A-2。
+- Machine config 已供 Journal core 與 pure Decision Engine 載入；Gate 4A-2 會驗證策略門檻、權重、方法、hard caps、必要 flags、canonical provider identity 與 65 天初始容量，不合法時拒絕啟動。
 
 ## 11. Stage 2.1 核准表
 

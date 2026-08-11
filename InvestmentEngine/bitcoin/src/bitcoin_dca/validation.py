@@ -417,11 +417,12 @@ def _validate_decisions(
         if status not in DECISION_STATUSES:
             issues.append(f"{prefix}: invalid decision_status")
         final_amount = record.get("final_suggested_usd")
+        parsed_final = None
         if status == "blocked":
             if final_amount is not None:
                 issues.append(f"{prefix}: blocked decision final amount must be null")
         else:
-            _decimal_field(
+            parsed_final = _decimal_field(
                 final_amount,
                 "final_suggested_usd",
                 prefix,
@@ -431,6 +432,100 @@ def _validate_decisions(
         for object_field in {"scores", "market_amounts", "pacing", "capacity"}:
             if not isinstance(record.get(object_field), dict):
                 issues.append(f"{prefix}: {object_field} must be an object")
+        scores = record.get("scores")
+        if isinstance(scores, dict):
+            for field in {
+                "drawdown_pct",
+                "daily_drop_pct",
+                "atr_pct",
+                "down_atr_multiple",
+                "location_score",
+                "sentiment_score",
+                "atr_drop_score",
+                "absolute_drop_score",
+                "shock_score",
+                "directional_score",
+                "bviv_level",
+                "bviv_modifier",
+            }:
+                if field in scores and scores[field] is not None:
+                    value = _decimal_field(
+                        scores[field], field, prefix, issues, max_places=8
+                    )
+                    if (
+                        value is not None
+                        and field.endswith("score")
+                        and not Decimal("0") <= value <= Decimal("1")
+                    ):
+                        issues.append(f"{prefix}: {field} must be within 0..1")
+        market_amounts = record.get("market_amounts")
+        if isinstance(market_amounts, dict):
+            for field in {
+                "base_amount_usd",
+                "adaptive_multiplier",
+                "market_adaptive_amount_usd",
+                "market_amount_usd",
+                "bviv_modifier",
+            }:
+                if field in market_amounts:
+                    value = _decimal_field(
+                        market_amounts[field], field, prefix, issues, max_places=8
+                    )
+                    if (
+                        value is not None
+                        and field == "bviv_modifier"
+                        and value > Decimal("1")
+                    ):
+                        issues.append(f"{prefix}: BVIV modifier must not amplify in v1")
+        capacity = record.get("capacity")
+        if isinstance(capacity, dict):
+            for field in {
+                "weekly_hard_remaining_usd",
+                "current_week_future_capacity_usd",
+                "future_week_capacity_usd",
+                "total_capacity_including_today_usd",
+                "today_hard_capacity_usd",
+                "minimum_required_today_usd",
+            }:
+                if field in capacity:
+                    _decimal_field(
+                        capacity[field], field, prefix, issues, max_places=8
+                    )
+        pacing = record.get("pacing")
+        if isinstance(pacing, dict):
+            for field in {
+                "required_daily_pace_usd",
+                "pace_floor_usd",
+                "weekly_gap_usd",
+                "weekly_catchup_usd",
+                "weekly_soft_remaining_usd",
+                "effective_weekly_soft_remaining_usd",
+                "guard_candidate_usd",
+                "final_suggested_usd",
+            }:
+                if field in pacing:
+                    _decimal_field(
+                        pacing[field], field, prefix, issues, max_places=8
+                    )
+        if parsed_final is not None:
+            if parsed_final > config.daily_hard_max:
+                issues.append(f"{prefix}: final amount exceeds daily hard max")
+            if status == "completed" and parsed_final != 0:
+                issues.append(f"{prefix}: completed decision must suggest zero")
+            if isinstance(capacity, dict):
+                weekly_remaining = capacity.get("weekly_hard_remaining_usd")
+                today_capacity = capacity.get("today_hard_capacity_usd")
+                for field, raw_limit in (
+                    ("weekly hard remaining", weekly_remaining),
+                    ("today hard capacity", today_capacity),
+                ):
+                    if raw_limit is None:
+                        continue
+                    limit = _decimal_field(
+                        raw_limit, field, prefix, issues, max_places=8
+                    )
+                    if limit is not None and parsed_final > limit:
+                        issues.append(f"{prefix}: final amount exceeds {field}")
         if not isinstance(record.get("reason_codes"), list) or not all(
             isinstance(value, str) for value in record.get("reason_codes", [])
         ):

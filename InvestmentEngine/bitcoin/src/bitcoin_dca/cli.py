@@ -111,7 +111,7 @@ def _run(args: argparse.Namespace) -> int:
     if args.command == "status":
         service.validate()
         _print_state(service.portfolio_state())
-        print("  decision_runtime: not implemented (Gate 4A-2/4A-3)")
+        print("  decision_runtime: pure core ready; recommend workflow awaits Gate 4A-3")
         return 0
 
     callback = lambda preview: _confirm(preview, assume_yes=args.yes)
@@ -179,4 +179,3 @@ def main(argv: Sequence[str] | None = None) -> int:
     except BitcoinDcaError as exc:
         print(f"Runtime error: {exc}", file=sys.stderr)
         return 6
-

@@ -41,7 +41,7 @@ Stage 4A runtime 基準：
 python3 InvestmentEngine/bitcoin/dca.py <command>
 ```
 
-`dca.py` 只作薄 CLI；目前已接入 Config、Validator、Journal 與 Ledger。Provider、Indicators、Decision Engine、Budget Guard 與 Reporter 留待後續 Gate。
+`dca.py` 只作薄 CLI；目前已接入 Config、Validator、Journal 與 Ledger，並已建立不接 I/O 的 Indicators、Decision Engine 與 Budget Guard。Provider、`recommend` workflow 與 Reporter 留待後續 Gate。
 
 ## 4. 預定本機檔案
 
@@ -49,7 +49,7 @@ python3 InvestmentEngine/bitcoin/dca.py <command>
 InvestmentEngine/bitcoin/
 ├── dca.py                         # 已實作 CLI entrypoint
 ├── config/                        # 已建立 versioned machine config
-├── src/bitcoin_dca/               # Gate 4A-1 runtime modules
+├── src/bitcoin_dca/               # Gate 4A-1／4A-2 runtime modules
 ├── data/
 │   ├── market_snapshots.jsonl     # Git ignored
 │   ├── decisions.jsonl            # Git ignored
@@ -63,13 +63,13 @@ InvestmentEngine/bitcoin/
         └── monthly/
 ```
 
-Gate 4A-1 已建立 `dca.py`、machine config 與 Journal core modules；尚未建立 Provider、Decision Engine、Budget Guard 或 Reporter modules。
+Gate 4A-1 已建立 `dca.py`、machine config 與 Journal core modules；Gate 4A-2 已建立 pure Indicators、Decision Engine、weekly capacity 與 Budget Guard modules。尚未建立 Provider、`recommend` orchestration 或 Reporter modules。
 
 ## 5. 每日手動流程
 
 ### 5.1 產生建議
 
-狀態：尚未實作；需完成 Gate 4A-2 與 4A-3。
+狀態：尚未實作；pure calculation 已完成，仍需 Gate 4A-3 的 Provider、snapshot／decision persistence 與 CLI orchestration。
 
 每天台北時間 21:00 後執行：
 
@@ -146,7 +146,7 @@ python3 InvestmentEngine/bitcoin/dca.py close-day --reason completed_for_day
 
 ### 6.1 查看狀態
 
-狀態：Gate 4A-1 已實作；決策與 weekly capacity 欄位待 Gate 4A-2。
+狀態：Gate 4A-1 CLI 已實作；Gate 4A-2 計算函式已完成，但 `status` 要顯示最新決策與 weekly capacity 仍需 4A-3 先建立正式 canonical records。
 
 ```bash
 python3 InvestmentEngine/bitcoin/dca.py status
@@ -174,7 +174,7 @@ python3 InvestmentEngine/bitcoin/dca.py correct-purchase \
 
 ### 6.3 驗證 Journal
 
-狀態：Gate 4A-1 已實作 structural、revision、reference、execution、reversal 與 PortfolioState validation；Decision／Budget Guard numeric invariants 待 Gate 4A-2。
+狀態：Gate 4A-1 已實作 structural、revision、reference、execution、reversal 與 PortfolioState validation；Gate 4A-2 已加入 DecisionRecord numeric fields、BVIV 不放大與 final hard-cap invariants。
 
 ```bash
 python3 InvestmentEngine/bitcoin/dca.py validate

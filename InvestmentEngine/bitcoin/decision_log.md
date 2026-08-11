@@ -556,3 +556,55 @@ Manual purchase 保存總 USD 支出與實收 BTC，並在寫入前顯示 previe
 
 - Gate 4A-2 另行核准後，實作 pure Decision Engine、weekly capacity 與 Budget Guard。
 - Gate 4A-2 應擴充 `validate` 的 decision numeric invariants 與 machine strategy-config validation。
+
+---
+
+## DCA-ADR-017：Gate 4A-2 採純函式 Decision Engine 與不可繞過的 Budget Guard
+
+- 日期：2026-08-11
+- 狀態：Accepted／Implemented（2026-08-11）
+
+### 背景
+
+Gate 4A-1 已能以實際成交重建 PortfolioState，但尚不能把已正規化市場輸入轉成可重現的建議。Provider 與網路錯誤不應混入策略公式測試，因此 Gate 4A-2 必須先建立完全不執行 I/O 的計算核心，並重新驗證順延後的 2026-08-12 至 2026-10-15 共 65 天日曆容量。
+
+### 決策
+
+Gate 4A-2 在 `src/bitcoin_dca/` 新增：
+
+- `indicators.py`：`linear_score`、location、sentiment、Shock group、directional reweighting 與 BVIV modifier。
+- `budget.py`：partial-week calendar、immutable weekly-target values、期限比例、future capacity buckets、`minimum_required_today` 與 Budget Guard。
+- `decision.py`：把 normalized market input、Portfolio input、WeeklyTarget 與 versioned Config 組合成 frozen、JSON-ready deterministic result。
+
+計算核心只接受已通過未來 Provider cutoff／quality validation 的值，不取得現在時間、不讀網路、不讀寫 Journal，也不產生 ID。相同 input objects 與 Config 必須產生 byte-equivalent canonical numeric fields。
+
+WeeklyTarget 的 canonical USD 欄位遵循既有兩位小數 schema：名目 target 與 soft max 向下取至 0.01 USD，weekly minimum 向上取至 0.01 USD；比例與所有中間計算仍使用 `Decimal` 完整精度。`minimum_required_today` 同樣向上取至 0.01 USD，最終建議向下取至 0.01 USD。
+
+Machine config loader 現在會驗證策略權重、門檻順序、Shock 方法、BVIV modifier 上限、pacing flags、hard-cap override flags、canonical provider identity 及初始 65 天容量。Journal validator 也拒絕超過每日、當日或每週 hard capacity 的 DecisionRecord final amount。
+
+### 原因
+
+- Pure functions 可用固定 fixtures 隔離測試市場公式及資金保護。
+- Frozen inputs／outputs 防止計算途中被隱性修改。
+- 全部可調數值仍由 versioned machine config 載入，避免 runtime hard-code 漂移。
+- Provider、Journal persistence 與 CLI orchestration 留在 Gate 4A-3，可先證明核心不突破 hard caps。
+
+### 影響與取捨
+
+- Gate 4A-2 本身不會建立 MarketSnapshot、WeeklyTargetSnapshot 或 DecisionRecord，也不會讓 `dca.py recommend` 可用。
+- `MarketInputs` 是 normalized internal contract；freshness、cutoff、fallback 選擇與原始 candle 計算仍由 Gate 4A-3 負責。
+- 草案權重、門檻、比例及 hard-cap 數值仍未經回測證實；本 Gate 只保證忠實、可重現地執行已核准公式。
+
+### 驗證
+
+15 個 Gate 4A-2 unit tests 覆蓋：首週與末週 partial buckets、65 天計畫、weekly urgency、Shock 去重、BVIV downside gate、ATR 降級、兩群組 reweight、`base_only`、blocked、completed、soft-cap feasibility override、最終日不可行、全 65 天多組資金狀態 hard-cap invariant、machine-config drift 及 byte-equivalent result。
+
+完整 Bitcoin 測試套件共 29 個 tests 通過；repository 原有 10 個 tests 亦通過。
+
+### Review 結果
+
+使用者於 2026-08-11 接受指標與降級規則、Weekly target 與 pacing、Capacity 與 `minimum_required_today`，以及 Budget Guard，並正式核准 Gate 4A-2。
+
+### 後續事項
+
+- Gate 4A-3 必須另行授權後，才可實作 Provider adapters、cutoff／freshness normalization、canonical writes 與 `recommend` CLI。

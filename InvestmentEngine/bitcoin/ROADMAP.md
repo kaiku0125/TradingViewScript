@@ -78,7 +78,7 @@ Roadmap 只描述交付順序與 Review gate，不授權自動下單或提前建
 
 ### Gate 4A-2：Pure decision core
 
-狀態：尚未授權／尚未實作。
+狀態：Accepted／Implemented（2026-08-11）。
 
 - Indicators 與 score normalization
 - BVIV modifier
@@ -86,7 +86,7 @@ Roadmap 只描述交付順序與 Review gate，不授權自動下單或提前建
 - Budget Guard
 - 65 天日曆及邊界測試
 
-驗收：相同 snapshot＋Config 產生 byte-equivalent canonical numeric fields；hard caps 永不被突破。
+驗收結果：15 個 decision-core unit tests 通過；相同 normalized input＋Config 產生 byte-equivalent canonical numeric fields，首尾 partial week 與全部 65 天使用同一 calendar bucket 邏輯，並以全 65 天、多組 remaining／weekly-spend 組合驗證 final amount 不突破 remaining funds、daily hard max 或 weekly hard remaining。
 
 ### Gate 4A-3：Provider adapters
 

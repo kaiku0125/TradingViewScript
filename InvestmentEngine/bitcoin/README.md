@@ -36,7 +36,7 @@ Base DCA 在完整期間預計投入 5,200 USD，其餘 4,800 USD 保留給智�
 
 ## 目前階段
 
-Stage 3 與 Stage 4A 本機手動 MVP 設計均已核准，Gate 4A-1 Journal core 已於 2026-08-11 實作。現在可以驗證本機 Journal、記錄／修正成交、關閉當日及查看衍生 PortfolioState；仍沒有市場資料擷取、策略建議、Budget Guard runtime、報表、排程或通知。
+Stage 3 與 Stage 4A 本機手動 MVP 設計均已核准，Gate 4A-1 Journal core 與 Gate 4A-2 pure Decision Engine／Budget Guard 已於 2026-08-11 實作。現在可以驗證本機 Journal、記錄／修正成交、重建 PortfolioState，並以固定輸入測試完整策略計算；仍沒有市場資料擷取、正式策略建議寫入、報表、排程或通知。
 
 已完成：
 
@@ -57,14 +57,17 @@ Stage 3 與 Stage 4A 本機手動 MVP 設計均已核准，Gate 4A-1 Journal cor
 - JSONL lock、append、fsync、schema／reference validation
 - `record-purchase`、`correct-purchase`、`close-day`、`status`、`validate`
 - Execution ledger、reversal／replacement 與 PortfolioState rebuild
+- Pure indicators、方向分數與 BVIV modifier
+- Weekly target、65 天 capacity buckets、pacing 與 Budget Guard
+- Machine strategy-config validation 與 DecisionRecord hard-cap invariants
 
 尚未完成：
 
 - 參數回測與營運驗證
-- Provider Adapter、Decision Engine 與 Budget Guard runtime
+- Provider Adapter 與 `recommend` workflow
 - `recommend` 與 Daily／Weekly／Monthly report runtime
 - 排程、通知、自動化與 Dashboard
-- 任何實際程式碼或排程
+- 任何排程或自動交易
 
 ## 文件索引
 
@@ -93,9 +96,10 @@ InvestmentEngine/bitcoin/
 ├── config/
 │   └── config.1.0-draft.2.json
 ├── src/
-│   └── bitcoin_dca/          # Gate 4A-1 Journal core
+│   └── bitcoin_dca/          # Gate 4A-1／4A-2 runtime
 ├── tests/
-│   └── test_journal_core.py
+│   ├── test_journal_core.py
+│   └── test_decision_core.py
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── DATA_MODEL.md
@@ -115,7 +119,7 @@ InvestmentEngine/bitcoin/
 
 ## 開發狀態
 
-本模組目前包含已核准設計與 Gate 4A-1 Journal runtime，但仍不提供投資建議、不抓取即時市場資料，也不會執行交易。真實成交資料預設不提交 Git。
+本模組目前包含已核准設計、Gate 4A-1 Journal runtime 與 Gate 4A-2 pure calculation core，但仍不提供可操作的每日投資建議、不抓取即時市場資料，也不會執行交易。真實成交資料預設不提交 Git。
 
 目前可用：
 

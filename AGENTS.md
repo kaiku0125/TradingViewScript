@@ -36,7 +36,7 @@ Current documentation stages:
 
 Current approved Stage 4A design constraints:
 
-- Stage 4A local manual MVP design was reviewed and approved on 2026-08-11. Gate 4A-1 Journal core was separately authorized and implemented on 2026-08-11.
+- Stage 4A local manual MVP design was reviewed and approved on 2026-08-11. Gate 4A-1 Journal core was separately authorized and implemented; Gate 4A-2 pure Decision Engine／Budget Guard was separately authorized, implemented, reviewed, and approved on 2026-08-11.
 - Treat `InvestmentEngine/bitcoin/docs/INTEGRATIONS.md`, `InvestmentEngine/bitcoin/docs/OPERATIONS.md`, and `InvestmentEngine/bitcoin/ROADMAP.md` as the approved Stage 4A contract.
 - The approved runtime design is a Python 3.11+ local CLI with standard-library-first dependencies, Decimal arithmetic, and no background service.
 - The manual entrypoint now exists at `python3 InvestmentEngine/bitcoin/dca.py <command>`. Gate 4A-1 implements only `record-purchase`, `correct-purchase`, `close-day`, `status`, and `validate`; `recommend` and `report` do not exist yet.
@@ -51,14 +51,16 @@ Current approved Stage 4A design constraints:
 - Provider failure follows the approved quality rules: invalid BTC blocks, missing Fear & Greed degrades directional groups, and missing BVIV uses modifier 1.0 with an explicit degraded reason.
 - Stage 4A excludes scheduling, notifications, Google Sheets, Dashboard, exchange imports, automatic backups, and automatic trading.
 - The versioned machine config is `InvestmentEngine/bitcoin/config/config.1.0-draft.2.json`; Decimal parameters remain JSON strings and secrets must never enter it.
-- Gate 4A-1 runtime modules live under `InvestmentEngine/bitcoin/src/bitcoin_dca/`. Keep `dca.py` as a thin entrypoint and do not move decision logic into it.
+- Gate 4A runtime modules live under `InvestmentEngine/bitcoin/src/bitcoin_dca/`. Keep `dca.py` as a thin entrypoint and do not move decision logic into it.
+- Gate 4A-2 exposes only pure, deterministic indicators, weekly-target／capacity calculations, and Budget Guard functions. It performs no network or Journal writes and does not add the `recommend` command.
+- The Decision Engine must preserve the approved rules: reweight exactly two valid directional groups, use `base_only` below two groups, combine ATR and absolute drop with `max`, keep BVIV at or below 1.0, compute capacity across the shifted 65-day calendar, and never exceed remaining funds or daily／weekly hard caps.
 - Gate 4A-1 writes only `data/executions.jsonl`; the other canonical datasets remain absent until their gates. All real JSONL and lock files remain Git ignored.
 - `record-purchase` writes only after interactive `yes` confirmation unless the operator explicitly passes `--yes`. It records the current Asia/Taipei date and rejects dates outside the approved plan.
 - `correct-purchase` must append a same-operation reversal and replacement. Never modify or delete the original JSONL line, and never reverse the same purchase twice.
 - `close-day --reason skipped` is invalid after an effective purchase that day; `completed_for_day` requires at least one effective purchase.
-- `validate` must hard fail malformed UTF-8/JSONL, incomplete lines, schema/reference/revision/reversal errors, and an invalid over-budget PortfolioState.
-- Run Gate 4A-1 tests with `PYTHONPYCACHEPREFIX=/tmp/bitcoin-dca-pycache python3 -m unittest discover -s InvestmentEngine/bitcoin/tests -v`.
-- Do not implement Gate 4A-2 Decision Engine/Budget Guard, Gate 4A-3 Providers/recommend, Gate 4A-4 reports, scheduling, notifications, or automatic trading without separate explicit authorization.
+- `validate` must hard fail malformed UTF-8/JSONL, incomplete lines, schema/reference/revision/reversal errors, DecisionRecord numeric hard-cap violations, and an invalid over-budget PortfolioState.
+- Run Gate 4A-1／4A-2 tests with `PYTHONPYCACHEPREFIX=/tmp/bitcoin-dca-pycache python3 -m unittest discover -s InvestmentEngine/bitcoin/tests -v`.
+- Do not implement Gate 4A-3 Providers/recommend, Gate 4A-4 reports, scheduling, notifications, or automatic trading without separate explicit authorization.
 
 Current approved Stage 3 constraints:
 
