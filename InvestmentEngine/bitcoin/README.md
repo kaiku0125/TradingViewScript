@@ -36,7 +36,7 @@ Base DCA 在完整期間預計投入 5,200 USD，其餘 4,800 USD 保留給智�
 
 ## 目前階段
 
-Stage 3 已於 2026-08-11 Review 並核准：在 Stage 2.1 核准的策略與容量設計之上，加入本機且 Git ignored 的 canonical JSONL Journal、不可變市場快照、可修訂決策、append-only 實際成交、每週目標快照及 Daily／Weekly／Monthly 報表模板。目前仍沒有資料擷取、策略 runtime、排程或通知。
+Stage 3 與 Stage 4A 本機手動 MVP 設計均已於 2026-08-11 Review 並核准。Provider、CLI、操作 window、降級、寫入與實作 Gate 已形成設計基準；目前仍沒有資料擷取、策略 runtime、排程或通知。
 
 已完成：
 
@@ -52,12 +52,14 @@ Stage 3 已於 2026-08-11 Review 並核准：在 Stage 2.1 核准的策略與容
 - Journal canonical storage 與資料驗證契約
 - 建議與實際成交分離、一天多筆成交及 reversal 修正規則
 - Daily Journal、Weekly Report 與 Monthly Report 模板
+- 本機手動 MVP 的 Provider、CLI、錯誤處理與實作 Gate 設計草案
 
 尚未完成：
 
 - 參數回測與營運驗證
 - 真實 Journal 寫入與驗證程式
-- API、通知、自動化與 Dashboard 整合規格
+- Provider Adapter、Decision Engine 與 Budget Guard runtime
+- 排程、通知、自動化與 Dashboard
 - 任何實際程式碼或排程
 
 ## 文件索引
@@ -70,7 +72,9 @@ Stage 3 已於 2026-08-11 Review 並核准：在 Stage 2.1 核准的策略與容
 - [`templates/DAILY_JOURNAL.md`](templates/DAILY_JOURNAL.md)：每日決策與執行紀錄模板
 - [`templates/WEEKLY_REPORT.md`](templates/WEEKLY_REPORT.md)：每週進度、品質與容量摘要模板
 - [`templates/MONTHLY_REPORT.md`](templates/MONTHLY_REPORT.md)：月度投入、遵循度與投資組合摘要模板
-- `ROADMAP.md`：版本與整合規劃（第 4 階段建立）
+- [`docs/INTEGRATIONS.md`](docs/INTEGRATIONS.md)：本機 MVP 市場資料來源與降級規則
+- [`docs/OPERATIONS.md`](docs/OPERATIONS.md)：CLI、每日操作、錯誤與恢復契約
+- [`ROADMAP.md`](ROADMAP.md)：設計、實作及驗收 Gate
 
 ## 預定目錄
 
@@ -79,13 +83,13 @@ InvestmentEngine/bitcoin/
 ├── README.md
 ├── SPEC.md
 ├── CONFIG.md
-├── ROADMAP.md              # 第 4 階段
+├── ROADMAP.md
 ├── decision_log.md
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── DATA_MODEL.md
-│   ├── INTEGRATIONS.md     # 第 4 階段
-│   └── OPERATIONS.md       # 第 4 階段
+│   ├── INTEGRATIONS.md
+│   └── OPERATIONS.md
 ├── templates/
 │   ├── DAILY_JOURNAL.md
 │   ├── WEEKLY_REPORT.md
@@ -100,4 +104,4 @@ InvestmentEngine/bitcoin/
 
 ## 開發狀態
 
-本模組目前僅包含設計文件、資料契約與報表模板，不提供投資建議、不抓取即時市場資料，也不會執行交易。真實成交資料預設不提交 Git。
+本模組目前僅包含已核准設計文件、資料契約與報表模板，不提供投資建議、不抓取即時市場資料，也不會執行交易。Stage 4A 文件中的 CLI 是已核准但尚未實作的未來介面，目前不可執行。真實成交資料預設不提交 Git。

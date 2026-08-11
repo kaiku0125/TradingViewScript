@@ -2,3 +2,5 @@ generated/
 .pycache/
 .env.local
 InvestmentEngine/bitcoin/data/*.jsonl
+InvestmentEngine/bitcoin/data/*.lock
+InvestmentEngine/bitcoin/reports/generated/

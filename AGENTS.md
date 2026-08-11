@@ -34,6 +34,24 @@ Current documentation stages:
 - Stage 3: data model, Journal, Weekly Report, and Monthly Report templates
 - Stage 4: integrations, operations, and Roadmap
 
+Current approved Stage 4A design constraints:
+
+- Stage 4A local manual MVP design was reviewed and approved on 2026-08-11. Runtime implementation still requires separate explicit authorization.
+- Treat `InvestmentEngine/bitcoin/docs/INTEGRATIONS.md`, `InvestmentEngine/bitcoin/docs/OPERATIONS.md`, and `InvestmentEngine/bitcoin/ROADMAP.md` as the approved Stage 4A contract.
+- The approved runtime design is a Python 3.11+ local CLI with standard-library-first dependencies, Decimal arithmetic, and no background service.
+- The future manual entrypoint is `python3 InvestmentEngine/bitcoin/dca.py <command>`; this command does not exist yet.
+- Approved implementation order is Journal core, pure Decision Engine and Budget Guard, Provider adapters, then deterministic reports and local rehearsal.
+- The MVP reads only Coinbase Exchange `BTC-USD`, Alternative.me Fear & Greed, Volmex BVIV/BVIVF, and the local canonical Journal. It must not access exchange accounts or place orders.
+- `VOLMEX_API_KEY` is the only approved optional secret for the MVP. Read it from the environment and redact it from URLs, logs, snapshots, journals, errors, and reports.
+- Recommendation is a same-day manual command in the 21:00-21:10 Asia/Taipei window, targeting about 21:05. Do not create backdated recommendations or use cutoff-after data.
+- Normalize candle close `observed_at` to the candle bucket end while preserving the provider's original bucket-start timestamp and both bucket boundaries.
+- Save the MarketSnapshot and DecisionRecord before presenting the recommendation to the operator.
+- Manual purchase recording requires an interactive confirmation and appends only total USD paid and net BTC received; never mutate an existing execution event.
+- All JSONL writes use an exclusive local lock, complete-line append, flush, and fsync. Never truncate or rewrite canonical Journal files.
+- Provider failure follows the approved quality rules: invalid BTC blocks, missing Fear & Greed degrades directional groups, and missing BVIV uses modifier 1.0 with an explicit degraded reason.
+- Stage 4A excludes scheduling, notifications, Google Sheets, Dashboard, exchange imports, automatic backups, and automatic trading.
+- Do not create `dca.py`, runtime modules, machine config, data files, or generated reports until runtime implementation is explicitly authorized.
+
 Current approved Stage 3 constraints:
 
 - Stage 3 was reviewed and approved on 2026-08-11.

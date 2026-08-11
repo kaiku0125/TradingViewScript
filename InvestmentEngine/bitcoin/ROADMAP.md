@@ -1,0 +1,143 @@
+# Bitcoin Smart DCA Engine Roadmap
+
+## 1. 文件狀態
+
+- 版本：`0.1`
+- 階段：Stage 4A Accepted（2026-08-11）
+- 日期：2026-08-11
+
+Roadmap 只描述交付順序與 Review gate，不授權自動下單或提前建立後續功能。
+
+## 2. 已完成
+
+### Stage 1：系統邊界
+
+- 專案入口、高階架構與決策紀錄
+- 狀態：Accepted
+
+### Stage 2／2.1：策略與資金保護設計
+
+- Smart DCA 公式、集中參數、canonical source、cutoff、因子去重
+- Weekly target、全期容量、minimum-required-today、hard-cap 原則
+- 狀態：Accepted design；numeric defaults 待回測／營運驗證
+
+### Stage 3：Journal 與報表資料契約
+
+- 四個 canonical JSONL record types
+- 建議與成交分離、revision、reversal、day-close
+- Daily／Weekly／Monthly templates
+- 狀態：Accepted（2026-08-11）
+
+## 3. Stage 4A：本機手動 MVP
+
+### Gate 4A-D：設計 Review
+
+交付：
+
+- `docs/INTEGRATIONS.md`
+- `docs/OPERATIONS.md`
+- `ROADMAP.md`
+- 對應 ADR 與治理更新
+
+通過條件：
+
+- 使用者接受每日 CLI 互動。
+- 確認 21:00～21:10 recommendation window，目標約 21:05 手動執行。
+- 確認 Volmex key 為可選環境變數。
+- 確認不補造歷史 decision。
+- 確認本機無備份風險。
+- 確認 MVP 沒有排程、通知與自動交易。
+
+目前狀態：Accepted（2026-08-11）。以下七項均已核准：Python 3.11+ 本機 CLI、21:00～21:10 recommendation window、Volmex optional key 與 BVIVF／中性降級、不補造歷史 recommendation、purchase 寫入前確認，以及暫無排程、通知、自動下單與備份。
+
+核准時使用的 Review checklist：
+
+```text
+1. Python 3.11+ 本機 CLI：接受／修改
+2. 21:00～21:10 recommendation window：接受／修改
+3. Volmex key 可選，失敗用 BVIVF／中性降級：接受／修改
+4. 不補造歷史 recommendation：接受／修改
+5. record-purchase 互動確認：接受／修改
+6. 無排程、通知、自動下單與備份：接受／修改
+7. Stage 4A design：核准／修改後再審
+```
+
+### Gate 4A-1：Journal core
+
+需另行明確授權開始實作：
+
+- Python package skeleton 與 machine config
+- Decimal／time／ID utilities
+- JSONL schemas、exclusive lock、append、validate
+- Execution ledger、reversal、day-close、PortfolioState
+- `record-purchase`、`correct-purchase`、`close-day`、`status`
+
+驗收：固定 fixtures 可重建完全相同 PortfolioState；錯誤 JSONL 必須 hard fail。
+
+### Gate 4A-2：Pure decision core
+
+- Indicators 與 score normalization
+- BVIV modifier
+- Weekly targets、pacing、capacity buckets
+- Budget Guard
+- 65 天日曆及邊界測試
+
+驗收：相同 snapshot＋Config 產生 byte-equivalent canonical numeric fields；hard caps 永不被突破。
+
+### Gate 4A-3：Provider adapters
+
+- Coinbase Exchange 5m／1d
+- Alternative.me Fear & Greed
+- Volmex BVIV／BVIVF
+- freshness、cutoff、retry、redaction
+- `recommend`
+
+驗收：正常、stale、missing、亂序、缺 bucket、429、timeout、fallback 與 secret-redaction fixtures 全部通過。
+
+### Gate 4A-4：Reports 與試運轉
+
+- Daily／Weekly／Monthly renderer
+- data watermark 與 deterministic report tests
+- 第一日 dry run
+- 至少一次不寫正式 Journal 的 fixture-based rehearsal
+
+驗收：使用者能完成 recommend → 手動買入 → record → status → report，且 validate 無錯誤。
+
+## 4. Stage 4B：本機自動化候選
+
+Stage 4A 穩定及另行 Review 後才考慮：
+
+- 21:00 local scheduler
+- retry window 與 missed-run alarm
+- Telegram／LINE 通知
+- 自動產生週／月報表
+- 本機備份
+
+任何排程與手動 `recommend` 必須共用同一 workflow entrypoint 與 side effects，避免兩套決策流程。
+
+## 5. 後續候選
+
+不屬於目前承諾範圍：
+
+- Dashboard
+- Google Sheets read-only mirror
+- 交易所成交匯入
+- 參數 backtest 與敏感度分析
+- Config promotion from draft to validated
+- AI explanation／review assistant
+
+自動交易沒有預定階段；若未來提出，必須另立安全、授權與風險 Review，且仍不得繞過 Budget Guard。
+
+## 6. 建議近期順序
+
+```text
+Stage 4A design approval
+  → Journal core
+  → Pure decision core
+  → Provider adapters
+  → Reports
+  → Local rehearsal
+  → Manual MVP acceptance
+```
+
+不要先做排程或通知。若 Journal、Decision Engine 或 Budget Guard 尚未通過測試，外部輸出只會放大錯誤。

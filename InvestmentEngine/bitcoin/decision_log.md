@@ -466,3 +466,43 @@ nominal_adaptive_daily = 4,800 / 65 ≈ 73.846153846 USD
 
 - 核心引擎實作時加入 2026-08-12 首日、2026-10-15 最終日與部分週容量測試。
 - 回測或營運驗證新的每日名目 Adaptive 配額及既有 hard caps。
+
+---
+
+## DCA-ADR-015：本機手動 MVP 採分層 CLI 與唯讀 Provider
+
+- 日期：2026-08-11
+- 狀態：Accepted（2026-08-11）
+
+### 背景
+
+Stage 3 已定義 canonical Journal，但目前沒有方法建立市場快照、執行 Budget Guard、保存每日建議或讓使用者登記成交。直接先做排程、通知或 Dashboard 會在核心決策與 Journal 尚未驗證時放大錯誤，也會增加除錯範圍。
+
+### 決策
+
+Stage 4A 提議先建立完全由使用者手動觸發的 Python 3.11+ 本機 CLI。MVP 依序實作 Journal core、pure Decision Engine／Budget Guard、Provider Adapters、deterministic reports 與本機 rehearsal。
+
+市場資料只以唯讀 REST 取得：Coinbase Exchange `BTC-USD` 5m／1d、Alternative.me Fear & Greed、Volmex `BVIV` 60m 及 `BVIVF` daily fixing。Volmex key 為可選環境變數 `VOLMEX_API_KEY`，不得進入命令列、log 或 Journal。MVP 不讀交易所帳戶、不送單、不排程、不通知，也不補造歷史 decision。
+
+未來 CLI 以單一入口提供 `recommend`、`record-purchase`、`close-day`、`correct-purchase`、`status`、`validate` 與 `report`。所有寫入使用 exclusive lock、append-only JSONL、flush 與 fsync。Recommendation 必須在台北 21:00～21:10 window 內手動觸發，先保存 MarketSnapshot 與 DecisionRecord，再顯示給使用者。Candle close 的 normalized `observed_at` 使用 bucket end，同時保留供應商原始 bucket-start timestamp；因此 `DATA_MODEL.md` review version 提升至 `1.0-draft.2`。
+
+### 原因
+
+- 用最小操作面驗證完整決策與紀錄閉環。
+- Pure core 可用固定 snapshot 測試，不依賴外部 API。
+- 唯讀 Provider 不需要交易所帳戶權限，降低安全風險。
+- 手動觸發便於觀察 cutoff、degraded、blocked 與 hard-cap 邊界。
+- 單一 CLI entrypoint 可供未來排程重用，避免手動與自動流程分叉。
+
+### 影響與取捨
+
+- 使用者每天必須手動執行 recommend 及登記成交。
+- 錯過當日不補造 recommendation，報表會留下 `no_decision`。
+- Volmex 60m 權限不足時可能使用 BVIVF fallback 或中性 modifier。
+- 本機無備份是已知資料遺失風險。
+- Python runtime、HTTP/retry 數值與 CLI 設計已核准，但仍不能視為已實作。
+
+### 後續事項
+
+- 另行授權 Gate 4A-1 Journal core 實作。
+- 第一日 rehearsal 必須驗證 2026-08-12 partial week、previous reference 與 65 天容量。

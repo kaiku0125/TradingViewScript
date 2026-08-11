@@ -2,7 +2,7 @@
 
 ## 1. 文件目的
 
-本文件定義 Bitcoin Smart DCA Engine 的高階系統邊界與演進方向。Stage 2.1 的公式、因子角色、資料來源與容量規則已於 2026-08-02 核准為設計基準；權重、門檻、倍率與 hard-cap 金額仍是待回測或營運驗證的草案預設值。部署方式與實作語言留待後續階段確認。
+本文件定義 Bitcoin Smart DCA Engine 的高階系統邊界與演進方向。Stage 2.1 的公式、因子角色、資料來源與容量規則已於 2026-08-02 核准為設計基準；權重、門檻、倍率與 hard-cap 金額仍是待回測或營運驗證的草案預設值。Stage 4A 已於 2026-08-11 核准以 Python 3.11+ 本機 CLI 作第一個 runtime，尚待另行授權實作。
 
 ## 2. 系統邊界
 
@@ -43,14 +43,7 @@ flowchart LR
 
 ### 3.1 資料來源層
 
-預留以下來源，但不在第 1 階段選定供應商或串接方式：
-
-- BTC 市價與 OHLCV
-- Fear & Greed Index
-- BVIV
-- ATR 與單日漲跌幅所需行情
-- 投資組合與實際成交資料
-- TradingView Alert
+Stage 2.1 已選定 Coinbase Exchange `BTC-USD`、Alternative.me Fear & Greed、Volmex BVIV 與 Local Journal 作 v1 canonical basis。Stage 4A 只設計前三者的唯讀 Adapter 及本機 Journal 讀寫，不啟用 TradingView Alert、其他交易所或帳戶資料。
 
 ### 3.2 資料擷取與驗證層
 
@@ -148,6 +141,8 @@ Stage 3 已核准將 canonical Journal 定義為四個彼此分離的本機 JSON
 | Dashboard | 進度與績效呈現 | 讀取標準化紀錄 |
 | AI Agent | 解釋、檢查與未來建議 | 不繞過硬性資金限制 |
 
+Stage 4A 本機手動 MVP 只啟用 Coinbase Exchange、Alternative.me、Volmex 及 Local Journal。其 Provider、cutoff、fallback、secret redaction 與 HTTP policy 見 [`INTEGRATIONS.md`](INTEGRATIONS.md)；CLI、寫入順序、鎖、idempotency 與故障恢復見 [`OPERATIONS.md`](OPERATIONS.md)。其餘整合維持候選狀態。
+
 ## 9. 核准與後續驗證狀態
 
 - 因子分組、BVIV 非方向性限制與 Shock 去重：Stage 2.1 設計已核准；數值待回測
@@ -156,5 +151,6 @@ Stage 3 已核准將 canonical Journal 定義為四個彼此分離的本機 JSON
 - 週進度、期限調速、`minimum_required_today` 及最終日不覆寫限制：Stage 2.1 設計已核准；比例與門檻待回測
 - Coinbase `BTC-USD` canonical source 與 21:00 cutoff：Stage 2.1 設計已核准
 - Journal canonical JSONL storage、revision、reversal 與 day-close 規則：Stage 3 已於 2026-08-11 核准
-- 21:00 cutoff 的實際排程、失敗重試與告警政策
-- 實作語言與部署方式
+- 本機手動 CLI、Provider Adapter、重試、JSONL lock 與報表操作：Stage 4A 已於 2026-08-11 核准
+- Python 3.11+ 與 standard-library-first runtime：Stage 4A 已於 2026-08-11 核准
+- 21:00 自動排程、失敗告警與通知：不在 Stage 4A 範圍

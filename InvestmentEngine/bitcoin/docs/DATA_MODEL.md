@@ -2,8 +2,8 @@
 
 ## 1. 文件狀態
 
-- 資料模型版本：`1.0-draft.1`
-- 階段：Stage 3 Accepted（2026-08-11）
+- 資料模型版本：`1.0-draft.2`
+- 階段：Stage 3 Accepted（2026-08-11）；Stage 4A candle timing extension Accepted（2026-08-11）
 - 時區：除來源原始時間外，業務日期與週期皆使用 `Asia/Taipei`
 - 儲存格式：UTF-8 JSON Lines（JSONL），每行一個完整事件或紀錄
 
@@ -60,7 +60,7 @@
   "symbol": "BTC-USD",
   "value": "116710.25",
   "interval": "5m",
-  "observed_at": "2026-08-11T20:55:00+08:00",
+  "observed_at": "2026-08-11T21:00:00+08:00",
   "available_at": "2026-08-11T21:00:00+08:00",
   "fetched_at": "2026-08-11T21:01:10+08:00",
   "timezone": "UTC",
@@ -72,6 +72,8 @@
 ```
 
 `quality_status` 只允許 `valid`、`stale`、`missing`、`invalid`。缺失值使用 `null`，不得用 `0` 冒充。
+
+對 OHLC candle，供應商 timestamp 與 normalized `bucket_start`、`bucket_end` 都必須保存；close value 的 `observed_at` 固定使用 `bucket_end`，表示該 close 成立的時間，不把 bucket start 誤當成資料完成時間。
 
 ## 5. MarketSnapshot
 
