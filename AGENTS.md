@@ -36,10 +36,10 @@ Current documentation stages:
 
 Current approved Stage 4A design constraints:
 
-- Stage 4A local manual MVP design was reviewed and approved on 2026-08-11. Runtime implementation still requires separate explicit authorization.
+- Stage 4A local manual MVP design was reviewed and approved on 2026-08-11. Gate 4A-1 Journal core was separately authorized and implemented on 2026-08-11.
 - Treat `InvestmentEngine/bitcoin/docs/INTEGRATIONS.md`, `InvestmentEngine/bitcoin/docs/OPERATIONS.md`, and `InvestmentEngine/bitcoin/ROADMAP.md` as the approved Stage 4A contract.
 - The approved runtime design is a Python 3.11+ local CLI with standard-library-first dependencies, Decimal arithmetic, and no background service.
-- The future manual entrypoint is `python3 InvestmentEngine/bitcoin/dca.py <command>`; this command does not exist yet.
+- The manual entrypoint now exists at `python3 InvestmentEngine/bitcoin/dca.py <command>`. Gate 4A-1 implements only `record-purchase`, `correct-purchase`, `close-day`, `status`, and `validate`; `recommend` and `report` do not exist yet.
 - Approved implementation order is Journal core, pure Decision Engine and Budget Guard, Provider adapters, then deterministic reports and local rehearsal.
 - The MVP reads only Coinbase Exchange `BTC-USD`, Alternative.me Fear & Greed, Volmex BVIV/BVIVF, and the local canonical Journal. It must not access exchange accounts or place orders.
 - `VOLMEX_API_KEY` is the only approved optional secret for the MVP. Read it from the environment and redact it from URLs, logs, snapshots, journals, errors, and reports.
@@ -50,7 +50,15 @@ Current approved Stage 4A design constraints:
 - All JSONL writes use an exclusive local lock, complete-line append, flush, and fsync. Never truncate or rewrite canonical Journal files.
 - Provider failure follows the approved quality rules: invalid BTC blocks, missing Fear & Greed degrades directional groups, and missing BVIV uses modifier 1.0 with an explicit degraded reason.
 - Stage 4A excludes scheduling, notifications, Google Sheets, Dashboard, exchange imports, automatic backups, and automatic trading.
-- Do not create `dca.py`, runtime modules, machine config, data files, or generated reports until runtime implementation is explicitly authorized.
+- The versioned machine config is `InvestmentEngine/bitcoin/config/config.1.0-draft.2.json`; Decimal parameters remain JSON strings and secrets must never enter it.
+- Gate 4A-1 runtime modules live under `InvestmentEngine/bitcoin/src/bitcoin_dca/`. Keep `dca.py` as a thin entrypoint and do not move decision logic into it.
+- Gate 4A-1 writes only `data/executions.jsonl`; the other canonical datasets remain absent until their gates. All real JSONL and lock files remain Git ignored.
+- `record-purchase` writes only after interactive `yes` confirmation unless the operator explicitly passes `--yes`. It records the current Asia/Taipei date and rejects dates outside the approved plan.
+- `correct-purchase` must append a same-operation reversal and replacement. Never modify or delete the original JSONL line, and never reverse the same purchase twice.
+- `close-day --reason skipped` is invalid after an effective purchase that day; `completed_for_day` requires at least one effective purchase.
+- `validate` must hard fail malformed UTF-8/JSONL, incomplete lines, schema/reference/revision/reversal errors, and an invalid over-budget PortfolioState.
+- Run Gate 4A-1 tests with `PYTHONPYCACHEPREFIX=/tmp/bitcoin-dca-pycache python3 -m unittest discover -s InvestmentEngine/bitcoin/tests -v`.
+- Do not implement Gate 4A-2 Decision Engine/Budget Guard, Gate 4A-3 Providers/recommend, Gate 4A-4 reports, scheduling, notifications, or automatic trading without separate explicit authorization.
 
 Current approved Stage 3 constraints:
 

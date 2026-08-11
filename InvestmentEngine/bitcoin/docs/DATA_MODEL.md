@@ -2,8 +2,8 @@
 
 ## 1. 文件狀態
 
-- 資料模型版本：`1.0-draft.2`
-- 階段：Stage 3 Accepted（2026-08-11）；Stage 4A candle timing extension Accepted（2026-08-11）
+- 資料模型版本：`1.0-draft.3`
+- 階段：Stage 3 Accepted；Stage 4A candle timing 與 Gate 4A-1 operation contract implemented（2026-08-11）
 - 時區：除來源原始時間外，業務日期與週期皆使用 `Asia/Taipei`
 - 儲存格式：UTF-8 JSON Lines（JSONL），每行一個完整事件或紀錄
 
@@ -85,6 +85,7 @@
 |---|---|---|
 | `schema_version` | string | 固定 `market_snapshot.v1` |
 | `snapshot_id` | string | 唯一 ID |
+| `operation_id` | string | 產生此紀錄的本機 command operation ID |
 | `plan_date` | date | 決策業務日期 |
 | `cutoff_at` | timestamp | 當日資料截止 |
 | `created_at` | timestamp | 快照建立時間 |
@@ -107,6 +108,7 @@
 | `schema_version` | string | 固定 `decision.v1` |
 | `decision_id` | string | 同一日期各 revision 共用的穩定 ID |
 | `revision_id` | string | 此 revision 唯一 ID |
+| `operation_id` | string | 產生此 revision 的本機 command operation ID |
 | `revision` | integer | 從 1 起遞增 |
 | `supersedes_revision_id` | string/null | 被本次取代的 revision |
 | `plan_date` | date | 決策業務日期 |
@@ -143,6 +145,7 @@
 |---|---|---|
 | `schema_version` | string | 固定 `execution.v1` |
 | `execution_id` | string | 唯一且不可重用 |
+| `operation_id` | string | 同一 command 產生的事件共用 ID；correction 的 reversal／replacement 必須相同 |
 | `event_type` | enum | `purchase`、`reversal`、`day_close` |
 | `plan_date` | date | 歸屬的 DCA 日期 |
 | `decision_revision_id` | string/null | 對應建議；歷史補登可為 null |
@@ -176,6 +179,7 @@
 |---|---|---|
 | `schema_version` | string | 固定 `weekly_target.v1` |
 | `weekly_target_id` | string | 唯一 ID |
+| `operation_id` | string | 產生此紀錄的本機 command operation ID |
 | `weekly_target_key` | string | 同一計畫週各 revision 共用的穩定 key |
 | `revision` | integer | 從 1 起遞增 |
 | `supersedes_revision_id` | string/null | 被本次資料修正取代的 revision |

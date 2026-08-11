@@ -506,3 +506,53 @@ Stage 4A 提議先建立完全由使用者手動觸發的 Python 3.11+ 本機 CL
 
 - 另行授權 Gate 4A-1 Journal core 實作。
 - 第一日 rehearsal 必須驗證 2026-08-12 partial week、previous reference 與 65 天容量。
+
+---
+
+## DCA-ADR-016：Gate 4A-1 採 append-only JSONL Journal core
+
+- 日期：2026-08-11
+- 狀態：Accepted／Implemented
+
+### 背景
+
+Stage 4A 設計核准後，需要先建立不依賴市場 API 或策略公式的本機紀錄基礎。此基礎必須能安全保存使用者實際成交、修正錯誤、重建 PortfolioState，並在後續 Decision Engine 寫入前先識別破損資料。
+
+### 決策
+
+Gate 4A-1 使用 Python 3.11+ standard library 建立：
+
+- `dca.py` 薄 CLI entrypoint。
+- `config/config.1.0-draft.2.json` versioned machine config。
+- `src/bitcoin_dca/` 下的 Config、Decimal、Storage、Validation、Ledger 與 CLI modules。
+- `fcntl.flock` 非阻塞 shared／exclusive local lock。
+- UTF-8 canonical JSONL 完整行 append、flush 與 fsync；不 truncate 或 rewrite。
+- `operation_id` 串連同一 command 產生的 records。
+- `record-purchase`、`correct-purchase`、`close-day`、`status` 與 `validate`。
+- 由未被 reversal 的 purchase events 衍生 PortfolioState。
+
+Manual purchase 保存總 USD 支出與實收 BTC，並在寫入前顯示 preview、要求明確 `yes`；`--yes` 只供 operator 主動指定。Correction 在同一 operation 追加 matching reversal 與 replacement，不修改原 event。真實 JSONL 及 lock 維持 Git ignored。
+
+### 原因
+
+- 先驗證 canonical ledger，再加入策略與網路，可縮小故障範圍。
+- Decimal string 與 `decimal.Decimal` 避免金額／BTC 的 binary float 誤差。
+- Append-only correction 保留完整稽核歷史。
+- Lock、完整行與 fsync 降低同時寫入及意外中斷造成的損壞。
+- Pure PortfolioState rebuild 讓未來 Budget Guard 只讀取可驗證的實際成交狀態。
+
+### 影響與取捨
+
+- 本機使用 `fcntl`，Gate 4A-1 runtime 以 macOS／POSIX 為目標，不宣稱 Windows 相容。
+- Correction 的 reversal＋replacement 是同一次 append payload，但 filesystem 仍不是資料庫 transaction；任何不完整行會由 validate hard fail。
+- 超過 10,000 USD 的真實 purchase 仍會保存，PortfolioState 標記 invalid，後續 validate hard fail；系統不竄改真實執行紀錄。
+- `recommend`、Provider、Decision Engine、Budget Guard 及 reports 尚未實作。
+
+### 驗證
+
+14 個 unit tests 覆蓋：65 天 machine config、CLI config loading、空 Journal、多筆成交、取消確認、correction、重複 reversal、day-close、Decimal 精度、日期限制、超支 invalid、破損 JSONL 與 lock contention。
+
+### 後續事項
+
+- Gate 4A-2 另行核准後，實作 pure Decision Engine、weekly capacity 與 Budget Guard。
+- Gate 4A-2 應擴充 `validate` 的 decision numeric invariants 與 machine strategy-config validation。

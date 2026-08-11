@@ -7,7 +7,7 @@
 - 執行模式：使用者在本機手動觸發
 - 正式計畫：2026-08-12 至 2026-10-15，Asia/Taipei
 
-本文件定義未來本機 MVP 的已核准操作與命令契約。現在尚未建立以下命令；範例是實作契約，不代表 runtime 已可用。
+本文件定義本機 MVP 的已核准操作與命令契約。Gate 4A-1 的 Journal commands 已可用；`recommend` 與 `report` 仍未實作。
 
 ## 2. MVP 成功條件
 
@@ -26,7 +26,7 @@
 
 ## 3. 建議 runtime 形態
 
-Stage 4A 提議：
+Stage 4A runtime 基準：
 
 - Python 3.11+。
 - 核心金額使用 `decimal.Decimal`。
@@ -35,21 +35,21 @@ Stage 4A 提議：
 - JSONL、UUID、hash、檔案鎖及 HTTP 優先使用標準函式庫。
 - 初版不引入資料庫、Web framework、Pandas 或排程框架。
 
-未來單一入口預定為：
+單一入口為：
 
 ```bash
 python3 InvestmentEngine/bitcoin/dca.py <command>
 ```
 
-`dca.py` 只作薄 CLI；Provider、Validator、Indicators、Decision Engine、Budget Guard、Journal 與 Reporter 必須保持獨立模組。
+`dca.py` 只作薄 CLI；目前已接入 Config、Validator、Journal 與 Ledger。Provider、Indicators、Decision Engine、Budget Guard 與 Reporter 留待後續 Gate。
 
 ## 4. 預定本機檔案
 
 ```text
 InvestmentEngine/bitcoin/
-├── dca.py                         # 未來 CLI entrypoint
-├── config/                        # 未來 versioned machine config
-├── src/                           # 未來 runtime modules
+├── dca.py                         # 已實作 CLI entrypoint
+├── config/                        # 已建立 versioned machine config
+├── src/bitcoin_dca/               # Gate 4A-1 runtime modules
 ├── data/
 │   ├── market_snapshots.jsonl     # Git ignored
 │   ├── decisions.jsonl            # Git ignored
@@ -63,11 +63,13 @@ InvestmentEngine/bitcoin/
         └── monthly/
 ```
 
-Stage 4A 設計不建立 `dca.py`、`config/` 或 `src/`；只有實作另行核准後才建立。
+Gate 4A-1 已建立 `dca.py`、machine config 與 Journal core modules；尚未建立 Provider、Decision Engine、Budget Guard 或 Reporter modules。
 
 ## 5. 每日手動流程
 
 ### 5.1 產生建議
+
+狀態：尚未實作；需完成 Gate 4A-2 與 4A-3。
 
 每天台北時間 21:00 後執行：
 
@@ -93,6 +95,8 @@ python3 InvestmentEngine/bitcoin/dca.py recommend
 「先保存、後顯示」是固定順序，避免 terminal 顯示一個未寫入 Journal 的建議。
 
 ### 5.2 手動買入與登記
+
+狀態：Gate 4A-1 已實作。
 
 使用者自行在交易所完成買入；MVP 永遠不操作交易所。買入後輸入：
 
@@ -122,6 +126,8 @@ python3 InvestmentEngine/bitcoin/dca.py record-purchase \
 
 ### 5.3 結束當日
 
+狀態：Gate 4A-1 已實作。
+
 沒有買入：
 
 ```bash
@@ -140,6 +146,8 @@ python3 InvestmentEngine/bitcoin/dca.py close-day --reason completed_for_day
 
 ### 6.1 查看狀態
 
+狀態：Gate 4A-1 已實作；決策與 weekly capacity 欄位待 Gate 4A-2。
+
 ```bash
 python3 InvestmentEngine/bitcoin/dca.py status
 ```
@@ -147,6 +155,8 @@ python3 InvestmentEngine/bitcoin/dca.py status
 唯讀輸出：目前計畫日、最新決策、今日實際投入、剩餘預算、累積 BTC、有效平均成本、本週目標與全期可行性。不得修改或補寫 Journal。
 
 ### 6.2 修正成交
+
+狀態：Gate 4A-1 已實作。
 
 ```bash
 python3 InvestmentEngine/bitcoin/dca.py correct-purchase \
@@ -164,6 +174,8 @@ python3 InvestmentEngine/bitcoin/dca.py correct-purchase \
 
 ### 6.3 驗證 Journal
 
+狀態：Gate 4A-1 已實作 structural、revision、reference、execution、reversal 與 PortfolioState validation；Decision／Budget Guard numeric invariants 待 Gate 4A-2。
+
 ```bash
 python3 InvestmentEngine/bitcoin/dca.py validate
 ```
@@ -171,6 +183,8 @@ python3 InvestmentEngine/bitcoin/dca.py validate
 唯讀執行 `DATA_MODEL.md` 的全部 schema、引用、revision、reversal、Decimal、cutoff、hard-cap 與 portfolio rebuild 驗證。任何 invalid 都以非零 exit code 結束。
 
 ### 6.4 產生報表
+
+狀態：尚未實作；留待 Gate 4A-4。
 
 ```bash
 python3 InvestmentEngine/bitcoin/dca.py report daily

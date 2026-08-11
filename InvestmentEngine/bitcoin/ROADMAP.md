@@ -64,7 +64,9 @@ Roadmap 只描述交付順序與 Review gate，不授權自動下單或提前建
 
 ### Gate 4A-1：Journal core
 
-需另行明確授權開始實作：
+狀態：Implemented（2026-08-11）。
+
+已完成：
 
 - Python package skeleton 與 machine config
 - Decimal／time／ID utilities
@@ -72,9 +74,11 @@ Roadmap 只描述交付順序與 Review gate，不授權自動下單或提前建
 - Execution ledger、reversal、day-close、PortfolioState
 - `record-purchase`、`correct-purchase`、`close-day`、`status`
 
-驗收：固定 fixtures 可重建完全相同 PortfolioState；錯誤 JSONL 必須 hard fail。
+驗收結果：14 個 unit tests 通過；固定 fixtures 可重建相同 PortfolioState，CLI 可載入 versioned config，錯誤／不完整 JSONL hard fail，取消確認不寫入，第二個 writer 無法取得 lock。
 
 ### Gate 4A-2：Pure decision core
+
+狀態：尚未授權／尚未實作。
 
 - Indicators 與 score normalization
 - BVIV modifier
@@ -132,7 +136,7 @@ Stage 4A 穩定及另行 Review 後才考慮：
 
 ```text
 Stage 4A design approval
-  → Journal core
+  → Journal core（completed）
   → Pure decision core
   → Provider adapters
   → Reports

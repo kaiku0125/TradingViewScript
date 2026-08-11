@@ -1,0 +1,118 @@
+{
+  "schema_version": "bitcoin_dca_config.v1",
+  "config_version": "1.0-draft.2",
+  "plan": {
+    "currency": "USD",
+    "asset": "BTC",
+    "initial_budget": "10000.00",
+    "start_date": "2026-08-12",
+    "end_date": "2026-10-15",
+    "timezone": "Asia/Taipei",
+    "data_cutoff_time": "21:00",
+    "recommendation_window_end": "21:10",
+    "notification_target_time": "21:05",
+    "base_dca": "80.00"
+  },
+  "data": {
+    "btc": {
+      "provider": "coinbase_exchange",
+      "product": "BTC-USD",
+      "reference_interval": "5m",
+      "reference_field": "close",
+      "reference_max_age_minutes": 10,
+      "daily_interval": "1d",
+      "daily_boundary": "00:00_UTC",
+      "automatic_fallback": "none"
+    },
+    "fear_greed": {
+      "provider": "alternative_me",
+      "use_latest_before_cutoff": true,
+      "max_age_hours": 36
+    },
+    "bviv": {
+      "provider": "volmex",
+      "primary_interval": "60m",
+      "primary_max_age_hours": 2,
+      "fallback_symbol": "BVIVF",
+      "fallback_interval": "1d",
+      "fallback_max_age_hours": 36,
+      "missing_modifier": "1.0",
+      "api_key_env": "VOLMEX_API_KEY"
+    },
+    "portfolio": {
+      "canonical_source": "local_journal",
+      "use_actual_investment": true,
+      "allow_external_overwrite": false
+    }
+  },
+  "factors": {
+    "location": {
+      "weight": "0.45",
+      "lookback_days": 90,
+      "score_min_pct": "5.0",
+      "score_max_pct": "30.0"
+    },
+    "sentiment": {
+      "weight": "0.25",
+      "score_zero_at": 60,
+      "score_one_at": 10
+    },
+    "shock": {
+      "weight": "0.30",
+      "atr_period": 14,
+      "atr_smoothing": "wilder_rma",
+      "atr_score_min_multiple": "0.5",
+      "atr_score_max_multiple": "2.0",
+      "drop_score_min_pct": "2.0",
+      "drop_score_max_pct": "10.0",
+      "combine_method": "max"
+    }
+  },
+  "bviv": {
+    "score_min": "50.0",
+    "score_max": "100.0",
+    "modifier_min": "0.90",
+    "modifier_max_v1": "1.00",
+    "gate_drawdown_pct": "5.0",
+    "gate_fear_greed_max": 40,
+    "gate_any_negative_return": true
+  },
+  "decision": {
+    "minimum_valid_directional_groups": 2,
+    "adaptive_multiplier_min": "0.0",
+    "adaptive_multiplier_max": "2.0",
+    "rounding_unit": "0.01",
+    "rounding_mode": "floor"
+  },
+  "pacing": {
+    "acceleration_start_days": 21,
+    "full_pace_days": 7,
+    "weekly_min_ratio_early": "0.80",
+    "weekly_min_ratio_late": "1.00",
+    "weekly_soft_max_ratio": "1.30",
+    "snapshot_weekly_target": true,
+    "enable_capacity_check": true,
+    "enable_minimum_required_today": true,
+    "minimum_required_rounding": "ceil",
+    "infeasible_policy": "alert_no_hard_cap_override"
+  },
+  "budget": {
+    "daily_hard_max": "500.00",
+    "weekly_hard_max": "2000.00",
+    "week_start": "monday",
+    "final_day_override_daily_max": false,
+    "final_day_override_weekly_max": false,
+    "allow_soft_cap_feasibility_override": true,
+    "allow_negative_remaining": false
+  },
+  "runtime": {
+    "data_dir": "../data",
+    "reports_dir": "../reports/generated",
+    "templates_dir": "../templates",
+    "lock_filename": ".bitcoin_dca.lock",
+    "http_timeout_seconds": 10,
+    "http_max_attempts": 3,
+    "http_retry_delays_seconds": [1, 3]
+  }
+}
+
