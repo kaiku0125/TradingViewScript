@@ -5,3 +5,4 @@ __pycache__/
 InvestmentEngine/bitcoin/data/*.jsonl
 InvestmentEngine/bitcoin/data/*.lock
 InvestmentEngine/bitcoin/reports/generated/
+InvestmentEngine/bitcoin/.venv/

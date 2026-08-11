@@ -44,6 +44,16 @@ python3 InvestmentEngine/bitcoin/dca.py <command>
 
 Entry point 會拒絕 Python 3.10 以下版本，避免在未核准 runtime 上執行正式 Journal workflow。
 
+本機安裝與隔離環境：
+
+```bash
+/opt/homebrew/bin/brew install python@3.11
+/opt/homebrew/opt/python@3.11/bin/python3.11 -m venv InvestmentEngine/bitcoin/.venv
+InvestmentEngine/bitcoin/.venv/bin/python --version
+```
+
+正式操作建議直接使用 `InvestmentEngine/bitcoin/.venv/bin/python`，不依賴 shell 的 `python3` 或 PATH。`.venv/` 為本機產物並已 Git ignored；Stage 4A 使用 standard library，不需要額外 `pip install`。
+
 `dca.py` 只作薄 CLI；目前已接入 Config、Validator、Journal、Ledger、read-only Providers、pure Decision Engine、Budget Guard、`recommend` orchestration、Reporter 與 isolated rehearsal。
 
 ## 4. 預定本機檔案

@@ -717,3 +717,18 @@ Reporter 不呼叫 Provider、不重算 Decision Engine，也不修改 canonical
 
 - 2026-08-12 21:00～21:10 執行 live `recommend`，完成第一個正式 recommendation 與實際人工操作驗收。
 - Stage 4B 的排程、通知與備份仍需另行設計與授權。
+
+---
+
+## DCA-ADR-020：正式本機命令固定使用專案 Python 3.11 虛擬環境
+
+- 日期：2026-08-11
+- 狀態：Accepted／Implemented
+
+### 決策
+
+Apple Silicon 本機以 Homebrew `python@3.11` 建立 Git-ignored `InvestmentEngine/bitcoin/.venv`。正式命令使用 `.venv/bin/python` 的明確路徑，不修改 macOS system Python，也不依賴目前 shell PATH。Stage 4A 為 standard-library-only，因此不安裝額外 pip dependencies。
+
+### 原因與影響
+
+系統預設 `python3` 為 3.9.6，不符合 runtime contract；明確的 project venv 可避免誤用。Python patch upgrades 可由 Homebrew 管理，必要時刪除並重建 `.venv`，canonical Journal 與 reports 不受影響。

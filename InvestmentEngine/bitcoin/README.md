@@ -129,17 +129,17 @@ InvestmentEngine/bitcoin/
 目前可用：
 
 ```bash
-python3 --version  # 必須為 3.11+
-python3 InvestmentEngine/bitcoin/dca.py validate
-python3 InvestmentEngine/bitcoin/dca.py status
-python3 InvestmentEngine/bitcoin/dca.py recommend
-python3 InvestmentEngine/bitcoin/dca.py record-purchase --usd "<USD>" --btc "<BTC>"
-python3 InvestmentEngine/bitcoin/dca.py correct-purchase --execution-id "<ID>" --usd "<USD>" --btc "<BTC>"
-python3 InvestmentEngine/bitcoin/dca.py close-day --reason skipped
-python3 InvestmentEngine/bitcoin/dca.py report daily
-python3 InvestmentEngine/bitcoin/dca.py report weekly --date 2026-08-12
-python3 InvestmentEngine/bitcoin/dca.py report monthly --date 2026-08-12
-python3 InvestmentEngine/bitcoin/dca.py rehearse-first-day
+InvestmentEngine/bitcoin/.venv/bin/python --version  # 必須為 3.11+
+InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py validate
+InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py status
+InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py recommend
+InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py record-purchase --usd "<USD>" --btc "<BTC>"
+InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py correct-purchase --execution-id "<ID>" --usd "<USD>" --btc "<BTC>"
+InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py close-day --reason skipped
+InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py report daily
+InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py report weekly --date 2026-08-12
+InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py report monthly --date 2026-08-12
+InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py rehearse-first-day
 ```
 
 `recommend` 只允許在正式計畫期間的 Asia/Taipei 21:00～21:10 執行，建議約 21:05 手動觸發。它會先 fsync canonical records，再顯示結果；輸出使用尚未回測證實的 draft parameters，且不代表交易已成交。
