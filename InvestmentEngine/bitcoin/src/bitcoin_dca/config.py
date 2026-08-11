@@ -33,12 +33,14 @@ class RuntimeConfig:
     factor_weights: tuple[Decimal, Decimal, Decimal]
     location_score_min_pct: Decimal
     location_score_max_pct: Decimal
+    location_lookback_days: int
     sentiment_score_zero_at: Decimal
     sentiment_score_one_at: Decimal
     atr_score_min_multiple: Decimal
     atr_score_max_multiple: Decimal
     drop_score_min_pct: Decimal
     drop_score_max_pct: Decimal
+    atr_period: int
     minimum_valid_directional_groups: int
     adaptive_multiplier_min: Decimal
     adaptive_multiplier_max: Decimal
@@ -56,6 +58,14 @@ class RuntimeConfig:
     weekly_soft_max_ratio: Decimal
     daily_hard_max: Decimal
     weekly_hard_max: Decimal
+    btc_reference_max_age_minutes: int
+    fear_greed_max_age_hours: int
+    bviv_primary_max_age_hours: int
+    bviv_fallback_max_age_hours: int
+    volmex_api_key_env: str
+    http_timeout_seconds: int
+    http_max_attempts: int
+    http_retry_delays_seconds: tuple[int, ...]
     data_dir: Path
     reports_dir: Path
     templates_dir: Path
@@ -288,16 +298,22 @@ def load_config(config_path: Path | str | None = None) -> RuntimeConfig:
         ),
         "pacing.acceleration_start_days": pacing.get("acceleration_start_days"),
         "pacing.full_pace_days": pacing.get("full_pace_days"),
+        "factors.location.lookback_days": location.get("lookback_days"),
+        "factors.shock.atr_period": shock.get("atr_period"),
     }
     if any(not isinstance(value, int) for value in integer_fields.values()):
         raise ConfigError("decision and pacing day/count fields must be integers")
     minimum_groups = integer_fields["decision.minimum_valid_directional_groups"]
     acceleration_days = integer_fields["pacing.acceleration_start_days"]
     full_pace_days = integer_fields["pacing.full_pace_days"]
+    location_lookback_days = integer_fields["factors.location.lookback_days"]
+    atr_period = integer_fields["factors.shock.atr_period"]
     if not 1 <= minimum_groups <= 3:
         raise ConfigError("minimum_valid_directional_groups must be in 1..3")
     if not acceleration_days > full_pace_days >= 1:
         raise ConfigError("pacing day thresholds are invalid")
+    if location_lookback_days < 2 or atr_period < 2:
+        raise ConfigError("indicator lookback periods must be at least 2")
     if base_dca < 0 or daily_hard_max < base_dca or weekly_hard_max <= 0:
         raise ConfigError("budget hard caps are invalid")
 
@@ -338,6 +354,23 @@ def load_config(config_path: Path | str | None = None) -> RuntimeConfig:
     )
     if any(not isinstance(value, int) or value <= 0 for value in freshness):
         raise ConfigError("all data freshness limits must be positive integers")
+    api_key_env = bviv_data.get("api_key_env")
+    if api_key_env != "VOLMEX_API_KEY":
+        raise ConfigError("data.bviv.api_key_env must be VOLMEX_API_KEY")
+
+    timeout = runtime.get("http_timeout_seconds")
+    attempts = runtime.get("http_max_attempts")
+    delays = runtime.get("http_retry_delays_seconds")
+    if not isinstance(timeout, int) or timeout <= 0:
+        raise ConfigError("runtime.http_timeout_seconds must be positive")
+    if not isinstance(attempts, int) or attempts < 1:
+        raise ConfigError("runtime.http_max_attempts must be positive")
+    if (
+        not isinstance(delays, list)
+        or len(delays) != attempts - 1
+        or any(not isinstance(value, int) or value < 0 for value in delays)
+    ):
+        raise ConfigError("runtime retry delays must match max attempts")
 
     total_days = (end_date - start_date).days + 1
     base_budget = base_dca * total_days
@@ -382,12 +415,14 @@ def load_config(config_path: Path | str | None = None) -> RuntimeConfig:
         factor_weights=weights,
         location_score_min_pct=location_min,
         location_score_max_pct=location_max,
+        location_lookback_days=location_lookback_days,
         sentiment_score_zero_at=sentiment_zero,
         sentiment_score_one_at=sentiment_one,
         atr_score_min_multiple=atr_min,
         atr_score_max_multiple=atr_max,
         drop_score_min_pct=drop_min,
         drop_score_max_pct=drop_max,
+        atr_period=atr_period,
         minimum_valid_directional_groups=minimum_groups,
         adaptive_multiplier_min=adaptive_min,
         adaptive_multiplier_max=adaptive_max,
@@ -405,6 +440,14 @@ def load_config(config_path: Path | str | None = None) -> RuntimeConfig:
         weekly_soft_max_ratio=weekly_soft_ratio,
         daily_hard_max=daily_hard_max,
         weekly_hard_max=weekly_hard_max,
+        btc_reference_max_age_minutes=freshness[0],
+        fear_greed_max_age_hours=freshness[1],
+        bviv_primary_max_age_hours=freshness[2],
+        bviv_fallback_max_age_hours=freshness[3],
+        volmex_api_key_env=api_key_env,
+        http_timeout_seconds=timeout,
+        http_max_attempts=attempts,
+        http_retry_delays_seconds=tuple(delays),
         data_dir=_resolve_dir(path, runtime.get("data_dir"), "runtime.data_dir"),
         reports_dir=_resolve_dir(
             path, runtime.get("reports_dir"), "runtime.reports_dir"

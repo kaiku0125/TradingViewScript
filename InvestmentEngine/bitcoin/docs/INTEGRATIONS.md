@@ -6,6 +6,7 @@
 - 日期：2026-08-11
 - 範圍：本機手動 MVP 的唯讀市場資料 Adapter
 - 非範圍：排程、通知、Dashboard、Google Sheets、交易所帳戶及自動下單
+- Runtime 狀態：Gate 4A-3 Accepted／Implemented（2026-08-11）
 
 本文件把 Stage 2.1 已核准的 canonical data sources 對應到本機 MVP 的外部讀取契約。所有策略公式、品質狀態與新鮮度仍以 `SPEC.md`、`CONFIG.md` 及 `docs/DATA_MODEL.md` 為準。
 

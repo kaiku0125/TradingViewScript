@@ -69,7 +69,7 @@ class DecisionResult:
             for key, value in asdict(self.indicators).items()
         }
         capacity_values = (
-            None
+            {}
             if self.capacity is None
             else {
                 key: _decimal_dict(value)
@@ -77,7 +77,7 @@ class DecisionResult:
             }
         )
         guard_values = (
-            None
+            {}
             if self.budget_guard is None
             else {
                 key: _decimal_dict(value)

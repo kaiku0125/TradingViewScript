@@ -1,4 +1,4 @@
-"""Command-line interface for the implemented Gate 4A-1 Journal core."""
+"""Command-line interface for the local manual Smart DCA MVP."""
 
 from __future__ import annotations
 
@@ -18,6 +18,8 @@ from .errors import (
     UserInputError,
 )
 from .ledger import JournalService, PortfolioState
+from .recommendation import RecommendationOutcome, RecommendationService
+from .storage import JournalStore
 
 
 def _confirm(preview: dict, *, assume_yes: bool) -> bool:
@@ -47,10 +49,29 @@ def _print_state(state: PortfolioState) -> None:
         print(f"  {key}: {payload[key]}")
 
 
+def _print_recommendation(outcome: RecommendationOutcome) -> None:
+    decision = outcome.decision
+    snapshot = outcome.snapshot
+    print("Smart DCA recommendation (draft parameters; not a trade)")
+    print(f"  plan_date: {decision['plan_date']}")
+    print(f"  cutoff_at: {snapshot['cutoff_at']}")
+    print(f"  config_version: {decision['config_version']}")
+    print(f"  decision_status: {decision['decision_status']}")
+    print(f"  final_suggested_usd: {decision['final_suggested_usd']}")
+    print(
+        "  remaining_to_execute_today_usd: "
+        f"{decision['remaining_to_execute_today_usd']}"
+    )
+    print(f"  reason_codes: {', '.join(decision['reason_codes']) or 'none'}")
+    print(f"  snapshot_id: {snapshot['snapshot_id']}")
+    print(f"  decision_revision_id: {decision['revision_id']}")
+    print(f"  weekly_target_id: {outcome.weekly_target['weekly_target_id']}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="dca.py",
-        description="Bitcoin Smart DCA local Journal core (Gate 4A-1)",
+        description="Bitcoin Smart DCA local manual MVP",
     )
     parser.add_argument(
         "--config",
@@ -94,6 +115,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("status", help="show derived local portfolio state")
     subparsers.add_parser("validate", help="validate canonical JSONL datasets")
+    subparsers.add_parser(
+        "recommend", help="fetch cutoff-qualified data and save today's recommendation"
+    )
     return parser
 
 
@@ -106,13 +130,30 @@ def _run(args: argparse.Namespace) -> int:
         print("Journal valid")
         for dataset, count in sorted(counts.items()):
             print(f"  {dataset}: {count}")
+        warnings = service.validation_warnings()
+        for warning in warnings:
+            print(f"  warning: {warning}")
         return 0
 
     if args.command == "status":
         service.validate()
         _print_state(service.portfolio_state())
-        print("  decision_runtime: pure core ready; recommend workflow awaits Gate 4A-3")
+        store = JournalStore(config)
+        with store.lock(exclusive=False):
+            decisions = store.read_dataset("decisions")
+        if decisions:
+            latest = decisions[-1]
+            print(f"  latest_decision_status: {latest['decision_status']}")
+            print(f"  latest_final_suggested_usd: {latest['final_suggested_usd']}")
+            print(f"  latest_decision_plan_date: {latest['plan_date']}")
+        else:
+            print("  latest_decision_status: none")
         return 0
+
+    if args.command == "recommend":
+        outcome = RecommendationService(config).recommend()
+        _print_recommendation(outcome)
+        return outcome.exit_code
 
     callback = lambda preview: _confirm(preview, assume_yes=args.yes)
     if args.command == "record-purchase":
@@ -166,15 +207,21 @@ def main(argv: Sequence[str] | None = None) -> int:
     except ConfigError as exc:
         print(f"Config error: {exc}", file=sys.stderr)
         return 3
-    except (UserInputError, OperationCancelled, KeyboardInterrupt) as exc:
+    except (UserInputError, OperationCancelled) as exc:
         message = str(exc) or "operation cancelled"
         print(f"Operation not written: {message}", file=sys.stderr)
         return 4
+    except KeyboardInterrupt:
+        print(
+            "Operation interrupted; durable partial records may exist. Run validate.",
+            file=sys.stderr,
+        )
+        return 6
     except LockUnavailableError as exc:
         print(f"Journal lock error: {exc}", file=sys.stderr)
         return 5
     except OSError as exc:
-        print(f"Filesystem error: {exc}", file=sys.stderr)
+        print(f"Filesystem error: {exc}. Run validate.", file=sys.stderr)
         return 5
     except BitcoinDcaError as exc:
         print(f"Runtime error: {exc}", file=sys.stderr)

@@ -12,7 +12,7 @@ from .config import RuntimeConfig
 from .decimal_utils import canonical_btc, canonical_usd
 from .errors import JournalValidationError, OperationCancelled, UserInputError
 from .storage import JournalStore
-from .validation import validate_journal
+from .validation import journal_warnings, validate_journal
 
 
 ConfirmCallback = Callable[[dict], bool]
@@ -188,6 +188,12 @@ class JournalService:
                     ["PortfolioState is invalid: actual investment exceeds initial budget"]
                 )
         return {name: len(records) for name, records in datasets.items()}
+
+    def validation_warnings(self) -> list[str]:
+        with self.store.lock(exclusive=False):
+            datasets = self.store.read_all()
+            validate_journal(datasets, self.config)
+            return journal_warnings(datasets)
 
     def portfolio_state(self, *, now: datetime | None = None) -> PortfolioState:
         operation_time = self._now(now)

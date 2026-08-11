@@ -2,8 +2,8 @@
 
 ## 1. 文件狀態
 
-- 資料模型版本：`1.0-draft.3`
-- 階段：Stage 3 Accepted；Stage 4A candle timing 與 Gate 4A-1 operation contract implemented（2026-08-11）
+- 資料模型版本：`1.0-draft.4`
+- 階段：Stage 3 Accepted；Stage 4A candle timing、operation contract 與 Gate 4A-3 provider persistence implemented（2026-08-11）
 - 時區：除來源原始時間外，業務日期與週期皆使用 `Asia/Taipei`
 - 儲存格式：UTF-8 JSON Lines（JSONL），每行一個完整事件或紀錄
 
@@ -67,9 +67,19 @@
   "cutoff_at": "2026-08-11T21:00:00+08:00",
   "stale_after": "PT10M",
   "quality_status": "valid",
-  "fallback_used": false
+  "fallback_used": false,
+  "request_descriptor": {
+    "provider": "coinbase_exchange",
+    "endpoint": "product_candles",
+    "query": {"granularity": "300"},
+    "http_status": 200,
+    "response_sha256": "...",
+    "attempts": 1
+  }
 }
 ```
+
+`request_descriptor` 只保存 endpoint 名稱、非敏感 query、HTTP status、response hash 與 attempts。禁止保存完整 URL、`apikey`、Authorization header 或 response body。
 
 `quality_status` 只允許 `valid`、`stale`、`missing`、`invalid`。缺失值使用 `null`，不得用 `0` 冒充。
 
@@ -86,6 +96,7 @@
 | `schema_version` | string | 固定 `market_snapshot.v1` |
 | `snapshot_id` | string | 唯一 ID |
 | `operation_id` | string | 產生此紀錄的本機 command operation ID |
+| `config_version` | string | 正規化此快照時使用的 Config 版本 |
 | `plan_date` | date | 決策業務日期 |
 | `cutoff_at` | timestamp | 當日資料截止 |
 | `created_at` | timestamp | 快照建立時間 |
@@ -122,6 +133,7 @@
 | `pacing` | object | pace floor、weekly catchup、minimum required today |
 | `capacity` | object | 日／週／全期容量與可行性 |
 | `final_suggested_usd` | USD/null | Budget Guard 後金額；blocked 時為 null |
+| `remaining_to_execute_today_usd` | USD/null | 扣除今日已實際投入後仍待執行的金額 |
 | `reason_codes` | string[] | 機器可讀原因 |
 | `reason_summary` | string | 簡潔的人類可讀說明 |
 

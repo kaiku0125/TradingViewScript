@@ -155,5 +155,5 @@ Stage 4A 本機手動 MVP 只啟用 Coinbase Exchange、Alternative.me、Volmex 
 - Python 3.11+ 與 standard-library-first runtime：Stage 4A 已於 2026-08-11 核准
 - Journal storage、Execution ledger、PortfolioState 與基礎 CLI：Gate 4A-1 已於 2026-08-11 實作
 - Pure Decision Engine 與 Budget Guard runtime：Gate 4A-2 已於 2026-08-11 核准並實作
-- Provider adapters、canonical snapshot／decision 寫入與 `recommend`：Gate 4A-3 尚未授權
+- Provider adapters、canonical snapshot／decision 寫入與 `recommend`：Gate 4A-3 已於 2026-08-11 核准並實作
 - 21:00 自動排程、失敗告警與通知：不在 Stage 4A 範圍

@@ -608,3 +608,60 @@ Machine config loader 現在會驗證策略權重、門檻順序、Shock 方法�
 ### 後續事項
 
 - Gate 4A-3 必須另行授權後，才可實作 Provider adapters、cutoff／freshness normalization、canonical writes 與 `recommend` CLI。
+
+---
+
+## DCA-ADR-018：Gate 4A-3 採唯讀 Provider 與先保存後顯示的 recommend workflow
+
+- 日期：2026-08-11
+- 狀態：Accepted／Implemented（2026-08-11）
+
+### 背景
+
+Gate 4A-2 已能由 normalized inputs 產生 deterministic decision，但尚無安全方式取得 cutoff-qualified 市場資料或把建議寫入 canonical Journal。正式操作需要把外部 API 的格式、時間語意、retry 與秘密處理隔離在 Provider layer，並確保 terminal 不會顯示未保存的建議。
+
+### 決策
+
+Gate 4A-3 新增：
+
+- `providers.py`：standard-library HTTP client、Coinbase Exchange、Alternative.me、Volmex adapters 與 normalized `MarketDataBundle`。
+- `recommendation.py`：21:00～21:10 window、Portfolio rebuild、WeeklyTargetSnapshot、MarketSnapshot、DecisionRecord revision 與 crash-orphan recovery。
+- `dca.py recommend`：只在 canonical writes fsync 完成後顯示建議；blocked／plan-infeasible 保存後回傳 exit 2。
+
+Coinbase 必須精確取得當日與前一日 cutoff 的 5m bucket，並驗證 91 根連續、已完成 UTC 日線；response 順序先依 timestamp 正規化，任何 duplicate、gap 或 invalid OHLC 都不補值。近期高點使用最後 90 根，ATR(14) 使用前一根 close 建立 true range 後套 Wilder RMA。
+
+Fear & Greed 取 cutoff 前最新 Alternative.me 值，stale／missing 不補零。Volmex 先取最後完成 BVIV 60m；失敗後取 BVIVF。若 BVIVF 的 daily UDF timestamp 是 UTC 00:00 bucket date，runtime 會正規化成該日期 America/New_York 16:00 fixing completion，避免在 fixing 完成前偷看；兩者皆無效時使用 BVIV modifier 1.0 並明確降級。
+
+HTTP 只重試 timeout、connection、429 與 5xx。`VOLMEX_API_KEY` 只從 environment 讀取並只進入 outgoing query；request descriptor 排除秘密，只保存非敏感 query、status、attempt count 與 response SHA-256。
+
+Canonical 寫入順序固定為 weekly target（若需要）→ snapshot → decision，每次 append 都 flush／fsync。相同 normalized orphan snapshot 可在 crash recovery 中被新的 decision 引用；不同 orphan 永不刪除或覆寫。同日再次執行會建立新 snapshot 與同一 decision chain 的下一 revision。
+
+### 原因
+
+- Provider normalization 防止外部 payload 與時間語意滲入 pure Decision Engine。
+- Exact bucket 與 completed-candle rules 落實 21:00 cutoff，避免 ticker substitution 或 cutoff-after data。
+- 先保存後顯示確保 operator 看到的建議有 canonical audit trail。
+- Secret-minimal descriptor 兼顧重現 HTTP 結果與 API key 安全。
+- Append dependency order 讓無資料庫的本機 JSONL 能以明確規則恢復 crash。
+
+### 影響與取捨
+
+- `recommend` 會在 exclusive lock 期間執行網路請求，其他 writer 會立即收到 lock unavailable；這保證 portfolio input 到 decision 寫入間不被成交修改。
+- Coinbase 任一必要 BTC dataset 無效時仍保存 blocked snapshot／decision；允許降級的 Fear & Greed／BVIV 問題則保存原因後繼續。
+- Provider fixtures 證明 normalization 與 persistence，但第一日真實 API rehearsal 仍屬 Gate 4A-4 驗收工作。
+- Gate 4A-3 不產生 Markdown reports，不新增排程、通知、備份或自動交易。
+
+### 驗證
+
+14 個 Gate 4A-3 tests 覆蓋：exact bucket、91 日線、Wilder ATR、亂序、duplicate、gap、cutoff-after exclusion、stale、429／4xx／5xx／timeout、BVIVF fallback／fixing completion、neutral degradation、secret redaction、blocked persistence、same-day revision、orphan recovery 與 recommendation window。
+
+完整 Bitcoin suite 共 43 個 tests 通過；repository 原有 tests 另行驗證。
+
+### Review 結果
+
+使用者於 2026-08-11 接受 Coinbase cutoff 與日線規則、Fear & Greed 降級、BVIV／BVIVF／中性 fallback、retry 與 secret redaction、canonical 寫入與 revision，以及 recommendation window／blocked 行為，並正式核准 Gate 4A-3。
+
+### 後續事項
+
+- 正式操作前準備 Python 3.11+ 本機環境；目前系統預設 `python3` 仍為 3.9.6。
+- Gate 4A-4 必須另行授權後，才可實作 reports 與第一日 local rehearsal。

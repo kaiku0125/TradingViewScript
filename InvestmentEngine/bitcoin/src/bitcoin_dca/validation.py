@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from .config import RuntimeConfig
@@ -26,17 +26,96 @@ def _required(record: dict, fields: set[str], prefix: str, issues: list[str]) ->
         issues.append(f"{prefix}: missing required field {field}")
 
 
-def _timestamp(value: object, field: str, prefix: str, issues: list[str]) -> None:
+def _timestamp(
+    value: object, field: str, prefix: str, issues: list[str]
+) -> datetime | None:
     if not isinstance(value, str):
         issues.append(f"{prefix}: {field} must be an RFC 3339 string")
-        return
+        return None
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError:
         issues.append(f"{prefix}: {field} is not a valid RFC 3339 timestamp")
-        return
+        return None
     if parsed.tzinfo is None or parsed.utcoffset() is None:
         issues.append(f"{prefix}: {field} must include a UTC offset")
+        return None
+    return parsed
+
+
+def _scan_secret_fields(value: object, prefix: str, issues: list[str]) -> None:
+    forbidden = {"apikey", "api_key", "authorization", "token", "secret"}
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key.lower() in forbidden:
+                issues.append(f"{prefix}: forbidden secret field {key}")
+            _scan_secret_fields(item, f"{prefix}.{key}", issues)
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            _scan_secret_fields(item, f"{prefix}[{index}]", issues)
+
+
+def _validate_provider_point(
+    point: dict,
+    *,
+    field: str,
+    prefix: str,
+    cutoff: datetime | None,
+    issues: list[str],
+) -> None:
+    required = {
+        "source",
+        "symbol",
+        "value",
+        "interval",
+        "observed_at",
+        "available_at",
+        "fetched_at",
+        "timezone",
+        "cutoff_at",
+        "stale_after",
+        "quality_status",
+        "fallback_used",
+        "request_descriptor",
+    }
+    point_prefix = f"{prefix}.{field}"
+    _required(point, required, point_prefix, issues)
+    status = point.get("quality_status")
+    if status not in {"valid", "stale", "missing", "invalid"}:
+        issues.append(f"{point_prefix}: invalid quality_status")
+    if not isinstance(point.get("fallback_used"), bool):
+        issues.append(f"{point_prefix}: fallback_used must be boolean")
+    for text_field in {"source", "symbol", "interval", "timezone", "stale_after"}:
+        if not isinstance(point.get(text_field), str) or not point.get(text_field):
+            issues.append(f"{point_prefix}: {text_field} must be a non-empty string")
+    if not isinstance(point.get("request_descriptor"), dict):
+        issues.append(f"{point_prefix}: request_descriptor must be an object")
+    observed = None
+    for timestamp_field in {"observed_at", "available_at", "fetched_at"}:
+        value = point.get(timestamp_field)
+        if value is not None:
+            parsed = _timestamp(value, timestamp_field, point_prefix, issues)
+            if timestamp_field == "observed_at":
+                observed = parsed
+    point_cutoff = _timestamp(
+        point.get("cutoff_at"), "cutoff_at", point_prefix, issues
+    )
+    if cutoff is not None and point_cutoff is not None and point_cutoff != cutoff:
+        issues.append(f"{point_prefix}: cutoff_at differs from snapshot cutoff")
+    if observed is not None and cutoff is not None and observed > cutoff:
+        issues.append(f"{point_prefix}: observed_at is after cutoff")
+    raw_value = point.get("value")
+    if status == "valid" and raw_value is None:
+        issues.append(f"{point_prefix}: valid provider value must not be null")
+    if raw_value is not None:
+        _decimal_field(
+            raw_value,
+            "value",
+            point_prefix,
+            issues,
+            max_places=18,
+        )
+    _scan_secret_fields(point, point_prefix, issues)
 
 
 def _plan_date(
@@ -265,7 +344,7 @@ def _validate_snapshots(
         ):
             issues.append(f"{prefix}: operation_id must be a non-empty string")
         _plan_date(record.get("plan_date"), "plan_date", prefix, config, issues)
-        _timestamp(record.get("cutoff_at"), "cutoff_at", prefix, issues)
+        cutoff = _timestamp(record.get("cutoff_at"), "cutoff_at", prefix, issues)
         _timestamp(record.get("created_at"), "created_at", prefix, issues)
         for object_field in {
             "btc_reference",
@@ -278,6 +357,117 @@ def _validate_snapshots(
         }:
             if not isinstance(record.get(object_field), dict):
                 issues.append(f"{prefix}: {object_field} must be an object")
+        for point_field in {
+            "btc_reference",
+            "btc_previous_reference",
+            "fear_greed",
+            "bviv",
+        }:
+            point = record.get(point_field)
+            if isinstance(point, dict):
+                _validate_provider_point(
+                    point,
+                    field=point_field,
+                    prefix=prefix,
+                    cutoff=cutoff,
+                    issues=issues,
+                )
+        daily = record.get("btc_daily_candles")
+        if isinstance(daily, dict):
+            _required(
+                daily,
+                {
+                    "source",
+                    "symbol",
+                    "interval",
+                    "timezone",
+                    "cutoff_at",
+                    "quality_status",
+                    "fallback_used",
+                    "candles",
+                    "request_descriptor",
+                },
+                f"{prefix}.btc_daily_candles",
+                issues,
+            )
+            status = daily.get("quality_status")
+            if status not in {"valid", "stale", "missing", "invalid"}:
+                issues.append(f"{prefix}.btc_daily_candles: invalid quality_status")
+            candles = daily.get("candles")
+            if not isinstance(candles, list):
+                issues.append(f"{prefix}.btc_daily_candles: candles must be a list")
+            else:
+                previous_end = None
+                for candle_index, candle in enumerate(candles, start=1):
+                    candle_prefix = (
+                        f"{prefix}.btc_daily_candles.candles[{candle_index}]"
+                    )
+                    if not isinstance(candle, dict):
+                        issues.append(f"{candle_prefix}: candle must be an object")
+                        continue
+                    start = _timestamp(
+                        candle.get("bucket_start"),
+                        "bucket_start",
+                        candle_prefix,
+                        issues,
+                    )
+                    end = _timestamp(
+                        candle.get("bucket_end"),
+                        "bucket_end",
+                        candle_prefix,
+                        issues,
+                    )
+                    if start is not None and end is not None:
+                        if end - start != timedelta(days=1):
+                            issues.append(f"{candle_prefix}: daily bucket must be 24 hours")
+                        if cutoff is not None and end > cutoff:
+                            issues.append(f"{candle_prefix}: incomplete candle after cutoff")
+                        if previous_end is not None and start != previous_end:
+                            issues.append(f"{candle_prefix}: daily candle gap or disorder")
+                        previous_end = end
+                    for price_field in {"low", "high", "open", "close"}:
+                        _decimal_field(
+                            candle.get(price_field),
+                            price_field,
+                            candle_prefix,
+                            issues,
+                            max_places=18,
+                            positive=True,
+                        )
+                if status == "valid" and daily.get("candle_count") != len(candles):
+                    issues.append(
+                        f"{prefix}.btc_daily_candles: candle_count does not match"
+                    )
+                if status == "valid" and len(candles) != config.location_lookback_days + 1:
+                    issues.append(
+                        f"{prefix}.btc_daily_candles: valid input must contain "
+                        f"{config.location_lookback_days + 1} candles"
+                    )
+            _scan_secret_fields(daily, f"{prefix}.btc_daily_candles", issues)
+        portfolio = record.get("portfolio_input")
+        if isinstance(portfolio, dict):
+            for amount_field in {
+                "actual_invested_usd",
+                "remaining_funds_usd",
+                "actual_invested_this_week_usd",
+                "actual_invested_today_usd",
+            }:
+                _decimal_field(
+                    portfolio.get(amount_field),
+                    amount_field,
+                    f"{prefix}.portfolio_input",
+                    issues,
+                    max_places=2,
+                )
+        quality = record.get("quality_summary")
+        if isinstance(quality, dict):
+            if quality.get("status") not in {"valid", "degraded", "blocked"}:
+                issues.append(f"{prefix}.quality_summary: invalid status")
+            if not isinstance(quality.get("reason_codes"), list) or not all(
+                isinstance(code, str) for code in quality.get("reason_codes", [])
+            ):
+                issues.append(f"{prefix}.quality_summary: reason_codes must be strings")
+        _scan_secret_fields(record, prefix, issues)
     return snapshot_ids
 
 
@@ -353,6 +543,19 @@ def _validate_weekly_targets(
         prefix="weekly target",
         issues=issues,
     )
+    keys_by_week_start: dict[str, set[str]] = defaultdict(set)
+    for record in records:
+        if isinstance(record.get("week_start"), str) and isinstance(
+            record.get("weekly_target_key"), str
+        ):
+            keys_by_week_start[record["week_start"]].add(
+                record["weekly_target_key"]
+            )
+    for week_start, keys in keys_by_week_start.items():
+        if len(keys) != 1:
+            issues.append(
+                f"weekly target {week_start}: must use one stable target key"
+            )
     return ids
 
 
@@ -526,6 +729,23 @@ def _validate_decisions(
                     )
                     if limit is not None and parsed_final > limit:
                         issues.append(f"{prefix}: final amount exceeds {field}")
+        remaining_to_execute = record.get("remaining_to_execute_today_usd")
+        if remaining_to_execute is not None:
+            parsed_remaining = _decimal_field(
+                remaining_to_execute,
+                "remaining_to_execute_today_usd",
+                prefix,
+                issues,
+                max_places=2,
+            )
+            if (
+                parsed_remaining is not None
+                and parsed_final is not None
+                and parsed_remaining > parsed_final
+            ):
+                issues.append(
+                    f"{prefix}: remaining_to_execute_today exceeds final amount"
+                )
         if not isinstance(record.get("reason_codes"), list) or not all(
             isinstance(value, str) for value in record.get("reason_codes", [])
         ):
@@ -539,6 +759,17 @@ def _validate_decisions(
         prefix="decision",
         issues=issues,
     )
+    ids_by_plan_date: dict[str, set[str]] = defaultdict(set)
+    for record in records:
+        if isinstance(record.get("plan_date"), str) and isinstance(
+            record.get("decision_id"), str
+        ):
+            ids_by_plan_date[record["plan_date"]].add(record["decision_id"])
+    for plan_date_value, decision_ids in ids_by_plan_date.items():
+        if len(decision_ids) != 1:
+            issues.append(
+                f"decision {plan_date_value}: must use one stable decision_id"
+            )
     return revision_ids
 
 
@@ -556,7 +787,6 @@ def validate_journal(
             issues.append(f"missing dataset {dataset}")
     if issues:
         raise JournalValidationError(issues)
-
     snapshots = _validate_snapshots(datasets["market_snapshots"], config, issues)
     weekly_targets = _validate_weekly_targets(
         datasets["weekly_targets"], config, issues
@@ -568,6 +798,61 @@ def validate_journal(
         weekly_targets,
         issues,
     )
+    snapshot_by_id = {
+        record.get("snapshot_id"): record
+        for record in datasets["market_snapshots"]
+        if isinstance(record.get("snapshot_id"), str)
+    }
+    target_by_id = {
+        record.get("weekly_target_id"): record
+        for record in datasets["weekly_targets"]
+        if isinstance(record.get("weekly_target_id"), str)
+    }
+    for index, decision in enumerate(datasets["decisions"], start=1):
+        prefix = f"decisions[{index}]"
+        snapshot = snapshot_by_id.get(decision.get("snapshot_id"))
+        target = target_by_id.get(decision.get("weekly_target_id"))
+        if snapshot is not None:
+            if decision.get("operation_id") != snapshot.get("operation_id"):
+                issues.append(f"{prefix}: operation_id differs from snapshot")
+            if decision.get("plan_date") != snapshot.get("plan_date"):
+                issues.append(f"{prefix}: plan_date differs from snapshot")
+            snapshot_config = snapshot.get("config_version")
+            if (
+                snapshot_config is not None
+                and decision.get("config_version") != snapshot_config
+            ):
+                issues.append(f"{prefix}: config_version differs from snapshot")
+            portfolio = snapshot.get("portfolio_input")
+            if isinstance(portfolio, dict) and decision.get("final_suggested_usd") is not None:
+                final = _decimal_field(
+                    decision.get("final_suggested_usd"),
+                    "final_suggested_usd",
+                    prefix,
+                    issues,
+                    max_places=2,
+                )
+                remaining = _decimal_field(
+                    portfolio.get("remaining_funds_usd"),
+                    "portfolio.remaining_funds_usd",
+                    prefix,
+                    issues,
+                    max_places=2,
+                )
+                if final is not None and remaining is not None and final > remaining:
+                    issues.append(f"{prefix}: final amount exceeds snapshot remaining funds")
+        if target is not None:
+            if decision.get("config_version") != target.get("config_version"):
+                issues.append(f"{prefix}: config_version differs from weekly target")
+            try:
+                plan_date_value = date.fromisoformat(decision.get("plan_date"))
+                week_start = date.fromisoformat(target.get("week_start"))
+                week_end = date.fromisoformat(target.get("week_end"))
+            except (TypeError, ValueError):
+                pass
+            else:
+                if not week_start <= plan_date_value <= week_end:
+                    issues.append(f"{prefix}: weekly target does not cover plan_date")
     _validate_executions(datasets["executions"], config, issues)
     for index, record in enumerate(datasets["executions"], start=1):
         decision_revision_id = record.get("decision_revision_id")
@@ -594,3 +879,15 @@ def validate_journal(
 
     if issues:
         raise JournalValidationError(issues)
+
+
+def journal_warnings(datasets: dict[str, list[dict]]) -> list[str]:
+    """Return non-fatal audit findings that must never trigger data deletion."""
+    referenced_snapshots = {
+        record.get("snapshot_id") for record in datasets.get("decisions", [])
+    }
+    return [
+        f"orphan market snapshot: {record.get('snapshot_id')}"
+        for record in datasets.get("market_snapshots", [])
+        if record.get("snapshot_id") not in referenced_snapshots
+    ]

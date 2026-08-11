@@ -90,13 +90,15 @@ Roadmap 只描述交付順序與 Review gate，不授權自動下單或提前建
 
 ### Gate 4A-3：Provider adapters
 
+狀態：Accepted／Implemented（2026-08-11）。
+
 - Coinbase Exchange 5m／1d
 - Alternative.me Fear & Greed
 - Volmex BVIV／BVIVF
 - freshness、cutoff、retry、redaction
 - `recommend`
 
-驗收：正常、stale、missing、亂序、缺 bucket、429、timeout、fallback 與 secret-redaction fixtures 全部通過。
+驗收結果：14 個 Gate 4A-3 tests 通過，涵蓋正常、stale、missing、亂序、重複 bucket、日線 gap、cutoff、429、4xx、5xx、timeout、BVIVF fixing availability、fallback、neutral degradation、blocked persistence、same-day revision、orphan recovery 與 secret redaction。
 
 ### Gate 4A-4：Reports 與試運轉
 

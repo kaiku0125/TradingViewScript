@@ -210,6 +210,7 @@ Config 載入時必須驗證：
 - Secrets 使用環境變數或秘密管理服務。
 - Gate 4A-1 machine-readable config 位於 `config/config.1.0-draft.2.json`，必須與本文件的 `1.0-draft.2` 值一致；Decimal 參數在 JSON 中保存為字串。
 - Machine config 已供 Journal core 與 pure Decision Engine 載入；Gate 4A-2 會驗證策略門檻、權重、方法、hard caps、必要 flags、canonical provider identity 與 65 天初始容量，不合法時拒絕啟動。
+- Gate 4A-3 另以同一 machine config 載入 lookback／ATR periods、各 Provider freshness、`VOLMEX_API_KEY` 環境變數名稱、HTTP timeout、attempts 與 retry delays；runtime 不得另設漂移的常數副本。
 
 ## 11. Stage 2.1 核准表
 
