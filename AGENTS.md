@@ -34,6 +34,23 @@ Current documentation stages:
 - Stage 3: data model, Journal, Weekly Report, and Monthly Report templates
 - Stage 4: integrations, operations, and Roadmap
 
+Current approved Stage 3 constraints:
+
+- Stage 3 was reviewed and approved on 2026-08-11.
+- The current plan runs from 2026-08-12 through 2026-10-15 inclusive, preserving the original 65-day duration. Treat it as a full-plan delay, not a compressed schedule.
+- Treat `InvestmentEngine/bitcoin/docs/DATA_MODEL.md` as the canonical Stage 3 storage contract.
+- Keep market snapshots immutable once referenced by a decision.
+- Store same-day recalculations as an append-only, acyclic decision revision chain. Preserve superseded revisions and derive the current revision as the chain's unique unsuperseded leaf.
+- Store actual purchases as append-only execution events. Correct mistakes with reversal and replacement events instead of overwriting history; use a non-financial `day_close` event when the user explicitly skips or closes the day.
+- Allow multiple purchases per plan date. Derive remaining budget, accumulated BTC, average cost, daily totals, and weekly totals only from effective actual execution events.
+- Manual purchase input requires only total USD paid and net BTC received. Default execution time to the report time; derive effective cost price as USD divided by BTC.
+- Do not track fees separately in v1. Treat total USD paid as budget cost and net BTC received as the acquired quantity, so the derived effective cost naturally includes fee impact.
+- Keep `MarketSnapshot`, `DecisionRecord`, `ExecutionEvent`, and `WeeklyTargetSnapshot` as separate canonical record types.
+- Treat PortfolioState and Daily／Weekly／Monthly reports as derived views, never as independent sources of truth.
+- Use decimal strings in canonical JSONL records for USD, BTC, prices, scores, and multipliers.
+- Store canonical JSONL locally under `InvestmentEngine/bitcoin/data/`; keep all real `*.jsonl` files Git ignored. Stage 3 does not require encryption or automated backups.
+- Stage 3 approval does not authorize API integrations, strategy runtime code, scheduling, notifications, dashboards, or automatic trading.
+
 Current approved Stage 2.1 design constraints:
 
 - Use Coinbase Exchange `BTC-USD` as the canonical BTC market-data basis. Do not silently mix or switch exchange sources.
@@ -46,7 +63,7 @@ Current approved Stage 2.1 design constraints:
 - Compute `effective_weekly_soft_remaining` before calculating the final amount. Never apply the original weekly soft remainder first when `minimum_required_today` requires the reviewed soft-cap override.
 - Do not override daily or weekly hard caps automatically on the final day.
 - Stage 2.1 design was approved on 2026-08-02. Numeric weights, thresholds, multipliers, pacing ratios, and hard-cap amounts remain draft defaults pending backtesting or operational validation; do not describe them as proven effective.
-- Approval covers design documentation only. Do not start Stage 3, implementation, API integration, or scheduling without separate explicit approval.
+- Approval covers Stage 2.1 design documentation only. Stage 3 documentation was separately requested on 2026-08-11; do not start runtime implementation, API integration, scheduling, notifications, dashboards, or automatic trading without separate explicit approval.
 
 Any future workflow, automation, schedule, trigger, payload, storage contract, or external integration added to this module must also update this `AGENTS.md` section in the same change.
 

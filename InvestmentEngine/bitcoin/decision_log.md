@@ -138,7 +138,7 @@ Smart DCA 訊號可能在市場劇烈波動時產生較大投入建議，但專�
 ## DCA-ADR-005：投資計畫改於 2026-08-01 開始
 
 - 日期：2026-07-31
-- 狀態：Accepted
+- 狀態：Superseded by DCA-ADR-014
 
 ### 背景
 
@@ -376,3 +376,93 @@ minimum_required_today = ceil_to_cent(max(
 ### 後續事項
 
 實作時針對部分週、最後一週、週額度已部分使用及美分邊界建立測試案例。
+
+---
+
+## DCA-ADR-013：採用事件式 Journal 並分離建議與實際成交
+
+- 日期：2026-08-11
+- 狀態：Accepted（2026-08-11）
+
+### 背景
+
+Stage 2.1 已要求每次建議可由市場快照、Config 版本與原因重現，且資金進度必須以實際成交而非系統建議計算。Stage 3 需要定義可以支援同日重算、一天多筆成交、歷史補登、成交修正與週／月報表的 canonical storage contract。
+
+若每日只保存一份可覆寫的彙總資料，同日重算會失去舊決策，成交修正也會破壞稽核軌跡；若直接保存可修改的剩餘資金，則無法證明它是否與實際成交一致。
+
+### 決策
+
+Stage 3 採用 UTF-8 JSON Lines，分成四個 canonical 資料集：
+
+1. 不可變的 `MarketSnapshot`。
+2. 以無循環 revision chain 保存、由唯一未被取代末端推導 current 的 `DecisionRecord`。
+3. 支援一天多筆成交、以 reversal 和 replacement 修正，並以 `day_close` 明確記錄跳過或結束等待的 append-only `ExecutionEvent`。
+4. 每週第一個投資日建立、建立後不可因市場或成交變化重設的 `WeeklyTargetSnapshot`。
+
+`PortfolioState` 不作獨立 source of truth，而是由未被 reversal 的實際 purchase events 推導。Daily Journal、Weekly Report 與 Monthly Report 也只作衍生視圖，不重新抓取市場資料或改寫 canonical records。所有金額、數量、價格、分數與倍率在 canonical JSONL 中使用十進位字串。
+
+手動成交只要求輸入總 USD 投入與實際收到的淨 BTC，成交時間預設為回報時間。v1 不拆分手續費；總 USD 視為預算成本，並以 `USD / BTC` 推導包含費用效果的有效成本價。真實 JSONL 存在 repository 的 `data/` 目錄，但必須 Git ignored；本階段不要求加密或自動備份。
+
+### 原因
+
+- 完整保留建議、重算與成交修正的稽核軌跡。
+- 系統建議不會污染真實持倉及剩餘預算。
+- 可以從相同資料水位重建相同投資組合與報表。
+- 一天多筆成交及事後補登不需要修改原決策。
+- JSONL 容易人工檢查，也適合未來逐筆寫入與轉入資料庫。
+
+### 影響與取捨
+
+- 後續實作必須驗證 ID 引用、current revision 唯一性、decimal 格式與 reversal 規則。
+- 查詢最新狀態需要聚合事件，不能直接信任可修改的餘額欄位。
+- 真實 Journal 可能包含敏感投資資料，預設不得提交 Git。
+- 本決策只建立資料與報表契約，不授權 API、排程、通知、Dashboard 或交易實作。
+
+### 後續事項
+
+- 實作 Journal 寫入、schema 驗證與投資組合重建時，遵守本契約。
+- Stage 4 定義外部整合 ownership、衝突處理、重試、通知與 Operations。
+
+---
+
+## DCA-ADR-014：將完整 65 天投資計畫推遲至 2026-08-12
+
+- 日期：2026-08-11
+- 狀態：Accepted
+
+### 背景
+
+原始計畫為 2026-07-31 至 2026-10-03，共 65 天；其後曾把起始日改為 2026-08-01 並保留舊截止日，因此縮短為 64 天。在 Stage 3 Review 完成前尚未建立 canonical Journal 或正式執行流程，使用者決定將計畫推遲至 2026-08-12，並明確要求維持最初的 65 天期間，而不是壓縮在舊截止日前完成。
+
+### 決策
+
+投資期間改為 2026-08-12 至 2026-10-15，含首尾共 65 個日曆日。總預算維持 10,000 USD，Base DCA 維持每日 80 USD。
+
+衍生值改為：
+
+```text
+base_budget = 65 × 80 = 5,200 USD
+adaptive_reserve = 10,000 - 5,200 = 4,800 USD
+nominal_adaptive_daily = 4,800 / 65 ≈ 73.846153846 USD
+```
+
+`SPEC.md` 與 `CONFIG.md` 版本同步提升至 `1.0-draft.2`。內部計算保留 `4,800 / 65` 的完整精度，最終建議仍按既有 Budget Guard 規則處理到美分。
+
+### 原因
+
+- 讓正式計畫起點與 canonical Journal 啟用時間一致。
+- 保留原始 65 天資金配置與節奏，不因啟動延遲而壓縮投資期間。
+- 避免把沒有標準化決策與成交紀錄的先前日期誤認為計畫執行期。
+
+### 影響與取捨
+
+- DCA-ADR-005 的 2026-08-01 起始日被本決策取代。
+- 結束日由 2026-10-03 順延至 2026-10-15，維持 65 個投資日。
+- Base Budget 回到原始 65 天計畫的 5,200 USD，Adaptive Reserve 為 4,800 USD。
+- 每日 500 USD 與每週 2,000 USD hard caps 仍為待驗證草案值，且不得自動突破。
+- 日期平移後，實作前必須用 65 天新日曆重新驗證每週 bucket 與全期 hard capacity。
+
+### 後續事項
+
+- 核心引擎實作時加入 2026-08-12 首日、2026-10-15 最終日與部分週容量測試。
+- 回測或營運驗證新的每日名目 Adaptive 配額及既有 hard caps。

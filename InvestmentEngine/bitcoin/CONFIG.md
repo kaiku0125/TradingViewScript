@@ -2,7 +2,7 @@
 
 ## 1. 文件狀態
 
-- Config 版本：`1.0-draft.1`
+- Config 版本：`1.0-draft.2`
 - 狀態：Stage 2.1 設計已核准；表列數值仍為待回測的草案預設值
 - 原則：策略參數集中管理；API Key、Bot Token、Webhook Secret 不得進入 Git
 
@@ -13,8 +13,8 @@
 | `plan.currency` | `USD` | enum | 目前只允許 `USD` |
 | `plan.asset` | `BTC` | enum | 目前只允許 `BTC` |
 | `plan.initial_budget` | `10000.00` | decimal USD | `> 0` |
-| `plan.start_date` | `2026-08-01` | ISO date | `<= end_date` |
-| `plan.end_date` | `2026-10-03` | ISO date | `>= start_date` |
+| `plan.start_date` | `2026-08-12` | ISO date | `<= end_date` |
+| `plan.end_date` | `2026-10-15` | ISO date | `>= start_date` |
 | `plan.timezone` | `Asia/Taipei` | IANA timezone | 必須有效 |
 | `plan.data_cutoff_time` | `21:00` | local time | `HH:mm` |
 | `plan.notification_target_time` | `21:05` | local time | 不早於 cutoff |
@@ -23,10 +23,10 @@
 衍生值由系統計算，不手動維護：
 
 ```text
-total_days = 64
-base_budget = 5,120.00
-adaptive_reserve = 4,880.00
-nominal_adaptive_daily = 76.25
+total_days = 65
+base_budget = 5,200.00
+adaptive_reserve = 4,800.00
+nominal_adaptive_daily = 4,800 / 65 ≈ 73.846153846
 ```
 
 ## 3. Canonical 資料來源

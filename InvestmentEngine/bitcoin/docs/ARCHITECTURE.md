@@ -81,6 +81,8 @@ flowchart LR
 
 Journal 分開保存系統建議與實際成交。通知、Weekly Report、Monthly Report 與 Dashboard 應讀取同一份標準化紀錄，不各自重新計算策略結果。
 
+Stage 3 已核准將 canonical Journal 定義為四個彼此分離的本機 JSONL 資料集：不可變市場快照、可修訂決策、append-only 成交事件與不可變週目標快照。投資組合狀態與報表一律由這些資料衍生，不另設可被外部直接覆寫的資金餘額來源。JSONL 位於 repository 的 `data/`，但由 Git ignore 排除；完整契約見 [`DATA_MODEL.md`](DATA_MODEL.md)。
+
 ## 4. 資料流原則
 
 每日流程預計遵循：
@@ -153,6 +155,6 @@ Journal 分開保存系統建議與實際成交。通知、Weekly Report、Month
 - 每日、每週 hard caps 與全期容量檢查：Stage 2.1 設計已核准；hard-cap 金額待驗證
 - 週進度、期限調速、`minimum_required_today` 及最終日不覆寫限制：Stage 2.1 設計已核准；比例與門檻待回測
 - Coinbase `BTC-USD` canonical source 與 21:00 cutoff：Stage 2.1 設計已核准
-- Journal 的 canonical storage 格式
+- Journal canonical JSONL storage、revision、reversal 與 day-close 規則：Stage 3 已於 2026-08-11 核准
 - 21:00 cutoff 的實際排程、失敗重試與告警政策
 - 實作語言與部署方式

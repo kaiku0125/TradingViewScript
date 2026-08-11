@@ -1,3 +1,4 @@
 generated/
 .pycache/
 .env.local
+InvestmentEngine/bitcoin/data/*.jsonl

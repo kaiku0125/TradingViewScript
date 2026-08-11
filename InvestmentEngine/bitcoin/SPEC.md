@@ -2,9 +2,9 @@
 
 ## 1. 文件狀態
 
-- 規格版本：`1.0-draft.1`
+- 規格版本：`1.0-draft.2`
 - 狀態：Stage 2.1 設計已核准；數值參數仍為待回測的草案預設值
-- 適用期間：2026-08-01 至 2026-10-03
+- 適用期間：2026-08-12 至 2026-10-15
 - 決策時區：Asia/Taipei
 
 本文件定義可人工重算、可測試的 Smart DCA 行為。所有可調數值集中於 [`CONFIG.md`](CONFIG.md)。本階段仍是設計文件，不是投資建議或程式實作。
@@ -24,12 +24,12 @@
 | 項目 | 值 |
 |---|---:|
 | 計畫資金 | 10,000 USD |
-| 投資期間 | 2026-08-01 至 2026-10-03 |
-| 投資日數 | 64 個日曆日 |
+| 投資期間 | 2026-08-12 至 2026-10-15 |
+| 投資日數 | 65 個日曆日 |
 | Base DCA | 80 USD/day |
-| Base Budget | 5,120 USD |
-| Adaptive Reserve | 4,880 USD |
-| 名目每日 Adaptive 配額 | 76.25 USD |
+| Base Budget | 5,200 USD |
+| Adaptive Reserve | 4,800 USD |
+| 名目每日 Adaptive 配額 | 4,800 ÷ 65 ≈ 73.846153846 USD |
 
 剩餘資金、週額度、進度與平均成本一律以「實際投入」計算，不以未執行的建議計算。
 
@@ -180,15 +180,17 @@ else:
 
 ```text
 adaptive_multiplier = 2 × directional_score
-market_adaptive_amount = 76.25 × adaptive_multiplier × bviv_modifier
+market_adaptive_amount = (4,800 / 65) × adaptive_multiplier × bviv_modifier
 market_amount = base_dca + market_adaptive_amount
 ```
 
-在 BVIV modifier 為 1 時：
+在 BVIV modifier 為 1 時，限制前金額約為：
 
 - 分數 0：80.00 USD。
-- 分數 0.5：156.25 USD。
-- 分數 1：232.50 USD。
+- 分數 0.5：153.846154 USD。
+- 分數 1：227.692308 USD。
+
+上述數字保留內部計算精度；通過 Budget Guard 後才依既有規則向下截斷至 0.01 USD。
 
 ## 10. 資金進度與每週目標
 
