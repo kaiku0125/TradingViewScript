@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import date
 from pathlib import Path
 from typing import Sequence
 
@@ -19,6 +20,8 @@ from .errors import (
 )
 from .ledger import JournalService, PortfolioState
 from .recommendation import RecommendationOutcome, RecommendationService
+from .rehearsal import run_first_day_rehearsal
+from .reporting import ReporterService
 from .storage import JournalStore
 
 
@@ -118,6 +121,18 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "recommend", help="fetch cutoff-qualified data and save today's recommendation"
     )
+    report = subparsers.add_parser(
+        "report", help="derive a deterministic Markdown report from the Journal"
+    )
+    report.add_argument("kind", choices=("daily", "weekly", "monthly"))
+    report.add_argument("--date", help="reference plan date in YYYY-MM-DD form")
+    report.add_argument(
+        "--stdout", action="store_true", help="print without writing a report file"
+    )
+    subparsers.add_parser(
+        "rehearse-first-day",
+        help="run an isolated fixed-data first-day workflow without formal writes",
+    )
     return parser
 
 
@@ -154,6 +169,30 @@ def _run(args: argparse.Namespace) -> int:
         outcome = RecommendationService(config).recommend()
         _print_recommendation(outcome)
         return outcome.exit_code
+
+    if args.command == "report":
+        try:
+            reference_date = None if args.date is None else date.fromisoformat(args.date)
+        except ValueError as exc:
+            raise UserInputError("report --date must be YYYY-MM-DD") from exc
+        result = ReporterService(config).generate(
+            args.kind,
+            reference_date=reference_date,
+            write=not args.stdout,
+        )
+        if args.stdout:
+            print(result.content, end="" if result.content.endswith("\n") else "\n")
+        else:
+            print(f"Generated {result.kind} report: {result.output_path}")
+            print(f"  period: {result.period_start}..{result.period_end}")
+            print(f"  watermark: {result.watermark}")
+        return 0
+
+    if args.command == "rehearse-first-day":
+        outcome = run_first_day_rehearsal(config)
+        print("Gate 4A-4 first-day rehearsal passed")
+        print(json.dumps(outcome.as_dict(), ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
 
     callback = lambda preview: _confirm(preview, assume_yes=args.yes)
     if args.command == "record-purchase":

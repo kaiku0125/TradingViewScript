@@ -36,7 +36,7 @@ Base DCA 在完整期間預計投入 5,200 USD，其餘 4,800 USD 保留給智�
 
 ## 目前階段
 
-Stage 3 與 Stage 4A 本機手動 MVP 設計均已核准。Gate 4A-1 Journal core、Gate 4A-2 pure Decision Engine／Budget Guard 與 Gate 4A-3 Provider／`recommend` workflow 已於 2026-08-11 核准並實作。現在可在核准時窗內抓取 canonical 市場資料、保存可重現建議並手動登記成交；仍沒有報表、排程、通知或自動交易。
+Stage 3 與 Stage 4A 本機手動 MVP（Gate 4A-1～4A-4）均已於 2026-08-11 核准並實作。現在可保存建議、手動登記成交，並由 canonical Journal 產生 deterministic Daily／Weekly／Monthly reports；仍沒有排程、通知或自動交易。2026-08-12 的 live provider 首日執行屬下一個操作步驟。
 
 已完成：
 
@@ -63,12 +63,13 @@ Stage 3 與 Stage 4A 本機手動 MVP 設計均已核准。Gate 4A-1 Journal cor
 - Coinbase／Alternative.me／Volmex read-only Provider adapters
 - Cutoff、freshness、retry、BVIVF fallback 與 secret redaction
 - `recommend`、WeeklyTargetSnapshot、MarketSnapshot 與 DecisionRecord revisions
+- Deterministic Daily／Weekly／Monthly Markdown renderer 與 canonical data watermark
+- 不連外、不寫正式 Journal 的 2026-08-12 第一日 fixture rehearsal
 
 尚未完成：
 
 - 參數回測與營運驗證
-- Python 3.11+ 本機操作環境與第一日 rehearsal
-- Daily／Weekly／Monthly report runtime
+- 2026-08-12 當日的 live provider 操作驗收
 - 排程、通知、自動化與 Dashboard
 - 任何排程或自動交易
 
@@ -99,7 +100,7 @@ InvestmentEngine/bitcoin/
 ├── config/
 │   └── config.1.0-draft.2.json
 ├── src/
-│   └── bitcoin_dca/          # Gate 4A-1／4A-2／4A-3 runtime
+│   └── bitcoin_dca/          # Gate 4A-1～4A-4 runtime
 ├── tests/
 │   ├── test_journal_core.py
 │   ├── test_decision_core.py
@@ -123,7 +124,7 @@ InvestmentEngine/bitcoin/
 
 ## 開發狀態
 
-本模組目前包含已核准設計與 Gate 4A-1～4A-3 runtime。`recommend` 只會讀取公開市場資料並寫入本機 Journal，不讀交易所帳戶、不送單。真實 canonical JSONL 預設不提交 Git。
+本模組目前包含已核准設計與 Gate 4A-1～4A-4 runtime。`recommend` 只會讀取公開市場資料並寫入本機 Journal，不讀交易所帳戶、不送單；`report` 只讀 canonical Journal。真實 canonical JSONL 與 generated reports 預設不提交 Git。
 
 目前可用：
 
@@ -135,6 +136,10 @@ python3 InvestmentEngine/bitcoin/dca.py recommend
 python3 InvestmentEngine/bitcoin/dca.py record-purchase --usd "<USD>" --btc "<BTC>"
 python3 InvestmentEngine/bitcoin/dca.py correct-purchase --execution-id "<ID>" --usd "<USD>" --btc "<BTC>"
 python3 InvestmentEngine/bitcoin/dca.py close-day --reason skipped
+python3 InvestmentEngine/bitcoin/dca.py report daily
+python3 InvestmentEngine/bitcoin/dca.py report weekly --date 2026-08-12
+python3 InvestmentEngine/bitcoin/dca.py report monthly --date 2026-08-12
+python3 InvestmentEngine/bitcoin/dca.py rehearse-first-day
 ```
 
 `recommend` 只允許在正式計畫期間的 Asia/Taipei 21:00～21:10 執行，建議約 21:05 手動觸發。它會先 fsync canonical records，再顯示結果；輸出使用尚未回測證實的 draft parameters，且不代表交易已成交。

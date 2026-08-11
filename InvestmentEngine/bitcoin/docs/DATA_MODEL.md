@@ -267,6 +267,8 @@ average_cost_usd = actual_invested_usd / total_btc
 
 同一資料水位與同一模板版本應產生相同報表內容。
 
+Gate 4A-4 以 period-scoped canonical records 的 append order、搭配排序後的 JSON object keys 計算 SHA-256 data watermark；`generated_at` 取納入資料中最大的 canonical event timestamp，而不是 renderer 的牆上時間。因此未變更 Journal 時重跑為 byte-identical。generated Markdown 是可覆寫的衍生物，不屬於 canonical Journal。
+
 ## 12. 驗證規則
 
 Stage 3 後續實作至少驗證：

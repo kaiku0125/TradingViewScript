@@ -10,6 +10,7 @@
 | 日期（Asia/Taipei） | `{{plan_date}}` |
 | Cutoff | `{{cutoff_at}}` |
 | 計算時間 | `{{calculated_at}}` |
+| 報表產生時間（canonical watermark） | `{{generated_at}}` |
 | 決策狀態 | `{{decision_status}}` |
 | 執行狀態 | `{{execution_status}}` |
 | Config | `{{config_version}}` |

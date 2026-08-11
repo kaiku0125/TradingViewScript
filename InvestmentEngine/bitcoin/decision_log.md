@@ -665,3 +665,55 @@ Canonical 寫入順序固定為 weekly target（若需要）→ snapshot → dec
 
 - 正式操作前準備 Python 3.11+ 本機環境；目前系統預設 `python3` 仍為 3.9.6。
 - Gate 4A-4 必須另行授權後，才可實作 reports 與第一日 local rehearsal。
+
+---
+
+## DCA-ADR-019：Gate 4A-4 採 canonical-only deterministic reports 與隔離式首日演練
+
+- 日期：2026-08-11
+- 狀態：Accepted／Implemented（2026-08-11）
+
+### 背景
+
+Gate 4A-3 已能保存 cutoff-qualified recommendation，但 operator 尚無法從 canonical Journal 產生日／週／月視圖，也缺少一個不污染正式資料的完整首日驗證。直接用正式 JSONL rehearsal 會混入模擬成交；以 renderer 當下牆上時間產生報表則會讓未變更資料的重跑結果漂移。
+
+### 決策
+
+Gate 4A-4 新增：
+
+- `reporting.py`：由目前有效 decision revisions、effective purchases、weekly targets 與 snapshots 產生 Daily／Weekly／Monthly Markdown。
+- `dca.py report daily|weekly|monthly`：預設寫入 Git-ignored `reports/generated/`；`--date` 選擇歷史報表期間，`--stdout` 不寫衍生檔。
+- `rehearsal.py` 與 `dca.py rehearse-first-day`：以固定 2026-08-12 21:05 provider fixtures、temporary Journal 及 temporary reports 執行完整首日流程。
+
+Reporter 不呼叫 Provider、不重算 Decision Engine，也不修改 canonical records。Data watermark 保留所需 records 的 canonical append order 並排序 JSON object keys 後計算 SHA-256；`generated_at` 取納入 records 的最大 canonical timestamp。相同 Journal 與模板因此產生 byte-identical report。
+
+首日 rehearsal 依序執行 recommendation、confirmed purchase、`completed_for_day`、PortfolioState、validate 及三種 reports。執行前後比較正式四個 dataset 的存在狀態與 SHA-256；所有模擬檔案只存在於 temporary directory，結束即移除。Fixture transport 完全在 process 內，不執行 network I/O。
+
+### 原因
+
+- Canonical-only renderer 保持建議、成交與報表的 ownership 邊界。
+- Period-scoped watermark 讓任何 revision、reversal 或 replacement 都可追蹤地改變報表身份。
+- Canonical timestamp 取代 wall clock，提供可測試的 deterministic output。
+- Temporary rehearsal 能驗證真實 CLI workflow 形狀，又不把假成交寫入正式投資紀錄。
+
+### 影響與取捨
+
+- Generated reports 是可覆寫衍生物，不提供 append-only 或 fsync 保證；canonical JSONL 仍是唯一真相來源。
+- `--date` 只回顧既有 canonical 資料，不能建立 backdated recommendation。
+- Fixture rehearsal 驗證程式與資料流，不證明 2026-08-12 當日外部 API 可用；live provider 首日驗收仍須在 recommendation window 執行。
+- 本 Gate 不新增排程、通知、備份、Dashboard、交易所匯入或自動交易。
+
+### 驗證
+
+5 個 Gate 4A-4 tests 覆蓋：三種報表 byte determinism、watermark、placeholder 完整性、輸出路徑、reversal／replacement effective view、計畫外日期拒絕、CLI surface，以及正式 Journal 不變的完整首日 rehearsal。
+
+完整 Bitcoin suite 共 48 個 tests 通過。固定 rehearsal 結果為：2026-08-12 `normal` recommendation、174.36 USD、模擬成交後 `executed`，1 MarketSnapshot、1 DecisionRecord、1 WeeklyTargetSnapshot、2 ExecutionEvents，三種 reports 完成且正式 Journal 未改變。
+
+### Review 結果
+
+使用者於 2026-08-11 接受 Daily／Weekly／Monthly 報表內容、canonical-only 與 deterministic watermark、revision／reversal／多筆成交呈現、隔離式第一日 rehearsal，以及正式 Journal 未被 rehearsal 修改的保證，並正式核准 Gate 4A-4。Stage 4A local manual MVP 因此標記為 Accepted。
+
+### 後續事項
+
+- 2026-08-12 21:00～21:10 執行 live `recommend`，完成第一個正式 recommendation 與實際人工操作驗收。
+- Stage 4B 的排程、通知與備份仍需另行設計與授權。

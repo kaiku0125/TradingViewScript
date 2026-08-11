@@ -102,12 +102,18 @@ Roadmap 只描述交付順序與 Review gate，不授權自動下單或提前建
 
 ### Gate 4A-4：Reports 與試運轉
 
+狀態：Accepted／Implemented（2026-08-11）。
+
 - Daily／Weekly／Monthly renderer
 - data watermark 與 deterministic report tests
 - 第一日 dry run
 - 至少一次不寫正式 Journal 的 fixture-based rehearsal
 
 驗收：使用者能完成 recommend → 手動買入 → record → status → report，且 validate 無錯誤。
+
+實作結果：`report daily|weekly|monthly` 只讀 canonical JSONL，以 period-scoped SHA-256 data watermark 與 canonical 最大事件時間產生 deterministic Markdown；`rehearse-first-day` 使用固定 provider fixtures 與 temporary Journal 完成完整首日鏈，並驗證正式 Journal 前後不變。2026-08-12 的 live provider 操作仍需當日執行。
+
+Review 結果：使用者接受三種報表內容、canonical-only／deterministic watermark、revision／reversal／多筆成交呈現、隔離式第一日 rehearsal，以及正式 Journal 不變保證，並核准 Gate 4A-4。Stage 4A local manual MVP 因此標記為 Accepted。
 
 ## 4. Stage 4B：本機自動化候選
 
@@ -139,10 +145,10 @@ Stage 4A 穩定及另行 Review 後才考慮：
 ```text
 Stage 4A design approval
   → Journal core（completed）
-  → Pure decision core
-  → Provider adapters
-  → Reports
-  → Local rehearsal
+  → Pure decision core（completed）
+  → Provider adapters（completed）
+  → Reports（accepted）
+  → Local fixture rehearsal（completed）
   → Manual MVP acceptance
 ```
 
