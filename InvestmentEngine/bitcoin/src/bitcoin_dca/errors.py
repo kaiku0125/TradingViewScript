@@ -28,3 +28,6 @@ class UserInputError(BitcoinDcaError):
 class OperationCancelled(BitcoinDcaError):
     """The operator declined an interactive write confirmation."""
 
+
+class NotificationError(BitcoinDcaError):
+    """A notification could not be configured or delivered safely."""

@@ -1,13 +1,13 @@
-# Bitcoin Smart DCA Local Manual MVP Operations
+# Bitcoin Smart DCA Local Operations
 
 ## 1. 文件狀態
 
-- 階段：Stage 4A Accepted（2026-08-11）
+- 階段：Stage 4A Accepted；Stage 4B scheduler／Telegram subset authorized（2026-08-11）
 - 日期：2026-08-11
-- 執行模式：使用者在本機手動觸發
+- 執行模式：手動 CLI＋每日 21:00 Asia/Taipei Codex local automation
 - 正式計畫：2026-08-12 至 2026-10-15，Asia/Taipei
 
-本文件定義本機 MVP 的已核准操作與命令契約。Gate 4A-1～4A-4 均已於 2026-08-11 核准並實作。
+本文件定義本機 runtime 的已核准操作與命令契約。Gate 4A-1～4A-4 與 Stage 4B 的 scheduler／Telegram 子集均已於 2026-08-11 授權實作。
 
 ## 2. MVP 成功條件
 
@@ -21,8 +21,9 @@
 6. 從 execution events 重建剩餘預算、BTC 數量及有效平均成本。
 7. 產生 Daily／Weekly／Monthly Markdown report。
 8. 驗證全部 JSONL 與引用關係。
+9. 由同一 workflow 在 21:00 保存 recommendation 後傳送 Telegram。
 
-它不需要背景服務、GUI、手機通知或自動下單。
+它不需要自建背景 daemon、GUI 或自動下單；排程由 Codex local automation 管理。
 
 ## 3. 建議 runtime 形態
 
@@ -54,7 +55,7 @@ InvestmentEngine/bitcoin/.venv/bin/python --version
 
 正式操作建議直接使用 `InvestmentEngine/bitcoin/.venv/bin/python`，不依賴 shell 的 `python3` 或 PATH。`.venv/` 為本機產物並已 Git ignored；Stage 4A 使用 standard library，不需要額外 `pip install`。
 
-`dca.py` 只作薄 CLI；目前已接入 Config、Validator、Journal、Ledger、read-only Providers、pure Decision Engine、Budget Guard、`recommend` orchestration、Reporter 與 isolated rehearsal。
+`dca.py` 只作薄 CLI；目前已接入 Config、Validator、Journal、Ledger、read-only Providers、pure Decision Engine、Budget Guard、`recommend` orchestration、Reporter、isolated rehearsal 與 `DailyWorkflowService`／Telegram notifier。
 
 ## 4. 預定本機檔案
 
@@ -84,13 +85,14 @@ Gate 4A-1 已建立 Journal core；Gate 4A-2 已建立 pure Indicators、Decisio
 
 狀態：Gate 4A-3 已核准並實作；Gate 4A-4 fixture rehearsal 已通過，live provider 首日操作留待 2026-08-12。
 
-每天台北時間 21:00 後執行：
+手動與排程共用：
 
 ```bash
-python3 InvestmentEngine/bitcoin/dca.py recommend
+InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py recommend
+InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py run-daily
 ```
 
-建議實際操作時間為 21:05 左右，但命令不靠排程啟動。
+兩個命令均執行相同 `DailyWorkflowService`：先檢查 Telegram credentials，再建立 canonical recommendation，最後傳送相同結果。`run-daily` 是排程使用的明確 alias。手動操作仍建議約 21:05；使用者指定的 automation 在 21:00 啟動，因此 Provider 尚未提供精確 bucket 時會依既有品質規則保存並通知 blocked，而不猜測資料。
 
 執行順序固定：
 
@@ -103,11 +105,36 @@ python3 InvestmentEngine/bitcoin/dca.py recommend
 7. 計算 indicators、market amount、pacing、capacity 及 Budget Guard。
 8. 建立並 fsync DecisionRecord。
 9. 釋放 lock。
-10. 在 terminal 顯示已保存建議的摘要；報表由明確的 `report` 命令產生。
+10. 將已保存 decision 的相同摘要傳送 Telegram。
+11. 在 terminal 顯示摘要；報表由明確的 `report` 命令產生。
 
 「先保存、後顯示」是固定順序，避免 terminal 顯示一個未寫入 Journal 的建議。
 
-### 5.2 手動買入與登記
+### 5.2 Telegram 設定測試
+
+```bash
+InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py test-telegram
+```
+
+此命令只傳送一則非投資建議的設定測試，不呼叫 Provider、不寫 Journal。Secrets 位於 repository-root `.env.local`：
+
+```text
+TELEGRAM_BOT_TOKEN=...
+TELEGRAM_CHAT_ID=...
+VOLMEX_API_KEY=...  # optional
+```
+
+### 5.3 每日 21:00 排程
+
+Codex local automation `smart-dca-21-00-telegram` 已啟用；它每日 21:00 Asia/Taipei 喚起，並只在 2026-08-12～2026-10-15 執行：
+
+```bash
+InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py run-daily
+```
+
+Mac 必須保持開機、醒著、上網，且 repository／`.venv`／`.env.local` 保持可用。`.env.local` 本機權限應為 `0600`。Stage 4B 目前沒有 retry window 或 missed-run alarm；失敗時由 automation run 狀態供使用者檢查。
+
+### 5.4 手動買入與登記
 
 狀態：Gate 4A-1 已實作。
 
@@ -137,7 +164,7 @@ python3 InvestmentEngine/bitcoin/dca.py record-purchase \
 
 成功寫入後顯示累積投入、剩餘預算、累積 BTC 與有效平均成本。需要 Daily Journal 時再明確執行 `report daily`。
 
-### 5.3 結束當日
+### 5.5 結束當日
 
 狀態：Gate 4A-1 已實作。
 
@@ -275,6 +302,8 @@ weekly target（若需要） → market snapshot → decision
 
 BTC 資料失敗會保存 blocked decision；Fear & Greed 或 BVIV 的允許降級則以 exit 0 完成，但 terminal 必須醒目列出 degraded 原因。
 
+Telegram credentials 缺失會在 recommendation 前失敗且不新增 decision。若 decision 已 fsync 後 Telegram delivery 才失敗，canonical decision 保留，command 以非零結束；不得因重送通知而修改舊 record。
+
 ## 10. 第一日操作
 
 2026-08-12 是計畫首日。首日 `recommend` 必須額外確認：
@@ -302,6 +331,7 @@ python3 InvestmentEngine/bitcoin/dca.py rehearse-first-day
 [ ] 系統時間與 Asia/Taipei 日期正確
 [ ] 目前在 21:00～21:10 recommendation window，建議約 21:05 執行
 [ ] 執行 recommend
+[ ] 確認 Telegram 收到與 terminal 相同的 decision status／amount
 [ ] 閱讀資料品質、原因、hard caps 與最終建議
 [ ] 在交易所手動決定是否買入
 [ ] 每筆成交執行 record-purchase（USD + BTC）

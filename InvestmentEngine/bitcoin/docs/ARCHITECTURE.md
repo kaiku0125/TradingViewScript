@@ -141,7 +141,7 @@ Stage 3 已核准將 canonical Journal 定義為四個彼此分離的本機 JSON
 | Dashboard | 進度與績效呈現 | 讀取標準化紀錄 |
 | AI Agent | 解釋、檢查與未來建議 | 不繞過硬性資金限制 |
 
-Stage 4A 本機手動 MVP 只啟用 Coinbase Exchange、Alternative.me、Volmex 及 Local Journal。其 Provider、cutoff、fallback、secret redaction 與 HTTP policy 見 [`INTEGRATIONS.md`](INTEGRATIONS.md)；CLI、寫入順序、鎖、idempotency 與故障恢復見 [`OPERATIONS.md`](OPERATIONS.md)。其餘整合維持候選狀態。
+Stage 4A 啟用 Coinbase Exchange、Alternative.me、Volmex 及 Local Journal；另行授權的 Stage 4B 子集啟用 Telegram 與 Codex 21:00 local automation。其 Provider、cutoff、fallback、secret redaction 與 HTTP policy 見 [`INTEGRATIONS.md`](INTEGRATIONS.md)；CLI、排程、寫入順序、鎖、idempotency 與故障恢復見 [`OPERATIONS.md`](OPERATIONS.md)。其餘整合維持候選狀態。
 
 ## 9. 核准與後續驗證狀態
 
@@ -157,4 +157,5 @@ Stage 4A 本機手動 MVP 只啟用 Coinbase Exchange、Alternative.me、Volmex 
 - Pure Decision Engine 與 Budget Guard runtime：Gate 4A-2 已於 2026-08-11 核准並實作
 - Provider adapters、canonical snapshot／decision 寫入與 `recommend`：Gate 4A-3 已於 2026-08-11 核准並實作
 - Canonical-only deterministic reports 與 temporary-store first-day rehearsal：Gate 4A-4 已於 2026-08-11 核准並實作
-- 21:00 自動排程、失敗告警與通知：不在 Stage 4A 範圍
+- 21:00 Codex local automation 與 Telegram delivery：Stage 4B 子集已於 2026-08-11 授權並實作
+- Retry window、missed-run alarm、自動報表與備份：尚未授權

@@ -115,17 +115,25 @@ Roadmap 只描述交付順序與 Review gate，不授權自動下單或提前建
 
 Review 結果：使用者接受三種報表內容、canonical-only／deterministic watermark、revision／reversal／多筆成交呈現、隔離式第一日 rehearsal，以及正式 Journal 不變保證，並核准 Gate 4A-4。Stage 4A local manual MVP 因此標記為 Accepted。
 
-## 4. Stage 4B：本機自動化候選
+## 4. Stage 4B：本機自動化
 
-Stage 4A 穩定及另行 Review 後才考慮：
+### 已授權子集（2026-08-11）
 
-- 21:00 local scheduler
+- 21:00 Asia/Taipei Codex local scheduler
+- Telegram recommendation／blocked／failure 通知
+- 手動與排程共用 `DailyWorkflowService` 與 `run-daily` entrypoint
+- `.env.local` secret loading 與 token redaction
+
+狀態：Implemented。Telegram test delivery 已成功；Codex automation `smart-dca-21-00-telegram` 已建立並啟用。第一個正式 operational run 為 2026-08-12 21:00 Asia/Taipei。
+
+### 尚未授權
+
 - retry window 與 missed-run alarm
-- Telegram／LINE 通知
+- LINE 通知
 - 自動產生週／月報表
 - 本機備份
 
-任何排程與手動 `recommend` 必須共用同一 workflow entrypoint 與 side effects，避免兩套決策流程。
+排程、手動 `recommend` 與手動 `run-daily` 共用同一 `DailyWorkflowService` side effects，避免兩套決策流程。
 
 ## 5. 後續候選
 

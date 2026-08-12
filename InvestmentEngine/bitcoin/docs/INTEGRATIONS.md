@@ -2,10 +2,10 @@
 
 ## 1. 文件狀態
 
-- 階段：Stage 4A Accepted（2026-08-11）
+- 階段：Stage 4A Accepted；Stage 4B Telegram subset authorized（2026-08-11）
 - 日期：2026-08-11
-- 範圍：本機手動 MVP 的唯讀市場資料 Adapter
-- 非範圍：排程、通知、Dashboard、Google Sheets、交易所帳戶及自動下單
+- 範圍：唯讀市場資料 Adapter 與 Telegram outbound notification
+- 非範圍：Dashboard、Google Sheets、交易所帳戶、自動備份及自動下單
 - Runtime 狀態：Gate 4A-3 Accepted／Implemented（2026-08-11）
 
 本文件把 Stage 2.1 已核准的 canonical data sources 對應到本機 MVP 的外部讀取契約。所有策略公式、品質狀態與新鮮度仍以 `SPEC.md`、`CONFIG.md` 及 `docs/DATA_MODEL.md` 為準。
@@ -19,6 +19,7 @@
 | BVIV 60m | Volmex | REST GET；可能需要 API key | v1 非方向性 modifier primary | 嘗試 fixing fallback |
 | BVIVF daily fixing | Volmex | REST GET；公開能力依供應方案 | BVIV fallback | modifier 1.0 並 `degraded` |
 | Portfolio | Local JSONL Journal | 本機唯讀重建 | remaining funds 與進度 | `blocked` |
+| Notification | Telegram Bot API | outbound HTTPS POST | 傳送已保存 recommendation | 不回滾 canonical decision；command nonzero |
 
 MVP 只能讀取公開市場資料，不能呼叫任何下單、帳戶、資產轉移或交易所私有端點。
 
@@ -204,9 +205,19 @@ MVP 不允許：
 
 測試 fixture 可以使用人工資料，但必須明確標記 `source=test_fixture`，且不能寫入正式 Journal。
 
-## 9. 實作前驗證事項
+## 9. Telegram 通知契約
 
-Provider runtime 另行授權後，實作至少建立：
+- Endpoint 使用 Telegram Bot API `sendMessage`，只傳 `chat_id`、純文字內容與 `disable_web_page_preview=true`。
+- `TELEGRAM_BOT_TOKEN`、`TELEGRAM_CHAT_ID` 只從 repository-root Git-ignored `.env.local` 或既有 process environment 讀取；不得進入 Config、Journal、reports、stdout 或 Git。
+- Runtime 只從 `.env.local` 載入上述兩個 Telegram keys 與 optional `VOLMEX_API_KEY`，忽略其他秘密。
+- Telegram credentials 必須在 recommendation 前驗證；缺失時不得建立新 decision。
+- 成功保存 decision 後才傳送訊息。傳送失敗不回滾或覆寫 canonical records，並以 redacted nonzero error 結束。
+- 訊息包含日期、decision status、final amount、remaining-to-execute、reason codes 與 revision，並明確標示 draft recommendation／not an automatic trade。
+- `test-telegram` 只傳設定測試，不呼叫 Provider、不建立 recommendation。
+
+## 10. 實作驗證事項
+
+Provider 與 Telegram runtime 測試至少建立：
 
 1. 正常 response fixture。
 2. 空 response、缺 bucket、重複 bucket及亂序 response fixture。
@@ -214,3 +225,4 @@ Provider runtime 另行授權後，實作至少建立：
 4. stale、timeout、429、4xx 與 5xx 測試。
 5. Volmex 無 key、無權限、primary 成功、BVIVF fallback 及全部缺失測試。
 6. 確認任何 error、snapshot 與 command output 都不洩漏 `VOLMEX_API_KEY`。
+7. 確認 Telegram form payload、missing credentials、invalid response、connection failure 與 bot-token redaction。

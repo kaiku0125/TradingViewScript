@@ -36,7 +36,7 @@ Base DCA 在完整期間預計投入 5,200 USD，其餘 4,800 USD 保留給智�
 
 ## 目前階段
 
-Stage 3 與 Stage 4A 本機手動 MVP（Gate 4A-1～4A-4）均已於 2026-08-11 核准並實作。現在可保存建議、手動登記成交，並由 canonical Journal 產生 deterministic Daily／Weekly／Monthly reports；仍沒有排程、通知或自動交易。2026-08-12 的 live provider 首日執行屬下一個操作步驟。
+Stage 3 與 Stage 4A 本機手動 MVP（Gate 4A-1～4A-4）均已於 2026-08-11 核准並實作。使用者另行授權 Stage 4B 的 21:00 本機排程與 Telegram 通知子集；`recommend`／`run-daily` 會保存 canonical recommendation 後傳送同一結果。仍沒有自動下單、備份、Dashboard 或交易所匯入。
 
 已完成：
 
@@ -65,13 +65,15 @@ Stage 3 與 Stage 4A 本機手動 MVP（Gate 4A-1～4A-4）均已於 2026-08-11 
 - `recommend`、WeeklyTargetSnapshot、MarketSnapshot 與 DecisionRecord revisions
 - Deterministic Daily／Weekly／Monthly Markdown renderer 與 canonical data watermark
 - 不連外、不寫正式 Journal 的 2026-08-12 第一日 fixture rehearsal
+- 共用 `DailyWorkflowService` 的手動／排程 recommendation 與 Telegram 通知
+- 2026-08-12～2026-10-15 每日 21:00 Asia/Taipei local automation
 
 尚未完成：
 
 - 參數回測與營運驗證
 - 2026-08-12 當日的 live provider 操作驗收
-- 排程、通知、自動化與 Dashboard
-- 任何排程或自動交易
+- Retry／missed-run alarm、報表自動化與 Dashboard
+- 自動交易與自動備份
 
 ## 文件索引
 
@@ -133,6 +135,8 @@ InvestmentEngine/bitcoin/.venv/bin/python --version  # 必須為 3.11+
 InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py validate
 InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py status
 InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py recommend
+InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py run-daily
+InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py test-telegram
 InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py record-purchase --usd "<USD>" --btc "<BTC>"
 InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py correct-purchase --execution-id "<ID>" --usd "<USD>" --btc "<BTC>"
 InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py close-day --reason skipped

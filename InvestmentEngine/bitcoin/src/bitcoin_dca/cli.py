@@ -5,11 +5,17 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Sequence
 
 from .config import DEFAULT_CONFIG_PATH, load_config
+from .daily_workflow import (
+    DEFAULT_ENV_FILE,
+    DailyWorkflowService,
+    TelegramNotifier,
+    load_secret_env,
+)
 from .errors import (
     BitcoinDcaError,
     ConfigError,
@@ -19,7 +25,7 @@ from .errors import (
     UserInputError,
 )
 from .ledger import JournalService, PortfolioState
-from .recommendation import RecommendationOutcome, RecommendationService
+from .recommendation import RecommendationOutcome
 from .rehearsal import run_first_day_rehearsal
 from .reporting import ReporterService
 from .storage import JournalStore
@@ -118,8 +124,34 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("status", help="show derived local portfolio state")
     subparsers.add_parser("validate", help="validate canonical JSONL datasets")
-    subparsers.add_parser(
+    recommend = subparsers.add_parser(
         "recommend", help="fetch cutoff-qualified data and save today's recommendation"
+    )
+    recommend.add_argument(
+        "--env-file",
+        type=Path,
+        default=DEFAULT_ENV_FILE,
+        help="local secret env file containing Telegram credentials",
+    )
+    daily = subparsers.add_parser(
+        "run-daily",
+        help="save today's recommendation and deliver the same result to Telegram",
+    )
+    daily.add_argument(
+        "--env-file",
+        type=Path,
+        default=DEFAULT_ENV_FILE,
+        help="local secret env file containing Telegram credentials",
+    )
+    telegram_test = subparsers.add_parser(
+        "test-telegram",
+        help="send one non-financial Telegram configuration test message",
+    )
+    telegram_test.add_argument(
+        "--env-file",
+        type=Path,
+        default=DEFAULT_ENV_FILE,
+        help="local secret env file containing Telegram credentials",
     )
     report = subparsers.add_parser(
         "report", help="derive a deterministic Markdown report from the Journal"
@@ -165,10 +197,27 @@ def _run(args: argparse.Namespace) -> int:
             print("  latest_decision_status: none")
         return 0
 
-    if args.command == "recommend":
-        outcome = RecommendationService(config).recommend()
-        _print_recommendation(outcome)
-        return outcome.exit_code
+    if args.command in {"recommend", "run-daily"}:
+        load_secret_env(args.env_file)
+        result = DailyWorkflowService(
+            config,
+            notifier=TelegramNotifier.from_environment(),
+        ).run()
+        _print_recommendation(result.recommendation)
+        print("  telegram_notification: delivered")
+        return result.recommendation.exit_code
+
+    if args.command == "test-telegram":
+        load_secret_env(args.env_file)
+        notifier = TelegramNotifier.from_environment()
+        tested_at = datetime.now(config.timezone).isoformat(timespec="seconds")
+        notifier.send(
+            "Bitcoin Smart DCA Telegram 測試成功\n"
+            f"時間：{tested_at}\n"
+            "這不是投資建議，也沒有執行 recommendation。"
+        )
+        print("Telegram test notification delivered")
+        return 0
 
     if args.command == "report":
         try:

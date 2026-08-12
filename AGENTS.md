@@ -40,17 +40,17 @@ Current approved Stage 4A design constraints:
 - Treat `InvestmentEngine/bitcoin/docs/INTEGRATIONS.md`, `InvestmentEngine/bitcoin/docs/OPERATIONS.md`, and `InvestmentEngine/bitcoin/ROADMAP.md` as the approved Stage 4A contract.
 - The approved runtime design is a Python 3.11+ local CLI with standard-library-first dependencies, Decimal arithmetic, and no background service.
 - The reviewed local environment path is `InvestmentEngine/bitcoin/.venv`, created with Homebrew `python@3.11`; it is Git ignored. Prefer `.venv/bin/python InvestmentEngine/bitcoin/dca.py <command>` for formal operations so the macOS system Python is never selected accidentally.
-- The manual entrypoint module is `InvestmentEngine/bitcoin/dca.py`; formal local invocation uses `InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py <command>`. It implements `recommend`, `record-purchase`, `correct-purchase`, `close-day`, `status`, `validate`, `report`, and `rehearse-first-day`.
+- The manual entrypoint module is `InvestmentEngine/bitcoin/dca.py`; formal local invocation uses `InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py <command>`. It implements `recommend`, `run-daily`, `test-telegram`, `record-purchase`, `correct-purchase`, `close-day`, `status`, `validate`, `report`, and `rehearse-first-day`.
 - Approved implementation order is Journal core, pure Decision Engine and Budget Guard, Provider adapters, then deterministic reports and local rehearsal.
 - The MVP reads only Coinbase Exchange `BTC-USD`, Alternative.me Fear & Greed, Volmex BVIV/BVIVF, and the local canonical Journal. It must not access exchange accounts or place orders.
-- `VOLMEX_API_KEY` is the only approved optional secret for the MVP. Read it from the environment and redact it from URLs, logs, snapshots, journals, errors, and reports.
+- `VOLMEX_API_KEY` is the only approved optional market-data secret for Stage 4A. Read it from the environment and redact it from URLs, logs, snapshots, journals, errors, and reports.
 - Recommendation is a same-day manual command in the 21:00-21:10 Asia/Taipei window, targeting about 21:05. Do not create backdated recommendations or use cutoff-after data.
 - Normalize candle close `observed_at` to the candle bucket end while preserving the provider's original bucket-start timestamp and both bucket boundaries.
 - Save the MarketSnapshot and DecisionRecord before presenting the recommendation to the operator.
 - Manual purchase recording requires an interactive confirmation and appends only total USD paid and net BTC received; never mutate an existing execution event.
 - All JSONL writes use an exclusive local lock, complete-line append, flush, and fsync. Never truncate or rewrite canonical Journal files.
 - Provider failure follows the approved quality rules: invalid BTC blocks, missing Fear & Greed degrades directional groups, and missing BVIV uses modifier 1.0 with an explicit degraded reason.
-- Stage 4A excludes scheduling, notifications, Google Sheets, Dashboard, exchange imports, automatic backups, and automatic trading.
+- Stage 4A itself excludes scheduling and notifications; the separately authorized Stage 4B subset below adds only the daily scheduler and Telegram delivery. Google Sheets, Dashboard, exchange imports, automatic backups, and automatic trading remain excluded.
 - The versioned machine config is `InvestmentEngine/bitcoin/config/config.1.0-draft.2.json`; Decimal parameters remain JSON strings and secrets must never enter it.
 - Gate 4A runtime modules live under `InvestmentEngine/bitcoin/src/bitcoin_dca/`. Keep `dca.py` as a thin entrypoint and do not move decision logic into it.
 - Gate 4A-2 exposes only pure, deterministic indicators, weekly-target／capacity calculations, and Budget Guard functions. It performs no network or Journal writes and does not add the `recommend` command.
@@ -68,8 +68,19 @@ Current approved Stage 4A design constraints:
 - `correct-purchase` must append a same-operation reversal and replacement. Never modify or delete the original JSONL line, and never reverse the same purchase twice.
 - `close-day --reason skipped` is invalid after an effective purchase that day; `completed_for_day` requires at least one effective purchase.
 - `validate` must hard fail malformed UTF-8/JSONL, incomplete lines, schema/reference/revision/reversal errors, DecisionRecord numeric hard-cap violations, and an invalid over-budget PortfolioState.
-- Run Gate 4A-1～4A-4 tests with `PYTHONPYCACHEPREFIX=/tmp/bitcoin-dca-pycache python3 -m unittest discover -s InvestmentEngine/bitcoin/tests -v`.
-- Do not implement Stage 4B scheduling, notifications, automatic backups, Dashboard, exchange imports, or automatic trading without separate explicit authorization.
+- Run Bitcoin tests with `PYTHONPYCACHEPREFIX=/tmp/bitcoin-dca-pycache InvestmentEngine/bitcoin/.venv/bin/python -m unittest discover -s InvestmentEngine/bitcoin/tests -v`.
+- Do not implement further Stage 4B retry／missed-run alarms, report automation, automatic backups, Dashboard, exchange imports, or automatic trading without separate explicit authorization.
+
+Current approved Stage 4B notification subset:
+
+- The user explicitly authorized a daily 21:00 Asia/Taipei scheduler and Telegram recommendation delivery on 2026-08-11.
+- Manual `recommend`, manual `run-daily`, and the scheduled job must execute the same `DailyWorkflowService` side effects: validate Telegram configuration, save the canonical recommendation, then deliver that saved result to Telegram.
+- The scheduled command is `InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py run-daily`; do not create a second calculation or notification path.
+- Load only `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, and optional `VOLMEX_API_KEY` from the Git-ignored repository-root `.env.local`. Never write or print their values.
+- Telegram delivery uses `daily_workflow.py`, standard-library HTTPS, a 15-second timeout, generic redacted errors, and no automatic trading action.
+- Missing Telegram credentials must fail before creating a recommendation. A Telegram delivery failure after canonical persistence must not roll back or rewrite the saved recommendation.
+- Blocked and degraded decisions are still delivered with their explicit status and reason codes. Every message states that it is a draft recommendation, not an automatic trade.
+- Codex local automation `smart-dca-21-00-telegram` runs daily at 21:00 Asia/Taipei and invokes the workflow only for the approved 2026-08-12 through 2026-10-15 plan. The Mac must remain awake and online.
 
 Current approved Stage 3 constraints:
 

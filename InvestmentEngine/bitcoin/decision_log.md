@@ -732,3 +732,39 @@ Apple Silicon 本機以 Homebrew `python@3.11` 建立 Git-ignored `InvestmentEng
 ### 原因與影響
 
 系統預設 `python3` 為 3.9.6，不符合 runtime contract；明確的 project venv 可避免誤用。Python patch upgrades 可由 Homebrew 管理，必要時刪除並重建 `.venv`，canonical Journal 與 reports 不受影響。
+
+---
+
+## DCA-ADR-021：Stage 4B 使用共用 DailyWorkflow 與 Codex 21:00 排程傳送 Telegram
+
+- 日期：2026-08-11
+- 狀態：Authorized／Implemented
+
+### 背景
+
+Stage 4A 必須由使用者或 Codex 在 recommendation window 手動觸發，手機無法保證每天準時操作。Repository 已有 weekly sync 的 Telegram Bot API 與 `.env.local` secret contract；使用者明確要求沿用該能力，並指定每日 21:00 發送 Smart DCA 建議。
+
+### 決策
+
+- 新增 `daily_workflow.py`，在同一 service 內依序驗證 Telegram 設定、執行既有 `RecommendationService`、保存 canonical records，最後傳送該已保存 decision。
+- 手動 `recommend`、手動 `run-daily` 與 scheduled `run-daily` 共用完全相同的 `DailyWorkflowService` side effects。
+- 新增 `test-telegram`，只驗證 delivery，不呼叫 Provider 或寫 Journal。
+- 從 Git-ignored repository-root `.env.local` 只載入 `TELEGRAM_BOT_TOKEN`、`TELEGRAM_CHAT_ID` 與 optional `VOLMEX_API_KEY`；process environment 優先且任何秘密不得輸出。
+- Codex local automation `smart-dca-21-00-telegram` 只在 2026-08-12～2026-10-15 每日 21:00 Asia/Taipei 執行正式 `.venv` `run-daily` command。
+
+### 故障語意
+
+- Telegram credentials 缺失：recommendation 前失敗，不寫 canonical record。
+- Recommendation failure：best-effort 傳送只含 exception type 的 redacted failure message，再保留原始 nonzero failure。
+- Blocked／degraded decision：照常保存並通知狀態與 reason codes。
+- Decision 已保存但 Telegram delivery 失敗：不回滾、不覆寫、不宣稱通知成功。
+
+### 邊界與取捨
+
+- 使用者指定 21:00，而非原建議的 21:05。若 Provider 在 cutoff 瞬間尚未提供 exact bucket，既有品質規則會產生 blocked decision 並通知，不延遲偷用 cutoff-after data。
+- Mac 必須醒著且在線；目前沒有 retry window、missed-run alarm、LINE、automatic reports 或 backup。
+- Telegram 只傳建議；不讀交易所帳戶、不下單，也不自動登記成交。
+
+### 驗證
+
+8 個 Stage 4B tests 覆蓋 approved-key env loading、form payload、missing credentials、invalid／exception redaction、saved recommendation delivery、safe failure message、blocked amount 與 CLI aliases。完整 Bitcoin suite 56 tests 與 repository 原有 10 tests 全數通過。現有 `.env.local` Telegram credentials 已以 `test-telegram` 實際送達一則非投資測試訊息，secret file 權限已收斂為 `0600`，automation 已建立並啟用。
