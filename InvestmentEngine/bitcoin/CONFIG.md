@@ -39,7 +39,7 @@ nominal_adaptive_daily = 4,800 / 65 ≈ 73.846153846
 | `data.btc.product` | `BTC-USD` | BTC 與 USD 現貨 |
 | `data.btc.reference_interval` | `5m` | 截止時間前最後完整 candle |
 | `data.btc.reference_field` | `close` | 決策 reference price |
-| `data.btc.reference_max_age_minutes` | `10` | 超過即 stale |
+| `data.btc.reference_max_age_minutes` | `10` | legacy freshness hint；runtime now requires the exact cutoff bucket instead of blocking late fetches |
 | `data.btc.daily_interval` | `1d` | 近期高點與 ATR |
 | `data.btc.daily_boundary` | `00:00_UTC` | 只使用已完成 candle |
 | `data.btc.automatic_fallback` | `none` | 缺資料時 blocked |

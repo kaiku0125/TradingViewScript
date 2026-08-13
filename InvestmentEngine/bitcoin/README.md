@@ -146,4 +146,4 @@ InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py report
 InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py rehearse-first-day
 ```
 
-`recommend` 只允許在正式計畫期間的 Asia/Taipei 21:00～21:10 執行，建議約 21:05 手動觸發。它會先 fsync canonical records，再顯示結果；輸出使用尚未回測證實的 draft parameters，且不代表交易已成交。
+`recommend` 只允許在正式計畫期間的 Asia/Taipei 當日 21:00 cutoff 後執行，建議約 21:05 手動觸發。晚於 21:10 仍沿用當日 21:00 cutoff，不加入 cutoff 後資料。它會先 fsync canonical records，再顯示結果；輸出使用尚未回測證實的 draft parameters，且不代表交易已成交。

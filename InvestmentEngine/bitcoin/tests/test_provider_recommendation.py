@@ -490,20 +490,27 @@ class ProviderRecommendationTest(unittest.TestCase):
         self.assertEqual(len(store.read_dataset("market_snapshots")), 1)
         self.assertEqual(len(store.read_dataset("decisions")), 1)
 
-    def test_outside_recommendation_window_writes_nothing(self) -> None:
+    def test_before_cutoff_writes_nothing(self) -> None:
         store = JournalStore(self.config)
         service = RecommendationService(
             self.config,
             store=store,
             market_data=self.market_service(),
         )
-        for value in (
-            datetime.fromisoformat("2026-08-12T20:59:59+08:00"),
-            datetime.fromisoformat("2026-08-12T21:10:01+08:00"),
-        ):
-            with self.assertRaises(UserInputError):
-                service.recommend(now=value)
+        with self.assertRaises(UserInputError):
+            service.recommend(now=datetime.fromisoformat("2026-08-12T20:59:59+08:00"))
         self.assertFalse(any(path.exists() for path in store.paths.datasets.values()))
+
+    def test_after_original_window_end_is_allowed(self) -> None:
+        store = JournalStore(self.config)
+        service = RecommendationService(
+            self.config,
+            store=store,
+            market_data=self.market_service(),
+        )
+        outcome = service.recommend(now=datetime.fromisoformat("2026-08-12T21:10:01+08:00"))
+        self.assertEqual(outcome.exit_code, 0)
+        self.assertEqual(outcome.snapshot["cutoff_at"], "2026-08-12T21:00:00+08:00")
 
 
 if __name__ == "__main__":

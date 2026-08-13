@@ -44,7 +44,7 @@ Current approved Stage 4A design constraints:
 - Approved implementation order is Journal core, pure Decision Engine and Budget Guard, Provider adapters, then deterministic reports and local rehearsal.
 - The MVP reads only Coinbase Exchange `BTC-USD`, Alternative.me Fear & Greed, Volmex BVIV/BVIVF, and the local canonical Journal. It must not access exchange accounts or place orders.
 - `VOLMEX_API_KEY` is the only approved optional market-data secret for Stage 4A. Read it from the environment and redact it from URLs, logs, snapshots, journals, errors, and reports.
-- Recommendation is a same-day manual command in the 21:00-21:10 Asia/Taipei window, targeting about 21:05. Do not create backdated recommendations or use cutoff-after data.
+- Recommendation is a same-day manual command allowed at or after the 21:00 Asia/Taipei cutoff, targeting about 21:05. Do not create backdated recommendations or use cutoff-after data.
 - Normalize candle close `observed_at` to the candle bucket end while preserving the provider's original bucket-start timestamp and both bucket boundaries.
 - Save the MarketSnapshot and DecisionRecord before presenting the recommendation to the operator.
 - Manual purchase recording requires an interactive confirmation and appends only total USD paid and net BTC received; never mutate an existing execution event.
@@ -56,7 +56,7 @@ Current approved Stage 4A design constraints:
 - Gate 4A-2 exposes only pure, deterministic indicators, weekly-target／capacity calculations, and Budget Guard functions. It performs no network or Journal writes and does not add the `recommend` command.
 - The Decision Engine must preserve the approved rules: reweight exactly two valid directional groups, use `base_only` below two groups, combine ATR and absolute drop with `max`, keep BVIV at or below 1.0, compute capacity across the shifted 65-day calendar, and never exceed remaining funds or daily／weekly hard caps.
 - Gate 4A-3 modules are `providers.py` and `recommendation.py`. Provider adapters return normalized records and never invoke the Decision Engine directly; recommendation orchestration must append weekly target when needed, then snapshot, then decision, with fsync before terminal output.
-- `recommend` is allowed only for the current Asia/Taipei plan date from 21:00:00 through 21:10:00. It has no backdated date option and uses the same 21:00 cutoff for same-day revisions.
+- `recommend` is allowed only for the current Asia/Taipei plan date at or after 21:00:00. It has no backdated date option and uses the same 21:00 cutoff for same-day revisions, even when executed later the same day.
 - Coinbase requires exact 5m current／previous cutoff buckets and 91 continuous completed UTC daily candles. Missing, duplicate, unordered-after-normalization gaps, or invalid BTC data blocks the decision; it must never switch exchanges or substitute a ticker.
 - Fear & Greed selects the latest valid Alternative.me value observed by cutoff and degrades when stale／missing. Volmex selects completed BVIV 60m, then completed BVIVF at the 16:00 America/New_York fixing time, then neutral 1.0; fallback or missing BVIV degrades explicitly.
 - HTTP retries only timeout／connection／429／5xx using versioned runtime settings. `VOLMEX_API_KEY` may enter only the outgoing query and must be absent from descriptors, errors, snapshots, decisions, stdout, and tests' canonical artifacts.

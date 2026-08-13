@@ -92,7 +92,7 @@ InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py recomm
 InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py run-daily
 ```
 
-兩個命令均執行相同 `DailyWorkflowService`：先檢查 Telegram credentials，再建立 canonical recommendation，最後傳送相同結果。`run-daily` 是排程使用的明確 alias。手動操作仍建議約 21:05；使用者指定的 automation 在 21:00 啟動，因此 Provider 尚未提供精確 bucket 時會依既有品質規則保存並通知 blocked，而不猜測資料。
+兩個命令均執行相同 `DailyWorkflowService`：先檢查 Telegram credentials，再建立 canonical recommendation，最後傳送相同結果。`run-daily` 是排程使用的明確 alias。手動操作仍建議約 21:05；若晚於 21:10 執行，仍使用同一個 21:00 cutoff，不加入 cutoff 後資料。
 
 執行順序固定：
 
@@ -249,8 +249,8 @@ python3 InvestmentEngine/bitcoin/dca.py report daily --stdout --date 2026-08-12
 
 - `recommend` 只允許目前 Asia/Taipei 日期。
 - 21:00 前執行必須停止，不寫 snapshot 或 decision。
-- 新 recommendation window 為 21:00～21:10；這對應 BTC reference 的 10 分鐘 freshness。超過 21:10 不建立新 decision。
-- 同日重算只允許在相同 21:00～21:10 window，且仍沿用同一 cutoff。
+- Recommendation 可在當日 21:00 cutoff 後執行；晚於 21:10 仍建立當日 decision，但不得加入 cutoff 後資料。
+- 同日重算仍沿用相同 21:00 cutoff。
 - 同日重算沿用同一 cutoff，建立新的 snapshot 與 decision revision。
 
 ### 7.2 不補造歷史建議
@@ -329,7 +329,7 @@ python3 InvestmentEngine/bitcoin/dca.py rehearse-first-day
 
 ```text
 [ ] 系統時間與 Asia/Taipei 日期正確
-[ ] 目前在 21:00～21:10 recommendation window，建議約 21:05 執行
+[ ] 目前已達當日 21:00 cutoff，建議約 21:05 執行
 [ ] 執行 recommend
 [ ] 確認 Telegram 收到與 terminal 相同的 decision status／amount
 [ ] 閱讀資料品質、原因、hard caps 與最終建議

@@ -267,11 +267,7 @@ class CoinbaseAdapter:
     def reference(self, cutoff: datetime, *, previous: bool = False) -> NormalizedValue:
         target_end = cutoff.astimezone(UTC) - (timedelta(days=1) if previous else timedelta())
         target_start = target_end - timedelta(minutes=5)
-        stale_after = (
-            "EXACT_HISTORICAL_BUCKET"
-            if previous
-            else f"PT{self.config.btc_reference_max_age_minutes}M"
-        )
+        stale_after = "EXACT_CUTOFF_BUCKET"
         descriptor: dict = {"provider": "coinbase_exchange", "endpoint": "product_candles"}
         try:
             response = self._request(
@@ -288,10 +284,6 @@ class CoinbaseAdapter:
             if close <= 0:
                 raise ValueError("reference close must be positive")
             status = "valid"
-            if not previous and response.fetched_at - target_end > timedelta(
-                minutes=self.config.btc_reference_max_age_minutes
-            ):
-                status = "stale"
             record = {
                 "source": "coinbase_exchange",
                 "symbol": "BTC-USD",
@@ -310,10 +302,7 @@ class CoinbaseAdapter:
                 "fallback_used": False,
                 "request_descriptor": descriptor,
             }
-            errors = () if status == "valid" else ("BTC_REFERENCE_STALE",)
-            return NormalizedValue(
-                close if status == "valid" else None, record, status, errors
-            )
+            return NormalizedValue(close, record, status, ())
         except ProviderRequestError as exc:
             descriptor = exc.descriptor
             code = f"BTC_REFERENCE_{exc.code}"

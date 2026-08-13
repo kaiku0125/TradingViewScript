@@ -42,19 +42,19 @@ Roadmap 只描述交付順序與 Review gate，不授權自動下單或提前建
 通過條件：
 
 - 使用者接受每日 CLI 互動。
-- 確認 21:00～21:10 recommendation window，目標約 21:05 手動執行。
+- 確認 21:00 cutoff 後 recommendation 可執行，目標約 21:05 手動執行。
 - 確認 Volmex key 為可選環境變數。
 - 確認不補造歷史 decision。
 - 確認本機無備份風險。
 - 確認 MVP 沒有排程、通知與自動交易。
 
-目前狀態：Accepted（2026-08-11）。以下七項均已核准：Python 3.11+ 本機 CLI、21:00～21:10 recommendation window、Volmex optional key 與 BVIVF／中性降級、不補造歷史 recommendation、purchase 寫入前確認，以及暫無排程、通知、自動下單與備份。
+目前狀態：Accepted（2026-08-11；2026-08-12 調整）。以下七項均已核准：Python 3.11+ 本機 CLI、21:00 cutoff 後同日 recommendation 可執行、Volmex optional key 與 BVIVF／中性降級、不補造歷史 recommendation、purchase 寫入前確認，以及暫無排程、通知、自動下單與備份。
 
 核准時使用的 Review checklist：
 
 ```text
 1. Python 3.11+ 本機 CLI：接受／修改
-2. 21:00～21:10 recommendation window：接受／修改
+2. 21:00 cutoff 後同日 recommendation window：接受／修改
 3. Volmex key 可選，失敗用 BVIVF／中性降級：接受／修改
 4. 不補造歷史 recommendation：接受／修改
 5. record-purchase 互動確認：接受／修改

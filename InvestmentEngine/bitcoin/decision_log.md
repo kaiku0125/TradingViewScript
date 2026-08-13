@@ -768,3 +768,29 @@ Stage 4A 必須由使用者或 Codex 在 recommendation window 手動觸發，�
 ### 驗證
 
 8 個 Stage 4B tests 覆蓋 approved-key env loading、form payload、missing credentials、invalid／exception redaction、saved recommendation delivery、safe failure message、blocked amount 與 CLI aliases。完整 Bitcoin suite 56 tests 與 repository 原有 10 tests 全數通過。現有 `.env.local` Telegram credentials 已以 `test-telegram` 實際送達一則非投資測試訊息，secret file 權限已收斂為 `0600`，automation 已建立並啟用。
+
+---
+
+## DCA-ADR-022：放寬 Recommendation 執行結束時間
+
+- 日期：2026-08-12
+- 狀態：Accepted／Implemented
+
+### 背景
+
+第一次 `smart-dca-21-00-telegram` automation run 在 2026-08-12 05:10 Asia/Taipei 被喚醒，不在原本 21:00～21:10 runtime window 內，因此未產生 recommendation。使用者認為 DCA 可忽略 21:10 後的小幅時間差，且晚幾分鐘不應造成當日完全沒有建議。
+
+### 決策
+
+- Runtime 只禁止 21:00 Asia/Taipei cutoff 前執行。
+- 21:00 後同一台北 plan date 可建立或修訂當日 recommendation。
+- 晚於 21:10 執行仍使用當日 21:00 cutoff，不加入 cutoff 後市場資料。
+- BTC reference quality 改為要求 Coinbase exact 5m cutoff bucket；不再因 fetch time 距 cutoff 超過 10 分鐘而標記 `BTC_REFERENCE_STALE`。
+- 手動 `recommend`、手動 `run-daily` 與 scheduled `run-daily` 仍共用同一個 `DailyWorkflowService`。
+
+### 邊界
+
+- 不建立 backdated recommendation。
+- 不使用 21:00 cutoff 後的市場資料。
+- Telegram delivery 仍只傳送已保存的 draft recommendation。
+- 自動交易仍排除在 Stage 4B 外。

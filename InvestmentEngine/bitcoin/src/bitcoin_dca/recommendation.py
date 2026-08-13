@@ -153,8 +153,8 @@ class RecommendationService:
         if not self.config.start_date <= plan_date <= self.config.end_date:
             raise UserInputError("today is outside the approved DCA plan")
         local_clock = operation_time.timetz().replace(tzinfo=None)
-        if not self.config.cutoff_time <= local_clock <= self.config.recommendation_window_end:
-            raise UserInputError("recommend is allowed only from 21:00 through 21:10 Asia/Taipei")
+        if local_clock < self.config.cutoff_time:
+            raise UserInputError("recommend is allowed only at or after 21:00 Asia/Taipei")
         return datetime.combine(
             plan_date,
             self.config.cutoff_time,

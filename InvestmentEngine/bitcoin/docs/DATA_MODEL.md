@@ -65,7 +65,7 @@
   "fetched_at": "2026-08-11T21:01:10+08:00",
   "timezone": "UTC",
   "cutoff_at": "2026-08-11T21:00:00+08:00",
-  "stale_after": "PT10M",
+  "stale_after": "EXACT_CUTOFF_BUCKET",
   "quality_status": "valid",
   "fallback_used": false,
   "request_descriptor": {
