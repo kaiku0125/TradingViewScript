@@ -211,11 +211,18 @@ class JournalService:
         btc: str,
         confirm: ConfirmCallback,
         now: datetime | None = None,
+        plan_date: date | None = None,
+        executed_at: datetime | None = None,
         note: str | None = None,
     ) -> tuple[dict, PortfolioState]:
-        operation_time = self._now(now)
-        plan_date = operation_time.date()
-        self._ensure_plan_date(plan_date)
+        recorded_time = self._now(now)
+        execution_time = self._now(executed_at) if executed_at else recorded_time
+        plan_date_value = plan_date or execution_time.date()
+        self._ensure_plan_date(plan_date_value)
+        if plan_date_value > execution_time.date():
+            raise UserInputError("plan date cannot be after the execution date")
+        if execution_time > recorded_time:
+            raise UserInputError("execution time cannot be after the recorded time")
         usd_value = canonical_usd(usd, positive=True)
         btc_value = canonical_btc(btc, positive=True)
         with localcontext() as context:
@@ -226,18 +233,19 @@ class JournalService:
             datasets = self.store.read_all()
             validate_journal(datasets, self.config)
             operation_id = str(uuid4())
-            timestamp = operation_time.isoformat(timespec="seconds")
+            executed_timestamp = execution_time.isoformat(timespec="seconds")
+            recorded_timestamp = recorded_time.isoformat(timespec="seconds")
             record = {
                 "schema_version": "execution.v1",
                 "execution_id": str(uuid4()),
                 "operation_id": operation_id,
                 "event_type": "purchase",
-                "plan_date": plan_date.isoformat(),
+                "plan_date": plan_date_value.isoformat(),
                 "decision_revision_id": _current_decision_revision(
-                    datasets["decisions"], plan_date.isoformat()
+                    datasets["decisions"], plan_date_value.isoformat()
                 ),
-                "executed_at": timestamp,
-                "recorded_at": timestamp,
+                "executed_at": executed_timestamp,
+                "recorded_at": recorded_timestamp,
                 "usd_amount": usd_value,
                 "btc_quantity": btc_value,
                 "venue": "unknown",
@@ -250,6 +258,9 @@ class JournalService:
             preview = {
                 "action": "record_purchase",
                 "plan_date": record["plan_date"],
+                "decision_revision_id": record["decision_revision_id"],
+                "executed_at": executed_timestamp,
+                "recorded_at": recorded_timestamp,
                 "usd_amount": usd_value,
                 "btc_quantity": btc_value,
                 "derived_effective_price_usd": format(effective_price, ".8f"),
@@ -260,7 +271,7 @@ class JournalService:
             self.store.append_records("executions", [record])
             updated = {name: list(records) for name, records in datasets.items()}
             updated["executions"].append(record)
-            state = rebuild_portfolio(updated["executions"], self.config, operation_time)
+            state = rebuild_portfolio(updated["executions"], self.config, recorded_time)
             return record, state
 
     def close_day(

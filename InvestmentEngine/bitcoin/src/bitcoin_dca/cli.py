@@ -95,6 +95,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     purchase.add_argument("--usd", required=True, help="total USD paid")
     purchase.add_argument("--btc", required=True, help="net BTC received")
+    purchase.add_argument(
+        "--plan-date",
+        type=date.fromisoformat,
+        help="DCA recommendation date (YYYY-MM-DD); defaults to execution date",
+    )
+    purchase.add_argument(
+        "--executed-at",
+        type=datetime.fromisoformat,
+        help="actual execution timestamp with UTC offset; defaults to record time",
+    )
     purchase.add_argument("--note")
     purchase.add_argument(
         "--yes", action="store_true", help="skip interactive confirmation"
@@ -248,6 +258,8 @@ def _run(args: argparse.Namespace) -> int:
         record, state = service.record_purchase(
             usd=args.usd,
             btc=args.btc,
+            plan_date=args.plan_date,
+            executed_at=args.executed_at,
             note=args.note,
             confirm=callback,
         )

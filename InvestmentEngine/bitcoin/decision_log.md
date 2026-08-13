@@ -794,3 +794,29 @@ Stage 4A 必須由使用者或 Codex 在 recommendation window 手動觸發，�
 - 不使用 21:00 cutoff 後的市場資料。
 - Telegram delivery 仍只傳送已保存的 draft recommendation。
 - 自動交易仍排除在 Stage 4B 外。
+
+---
+
+## DCA-ADR-023：分離跨午夜成交的建議日、成交時間與記錄時間
+
+- 日期：2026-08-13
+- 狀態：Accepted／Implemented
+
+### 背景
+
+使用者可能依 21:00 recommendation 在午夜後成交。例如 2026-08-12 的建議於 2026-08-13 03:26 執行。若只以命令執行時間推導全部欄位，成交會錯誤歸入下一個 DCA plan date，也無法保留真實成交時間。
+
+### 決策
+
+- `record-purchase` 新增 optional `--plan-date` 與 `--executed-at`。
+- 預設行為不變：沒有明確提供時，成交日與成交時間使用回報時間。
+- 跨午夜執行既有建議時，`plan_date` 保存 recommendation 歸屬日，`executed_at` 保存實際成交時間，`recorded_at` 保存 append 時間。
+- `decision_revision_id` 依指定 `plan_date` 連結 current revision。
+- 拒絕晚於實際成交日的 `plan_date`，並拒絕晚於 `recorded_at` 的 `executed_at`。
+- Canonical 金額仍只保存 total USD paid 與 net BTC received；有效成本價仍由兩者相除，不保存使用者另行提供的顯示均價。
+
+### 邊界
+
+- 此功能只記錄使用者已完成的手動成交，不讀交易所帳戶、不下單。
+- 無既有 recommendation 的歷史資料仍不得冒充既有建議；其 imported workflow 不在本次變更範圍。
+- 所有寫入仍須先預覽確認，並沿用 exclusive lock、append-only、flush 與 fsync。

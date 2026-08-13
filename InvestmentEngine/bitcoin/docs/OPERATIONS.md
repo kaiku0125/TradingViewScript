@@ -146,6 +146,16 @@ python3 InvestmentEngine/bitcoin/dca.py record-purchase \
   --btc 0.00128500
 ```
 
+若前一晚收到建議、午夜後才成交，明確分開建議日與實際成交時間：
+
+```bash
+python3 InvestmentEngine/bitcoin/dca.py record-purchase \
+  --usd 149.00 \
+  --btc 0.00236000 \
+  --plan-date 2026-08-12 \
+  --executed-at 2026-08-13T03:26:00+08:00
+```
+
 使用者只輸入：
 
 - 實際支付的總 USD。
@@ -153,14 +163,14 @@ python3 InvestmentEngine/bitcoin/dca.py record-purchase \
 
 系統自動填入：
 
-- `plan_date`：目前 Asia/Taipei 日期。
+- `plan_date`：預設為實際成交的 Asia/Taipei 日期；若是執行前一晚建議，可明確指定該建議日。
 - `recorded_at`：命令執行時間。
-- `executed_at`：預設等於 `recorded_at`。
+- `executed_at`：預設等於 `recorded_at`；明確提供時必須包含 UTC offset，且不得晚於 `recorded_at`。
 - `source=manual`。
 - `venue=unknown`。
 - 目前有效 `decision_revision_id`。
 
-命令必須先顯示即將追加的 USD、BTC、衍生有效成本價與 plan date，要求互動式 `yes` 確認。未來可提供 `--yes` 給明確的非互動呼叫，但不能作預設。
+命令必須先顯示即將追加的 USD、BTC、衍生有效成本價、plan date、decision revision、executed_at 與 recorded_at，要求互動式 `yes` 確認。可提供 `--yes` 給已取得明確確認的非互動呼叫，但不能作預設。
 
 成功寫入後顯示累積投入、剩餘預算、累積 BTC 與有效平均成本。需要 Daily Journal 時再明確執行 `report daily`。
 

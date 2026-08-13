@@ -48,6 +48,7 @@ Current approved Stage 4A design constraints:
 - Normalize candle close `observed_at` to the candle bucket end while preserving the provider's original bucket-start timestamp and both bucket boundaries.
 - Save the MarketSnapshot and DecisionRecord before presenting the recommendation to the operator.
 - Manual purchase recording requires an interactive confirmation and appends only total USD paid and net BTC received; never mutate an existing execution event.
+- `record-purchase` defaults `plan_date` and `executed_at` to the report time. For a purchase executed after midnight from a prior recommendation, explicit `--plan-date` and offset-aware `--executed-at` preserve the recommendation date separately from the actual execution and Journal recording times; a plan date after the execution date or an execution time after the recording time must be rejected.
 - All JSONL writes use an exclusive local lock, complete-line append, flush, and fsync. Never truncate or rewrite canonical Journal files.
 - Provider failure follows the approved quality rules: invalid BTC blocks, missing Fear & Greed degrades directional groups, and missing BVIV uses modifier 1.0 with an explicit degraded reason.
 - Stage 4A itself excludes scheduling and notifications; the separately authorized Stage 4B subset below adds only the daily scheduler and Telegram delivery. Google Sheets, Dashboard, exchange imports, automatic backups, and automatic trading remain excluded.
@@ -92,6 +93,7 @@ Current approved Stage 3 constraints:
 - Store actual purchases as append-only execution events. Correct mistakes with reversal and replacement events instead of overwriting history; use a non-financial `day_close` event when the user explicitly skips or closes the day.
 - Allow multiple purchases per plan date. Derive remaining budget, accumulated BTC, average cost, daily totals, and weekly totals only from effective actual execution events.
 - Manual purchase input requires only total USD paid and net BTC received. Default execution time to the report time; derive effective cost price as USD divided by BTC.
+- A manually reported cross-midnight fill may explicitly retain the prior recommendation's `plan_date` while storing its later actual `executed_at`; `recorded_at` remains the append time and the execution links to the current decision revision for that plan date when one exists.
 - Do not track fees separately in v1. Treat total USD paid as budget cost and net BTC received as the acquired quantity, so the derived effective cost naturally includes fee impact.
 - Keep `MarketSnapshot`, `DecisionRecord`, `ExecutionEvent`, and `WeeklyTargetSnapshot` as separate canonical record types.
 - Treat PortfolioState and Daily／Weekly／Monthly reports as derived views, never as independent sources of truth.

@@ -6,7 +6,7 @@ import sys
 import tempfile
 import unittest
 from contextlib import redirect_stdout
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
 
@@ -118,6 +118,35 @@ class JournalCoreTest(unittest.TestCase):
                 now=self.first_day,
             )
         self.assertFalse(self.store.paths.datasets["executions"].exists())
+
+    def test_purchase_can_link_prior_plan_date_to_cross_midnight_execution(self) -> None:
+        executed_at = datetime.fromisoformat("2026-08-13T03:26:00+08:00")
+        recorded_at = datetime.fromisoformat("2026-08-13T10:09:50+08:00")
+        purchase, state = self.service.record_purchase(
+            usd="149",
+            btc="0.00236",
+            plan_date=date.fromisoformat("2026-08-12"),
+            executed_at=executed_at,
+            confirm=lambda _: True,
+            now=recorded_at,
+        )
+
+        self.assertEqual(purchase["plan_date"], "2026-08-12")
+        self.assertEqual(purchase["executed_at"], executed_at.isoformat())
+        self.assertEqual(purchase["recorded_at"], recorded_at.isoformat())
+        self.assertEqual(state.actual_invested_usd, Decimal("149.00"))
+        self.assertEqual(state.actual_invested_today_usd, Decimal("0"))
+        self.assertEqual(state.actual_invested_this_week_usd, Decimal("149.00"))
+
+    def test_purchase_rejects_future_execution_time(self) -> None:
+        with self.assertRaises(UserInputError):
+            self.service.record_purchase(
+                usd="149",
+                btc="0.00236",
+                executed_at=datetime.fromisoformat("2026-08-13T10:10:00+08:00"),
+                confirm=lambda _: True,
+                now=datetime.fromisoformat("2026-08-13T10:09:50+08:00"),
+            )
 
     def test_correction_appends_reversal_and_replacement(self) -> None:
         original, _ = self.service.record_purchase(

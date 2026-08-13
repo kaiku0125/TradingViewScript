@@ -138,6 +138,7 @@ InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py recomm
 InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py run-daily
 InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py test-telegram
 InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py record-purchase --usd "<USD>" --btc "<BTC>"
+InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py record-purchase --usd "<USD>" --btc "<BTC>" --plan-date 2026-08-12 --executed-at 2026-08-13T03:26:00+08:00
 InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py correct-purchase --execution-id "<ID>" --usd "<USD>" --btc "<BTC>"
 InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py close-day --reason skipped
 InvestmentEngine/bitcoin/.venv/bin/python InvestmentEngine/bitcoin/dca.py report daily

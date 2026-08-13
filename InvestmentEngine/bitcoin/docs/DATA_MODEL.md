@@ -176,12 +176,13 @@
 
 - `purchase` 的 USD 與 BTC 都必須大於 0。
 - 使用者手動新增 purchase 時只需提供 `usd_amount` 與 `btc_quantity`。`executed_at` 預設使用回報的 `recorded_at`；`source` 預設 `manual`，`venue` 預設 `unknown`。
+- 若使用者在午夜後才執行前一個 `plan_date` 的建議，可明確提供先前建議日與帶 UTC offset 的實際 `executed_at`。此時 `plan_date` 保留建議／DCA 歸屬日，`executed_at` 保留成交時間，`recorded_at` 保留追加 Journal 的時間，並關聯該 `plan_date` 的 current decision revision。`plan_date` 不得晚於成交日，成交時間不得晚於記錄時間。
 - v1 不另外追蹤手續費。`usd_amount` 表示實際支付的全部 USD，`btc_quantity` 表示扣除任何 BTC fee 後實際收到的淨 BTC。因此衍生有效成本價固定為 `usd_amount / btc_quantity`，已自然反映費用造成的成本影響。
 - 修改錯誤成交時，先追加 `reversal` 指向原 event，再追加正確的 replacement `purchase`。
 - `reversal` 不得被再次 reversal；同一 purchase 最多一筆有效 reversal。
 - `day_close` 表示使用者明確結束當日等待：沒有成交時可標記 `skipped`，已有部分或完整成交時可標記 `completed_for_day`。它不包含金額，也不影響 PortfolioState。
 - 同一 `plan_date` 若有多筆 day_close，以最後一筆有效事件作當日人工結束狀態；若其後追加 purchase，執行狀態仍由最新成交總額重新推導。
-- 歷史補登使用實際成交日作 `plan_date`，並以 `source=imported` 標記，不得假裝是當時已存在的系統建議。
+- 無既有建議可關聯的歷史匯入使用實際成交日作 `plan_date`，並以 `source=imported` 標記，不得假裝是當時已存在的系統建議；這與明確關聯既有前一日建議的跨午夜手動成交不同。
 
 ## 8. WeeklyTargetSnapshot
 
