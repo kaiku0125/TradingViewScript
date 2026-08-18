@@ -26,6 +26,34 @@ When working on this module:
 9. Never store API keys, bot tokens, or other secrets in project documents, configuration committed to Git, journals, or reports.
 10. Work in reviewed stages. Stop after the requested stage and do not create later-stage files or implementation early.
 
+### DCA Export Column Preference
+
+For future DCA Excel previews, Google Sheets copy/paste tables, and other
+paste-ready tabular outputs, use this exact leading column order:
+
+1. `建議日期`
+2. `實際投入_USD`
+3. `有效成本價_USD`
+4. `實收_BTC`
+5. `決策狀態`
+6. `建議金額_USD`
+7. `與建議差額_USD`
+8. `執行狀態`
+9. `成交時間_台北`
+
+After those columns, preserve the existing remaining order:
+
+10. `累計投入_USD`
+11. `累計_BTC`
+12. `累計平均成本_USD`
+13. `剩餘預算_USD`
+14. `原因代碼`
+
+Display `建議日期` as `yyyy/mm/dd`, effective cost with thousands separators
+and two decimal places, and BTC as a numeric value with only the precision
+needed for the recorded quantity. Keep the underlying spreadsheet cells typed
+as dates and numbers so they paste cleanly into Google Sheets.
+
 Current documentation stages:
 
 - Stage 1: project skeleton, `README.md`, `docs/ARCHITECTURE.md`, and `decision_log.md`
