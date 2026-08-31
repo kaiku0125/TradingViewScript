@@ -49,26 +49,26 @@ var float CRO_CRYPTO_RATIO = 10
 // 銀行現金設定
 // ============================================================================
 // === AUTO-GENERATED CASH LIABILITY START ===
-// updated_at: 2026-08-24T01:01:25.027Z
-var float BANK1_AVAL = 110215.0  // LineBank (TWD)
+// updated_at: 2026-08-31T01:01:30.507Z
+var float BANK1_AVAL = 90436.0  // LineBank (TWD)
 var float BANK2_AVAL = 0.0  // Bankee (TWD)
-var float BANK3_AVAL = 94901.0  // 台新 (TWD)
-var float BANK4_AVAL = 10599.0  // 樂天 (TWD)
+var float BANK3_AVAL = 40845.0  // 台新 (TWD)
+var float BANK4_AVAL = 5405.0  // 樂天 (TWD)
 var float BITO_AVAL = 0.0  // 幣託 (USD)
 var float VISA_AVAL = 25500.0  // Visa (USD) 出金
-var float DEBT = -915040.0  // 負債(TWD)
+var float DEBT = -898791.0  // 負債(TWD)
 // === AUTO-GENERATED CASH LIABILITY END ===
 
 // ============================================================================
 // 交易所設定
 // ============================================================================
 // === AUTO-GENERATED USD START ===
-// updated_at: 2026-08-24T01:01:25.027Z
+// updated_at: 2026-08-31T01:01:30.507Z
 var float BYBIT_EXCHANGE_USD = 0.0
-var float BINANCE_EXCHANGE_USD = 1981.0
+var float BINANCE_EXCHANGE_USD = 3728.0
 var float CRYPTO_DOT_COM_EXCHANGE_USD = 0.0
 var float OKX_EXCHANGE_USD = 0.0
-var float PIONEX_EXCHANGE_USD = 14784.0
+var float PIONEX_EXCHANGE_USD = 9073.0
 var float KRAKEN_EXCHANGE_USD = 0.0
 var float EXCHANGE_USD =
       BYBIT_EXCHANGE_USD +
@@ -97,10 +97,10 @@ var float _0050_INCOME = 344242
 // ============================================================================
 
 // === AUTO-GENERATED START ===
-// updated_at: 2026-08-24T01:01:25.027Z
+// updated_at: 2026-08-31T01:01:30.507Z
 var string[] symbols = array.from("BTC", "ETH", "ADA", "BNB", "CRO")
-var float[] buyQtys = array.from(0.6119, 12.55, 38114.0, 16.54, 122800.0)
-var float[] buyCosts = array.from(30198.0, 21486.0, 11551.0, 7872.0, 14439.0)
+var float[] buyQtys = array.from(0.6572, 12.55, 39575.0, 16.54, 122800.0)
+var float[] buyCosts = array.from(33639.0, 21486.0, 11883.0, 7872.0, 14439.0)
 var float[] sellQtys = array.from(0.3263, 5.55, 5299.0, 6.667, 20178.0)
 var float[] sellIncomes = array.from(9755.0, 17084.0, 6120.0, 6878.0, 5959.89)
 // === AUTO-GENERATED END ===
@@ -1421,6 +1421,7 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2026, 8, 10, -243230)) //-7.50%
         array.push(rdArray, newData(2026, 8, 17, -311118)) //-9.60%
         array.push(rdArray, newData(2026, 8, 24, 4572)) //0.14%
+        array.push(rdArray, newData(2026, 8, 31, -165480)) //-4.95%
 
 // 選擇要繪製的值（平滑化或原始值）
 plotValue = INPUT_SMOOTHING_ENABLED and not na(smoothedVariation) ? smoothedVariation : (not na(filledVariation) ? filledVariation : recordAssetsVariation)
