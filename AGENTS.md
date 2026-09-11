@@ -54,6 +54,33 @@ and two decimal places, and BTC as a numeric value with only the precision
 needed for the recorded quantity. Keep the underlying spreadsheet cells typed
 as dates and numbers so they paste cleanly into Google Sheets.
 
+For every future DCA Excel preview, also include a visible `_Chart Helpers`
+worksheet using the current purchase-detail layout. Show one row per effective
+purchase event, ordered from the earliest recommendation date, and do not mix
+blocked or unexecuted recommendation-only rows into this worksheet. Preserve
+this exact column order:
+
+1. `建議日期`
+2. `實際投入_USD`
+3. `有效成本價_USD`
+4. `實收_BTC`
+5. `建議金額_USD`
+6. `與建議差額_USD`
+7. `決策狀態`
+8. `執行狀態`
+9. `成交時間_台北`
+10. `累計投入_USD`
+11. `累計_BTC`
+12. `累計平均成本_USD`
+13. `剩餘預算_USD`
+14. `原因代碼`
+15. `execution_id`
+16. `decision_revision_id`
+
+Keep the same typed date and numeric formatting rules as the main paste-ready
+table. Preserve multiple effective purchases as separate rows and calculate
+cumulative fields from effective purchase events only.
+
 Current documentation stages:
 
 - Stage 1: project skeleton, `README.md`, `docs/ARCHITECTURE.md`, and `decision_log.md`
