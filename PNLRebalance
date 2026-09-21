@@ -49,7 +49,7 @@ var float CRO_CRYPTO_RATIO = 10
 // 銀行現金設定
 // ============================================================================
 // === AUTO-GENERATED CASH LIABILITY START ===
-// updated_at: 2026-09-14T01:00:28.100Z
+// updated_at: 2026-09-21T01:02:16.750Z
 var float BANK1_AVAL = 90436.0  // LineBank (TWD)
 var float BANK2_AVAL = 0.0  // Bankee (TWD)
 var float BANK3_AVAL = 109312.0  // 台新 (TWD)
@@ -63,7 +63,7 @@ var float DEBT = -898791.0  // 負債(TWD)
 // 交易所設定
 // ============================================================================
 // === AUTO-GENERATED USD START ===
-// updated_at: 2026-09-14T01:00:28.100Z
+// updated_at: 2026-09-21T01:02:16.750Z
 var float BYBIT_EXCHANGE_USD = 0.0
 var float BINANCE_EXCHANGE_USD = 3728.0
 var float CRYPTO_DOT_COM_EXCHANGE_USD = 0.0
@@ -97,10 +97,10 @@ var float _0050_INCOME = 344242
 // ============================================================================
 
 // === AUTO-GENERATED START ===
-// updated_at: 2026-09-14T01:00:28.100Z
+// updated_at: 2026-09-21T01:02:16.750Z
 var string[] symbols = array.from("BTC", "ETH", "ADA", "BNB", "CRO")
-var float[] buyQtys = array.from(0.6958, 12.55, 39575.0, 16.54, 122800.0)
-var float[] buyCosts = array.from(36643.0, 21486.0, 11883.0, 7872.0, 14439.0)
+var float[] buyQtys = array.from(0.7325, 12.55, 39575.0, 16.54, 122800.0)
+var float[] buyCosts = array.from(37145.0, 21486.0, 11883.0, 7872.0, 14439.0)
 var float[] sellQtys = array.from(0.3263, 5.55, 5299.0, 6.667, 20178.0)
 var float[] sellIncomes = array.from(9755.0, 17084.0, 6428.0, 6878.0, 5959.89)
 // === AUTO-GENERATED END ===
@@ -1424,6 +1424,7 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2026, 8, 31, -165480)) //-4.95%
         array.push(rdArray, newData(2026, 9, 7, -69653)) //-2.08%
         array.push(rdArray, newData(2026, 9, 14, -148579)) //-4.45%
+        array.push(rdArray, newData(2026, 9, 21, 129655)) //3.88%
 
 // 選擇要繪製的值（平滑化或原始值）
 plotValue = INPUT_SMOOTHING_ENABLED and not na(smoothedVariation) ? smoothedVariation : (not na(filledVariation) ? filledVariation : recordAssetsVariation)
