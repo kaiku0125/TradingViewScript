@@ -239,6 +239,7 @@ Do not ask the user to manually refresh the snapshot first when the connector is
 
 ## PNLRebalance Rules
 - `PNLRebalance` reads holdings from the auto-generated arrays.
+- Exchange USDT balances (`EXCHANGE_USD`) are cash, not crypto exposure. Since 2026-09-23 they are added to `totalCash` (alongside `BITO_AVAL`), excluded from `totalCryptoAssets`, and subtracted from `allCost` the same way `BITO_AVAL` is. `weekly_holdings_pnl_sync.py` mirrors this in its `speculationPNL` calculation; keep both in sync.
 - For crypto assets, use the generated arrays as the canonical source.
 - Do not reintroduce `input.float(defval=runtime_value)` for generated holdings values, because Pine requires `const` defaults.
 - If manual overrides are needed, implement them as a separate switchable path instead of using runtime values as input defaults.

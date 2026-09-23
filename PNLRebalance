@@ -208,7 +208,6 @@ var string INLINE_ADA = "10"
 var string INLINE_BNB = "15"
 var string INLINE_ILV = "20"
 var string INLINE_OTHER = "22"
-var string INLINE_USDT = "23"
 
 // ============================================================================
 // 字串常數 - 版本資訊
@@ -267,6 +266,7 @@ INPUT_BANK2 = input.float(defval = BANK2_AVAL, title = "Bankee(TWD)", group = GR
 INPUT_BANK3 = input.float(defval = BANK3_AVAL, title = "台新(TWD)", group = GROUP_CASH) 
 INPUT_BANK4 = input.float(defval = BANK4_AVAL, title = "樂天(TWD)", group = GROUP_CASH)
 INPUT_BITO = input.float(defval = BITO_AVAL, title = "幣託(U)", group = GROUP_CASH)
+INPUT_DISPLAY_CASH_DETAIL = input.bool(defval = true, title = "顯示 台幣 / 美金 明細", group = GROUP_CASH)
 
 // ============================================================================
 // 輸入參數 - 提領設定
@@ -316,7 +316,6 @@ MY_CRO_COST = INPUT_CRO_COST
 IS_OTHER_DISPLAY = input.bool(defval = false, title = "淨利(零)幣?", inline = INLINE_OTHER, group = GROUP_ASSETS) 
 MY_OTHER_CRYPTO_COST = 0
 
-IS_USDT_DISPLAY = input.bool(defval = true, title = "剩餘USDT", inline = INLINE_USDT, group = GROUP_ASSETS)
 
 // ============================================================================
 // 輸入參數 - 版本資訊
@@ -764,8 +763,7 @@ collectCryptoAssets(
  float remainETH, float pnlETH, float pnlPercentETH, float nowETHRatio, string ethRebalaneText, float ethDiffRatio, string titleETHRatio,
  float remainADA, float pnlADA, float pnlPercentADA, float nowADARatio, string adaRebalaneText, float adaDiffRatio, string titleADARatio,
  float remainBNB, float pnlBNB, float pnlPercentBNB, float nowBNBRatio, string bnbRebalaneText, float bnbDiffRatio, string titleBNBRatio,
- float remainCRO, float pnlCRO, float pnlPercentCRO, float nowCRORatio, string croRebalaneText, float croDiffRatio, string titleCRORatio,
- float remainUSDT, float pnlUSDT, float pnlPercentUSDT, float nowUSDTRatio
+ float remainCRO, float pnlCRO, float pnlPercentCRO, float nowCRORatio, string croRebalaneText, float croDiffRatio, string titleCRORatio
  ) =>
     array<CryptoAssetData> assets = array.new<CryptoAssetData>()
     
@@ -864,25 +862,6 @@ collectCryptoAssets(
          )
         array.push(assets, asset)
     
-    // USDT - blank
-    if IS_USDT_DISPLAY
-        asset = CryptoAssetData.new(
-         remain = remainUSDT,
-         displayType = "blank",
-         assetName = "USDT",
-         titleRatio = "",
-         nowRatio = nowUSDTRatio,
-         rebalanceText = "",
-         diffRatio = 0,
-         judgeRatio = 0,
-         pnl = pnlUSDT,
-         pnlPercent = pnlPercentUSDT,
-         income = 0,
-         cost = 0,
-         inputCost = 0
-         )
-        array.push(assets, asset)
-    
     assets
 
 // 根據 remain 值對資產數組進行降序排序（冒泡排序）
@@ -976,8 +955,11 @@ bnbRatio = cryptoRatio * BNB_CRYPTO_RATIO
 // ============================================================================
 // 步驟 5：計算各類資產總價值
 // ============================================================================
-// 現金總額
-totalCash = (INPUT_BANK1 + INPUT_BANK2 + INPUT_BANK3 + INPUT_BANK4) * twdEx + INPUT_BITO * usdEx
+// 現金總額（台幣銀行 + 美金：幣託 + 交易所 USDT）
+// 交易所 USDT 視為尚未買入的美金現金，不計入幣圈曝險
+totalCashTwd = (INPUT_BANK1 + INPUT_BANK2 + INPUT_BANK3 + INPUT_BANK4) * twdEx
+totalCashUsd = (INPUT_BITO + EXCHANGE_USD) * usdEx
+totalCash = totalCashTwd + totalCashUsd
 // 台股總價值
 totalStocksAssets = (p0050 * MY_0050_POSITION) * twdEx
 // 主要加密貨幣總價值
@@ -988,8 +970,8 @@ mainCryptoAssets += pADA * MY_ADA_POSITION
 mainCryptoAssets += pBNB * MY_BNB_POSITION
 // 其他加密貨幣總價值
 otherCryptoASssets  = 0 
-// 加密貨幣總價值（主要部位 + 其他 + 交易所餘額）
-totalCryptoAssets = (mainCryptoAssets + otherCryptoASssets) * usdEx + EXCHANGE_USD * usdEx
+// 加密貨幣總價值（主要部位 + 其他；交易所 USDT 已歸入現金）
+totalCryptoAssets = (mainCryptoAssets + otherCryptoASssets) * usdEx
 // 總投機資產（台股 + 加密貨幣）
 totalSpeculationAssets = totalStocksAssets + totalCryptoAssets
 // 總資產（現金 + 投機）
@@ -998,8 +980,8 @@ totalAssets := totalCash + totalSpeculationAssets
 // ============================================================================
 // 步驟 6：計算成本和負債
 // ============================================================================
-// 總投入成本（股票+幣圈）- 幣託U
-allCost = (ALL_STOCKS_COST + ALL_CRYPTO_COST) * twdEx - INPUT_BITO * usdEx
+// 總投入成本（股票+幣圈）- 幣託U - 交易所 USDT（買入前皆視為美金現金）
+allCost = (ALL_STOCKS_COST + ALL_CRYPTO_COST) * twdEx - (INPUT_BITO + EXCHANGE_USD) * usdEx
 //allCost = (ALL_STOCKS_COST + ALL_CRYPTO_COST) * twdEx - INPUT_BITO * usdEx - INPUT_CRYPTO_COM_VISA * usdEx  // 總投入成本（股票+幣圈）- 幣託U - CRO卡
 // 總負債
 allDebt = DEBT * twdEx
@@ -1036,7 +1018,9 @@ cryptoRebalance = totalAssets * cryptoRatio - totalCryptoAssets
 [remainBNB, pnlBNB, pnlPercentBNB, nowBNBRatio] = calculateAssetValue(pBNB, MY_BNB_POSITION, MY_BNB_COST, totalAssets, usdEx)
 // 其他資產
 //[remainOther, pnlOther, pnlPercentOther, nowOthersRatio] = lib.calByRemain(otherCryptoASssets * usdEx, MY_OTHER_CRYPTO_COST * usdEx, totalAssets)
-[remainUSDT, pnlUSDT, pnlPercentUSDT, nowUSDTRatio] = lib.calByRemain(EXCHANGE_USD * usdEx, EXCHANGE_USD * usdEx, totalAssets)
+// 現金明細比例（台幣 / 美金）
+cashTwdRatioNow = totalCashTwd / totalAssets
+cashUsdRatioNow = totalCashUsd / totalAssets
 
 // ============================================================================
 // 步驟 10：準備顯示資訊
@@ -1064,7 +1048,7 @@ color stockColor = math.abs(twStockDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_
 // 幣圈再平衡
 float cryptoDiffRatio = lib.getRatioDiff(cryptoRatioNow, cryptoRatio)
 string cryptoDiffText = fm.fString(cryptoRebalance, 0) + "\t【" + fm.ratioString(cryptoDiffRatio) + "】"
-string cryptoPNLText = getRebalanceText("MAX ", BITO_AVAL * usdEx, cryptoRebalance)
+string cryptoPNLText = getRebalanceText("MAX ", (BITO_AVAL + EXCHANGE_USD) * usdEx, cryptoRebalance)
 color cryptoColor = math.abs(cryptoDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_TEXT_COLOR
 
 // ============================================================================
@@ -1185,6 +1169,25 @@ if barstate.islast
         cell(4, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
         cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
         nextRow := nextRow + 1
+
+        if INPUT_DISPLAY_CASH_DETAIL
+            // 台幣（銀行）
+            cell(0, nextRow, TWD, DF_TEXT_COLOR, DF_CELL_COLOR)
+            cell(1, nextRow, fm.ratioString(cashTwdRatioNow), DF_TEXT_COLOR, DF_CELL_COLOR)
+            cell(2, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
+            cell(3, nextRow, fm.fString(totalCashTwd, 0), DF_TEXT_COLOR, DF_CELL_COLOR)
+            cell(4, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
+            cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
+            nextRow := nextRow + 1
+            // 美金（幣託 + 交易所 USDT）
+            cell(0, nextRow, USD, DF_TEXT_COLOR, DF_CELL_COLOR)
+            cell(1, nextRow, fm.ratioString(cashUsdRatioNow), DF_TEXT_COLOR, DF_CELL_COLOR)
+            cell(2, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
+            cell(3, nextRow, fm.fString(totalCashUsd, 0), DF_TEXT_COLOR, DF_CELL_COLOR)
+            cell(4, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
+            cell(5, nextRow, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
+            nextRow := nextRow + 1
+
         nextRow := cellBlank(nextRow)
 
     //-----------------台股-----------------//
@@ -1220,8 +1223,7 @@ if barstate.islast
          remainETH, pnlETH, pnlPercentETH, nowETHRatio, ethRebalaneText, ethDiffRatio, titleETHRatio,
          remainADA, pnlADA, pnlPercentADA, nowADARatio, adaRebalaneText, adaDiffRatio, titleADARatio,
          remainBNB, pnlBNB, pnlPercentBNB, nowBNBRatio, bnbRebalaneText, bnbDiffRatio, titleBNBRatio,
-         remainCRO, pnlCRO, pnlPercentCRO, nowCRORatio, croRebalaneText, croDiffRatio, titleCRORatio,
-         remainUSDT, pnlUSDT, pnlPercentUSDT, nowUSDTRatio
+         remainCRO, pnlCRO, pnlPercentCRO, nowCRORatio, croRebalaneText, croDiffRatio, titleCRORatio
          )
         sortedAssets = sortAssetsByRemain(cryptoAssets)
         

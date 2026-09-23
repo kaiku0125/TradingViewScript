@@ -370,7 +370,10 @@ def calculate_market_snapshot(payload: dict, pnl_content: str) -> MarketSnapshot
     positions["0050"] = position_bought_0050 - position_sold_0050
 
     usd_twd = prices["USD/TWD"]
-    total_cash_twd = bank1 + bank2 + bank3 + bank4 + bito * usd_twd
+    # Exchange USDT balances are treated as USD cash (not crypto exposure),
+    # mirroring totalCash / allCost in PNLRebalance.
+    exchange_usd = sum(float(value) for value in usd_snapshot.values())
+    total_cash_twd = bank1 + bank2 + bank3 + bank4 + (bito + exchange_usd) * usd_twd
     total_stocks_assets_twd = prices["0050"] * positions["0050"]
     main_crypto_assets_usd = 0.0
     unrealized_pnl_twd: Dict[str, float] = {}
@@ -382,10 +385,9 @@ def calculate_market_snapshot(payload: dict, pnl_content: str) -> MarketSnapshot
         main_crypto_assets_usd += remain_usd
         unrealized_pnl_twd[symbol] = (remain_usd - costs[symbol]) * usd_twd
 
-    exchange_usd = sum(float(value) for value in usd_snapshot.values())
-    total_crypto_assets_twd = (main_crypto_assets_usd + exchange_usd) * usd_twd
+    total_crypto_assets_twd = main_crypto_assets_usd * usd_twd
     total_assets_twd = total_cash_twd + total_stocks_assets_twd + total_crypto_assets_twd
-    all_cost_twd = all_stocks_cost + all_crypto_cost - bito * usd_twd
+    all_cost_twd = all_stocks_cost + all_crypto_cost - (bito + exchange_usd) * usd_twd
     speculation_pnl_twd = total_stocks_assets_twd + total_crypto_assets_twd - all_cost_twd + visa * usd_twd
     speculation_pnl_ratio = speculation_pnl_twd / all_cost_twd
 
@@ -596,7 +598,7 @@ def build_summary_lines(
         [
             "",
             "Key inputs:",
-            f"Exchange USD balance: {format_price(snapshot.exchange_usd)} USD",
+            f"Exchange USDT (counted as cash): {format_price(snapshot.exchange_usd)} USD",
             f"Cash: {snapshot.cash_twd:,.0f} TWD",
             f"ALL_CRYPTO_COST = {format_price(parse_numeric_constant(pnl_content, 'ALL_CRYPTO_COST'))}",
             f"ALL_STOCKS_COST = {format_price(parse_numeric_constant(pnl_content, 'ALL_STOCKS_COST'))}",
@@ -671,7 +673,7 @@ def build_notion_weekly_review_lines(
         "",
         "2. 本週最大獲利來源（系統填入）",
         f"- 最大獲利來源：{biggest_profit_source_text}",
-        f"- 交易所 USD 餘額：{format_price(snapshot.exchange_usd)} USD",
+        f"- 交易所 USDT（計入現金）：{format_price(snapshot.exchange_usd)} USD",
         f"- 現金部位：{snapshot.cash_twd:,.0f} TWD",
         "",
         "3. 本週最大失誤（手動填寫）",
