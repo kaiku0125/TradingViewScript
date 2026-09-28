@@ -284,36 +284,36 @@ INPUT_CRYPTO_COM_VISA = input.float(defval = VISA_AVAL, title = "幣圈Visa(U)",
 // 輸入參數 - 資產設定
 // ============================================================================
 // 台股
-IS_0050_DISPLAY = input.bool(defval = true, title = "0050 :", inline = INLINE_0050, group = GROUP_ASSETS)
+IS_0050_DISPLAY = input.bool(defval = true, title = "0050", inline = INLINE_0050, group = GROUP_ASSETS)
 MY_0050_POSITION = input.float(defval = INPUT_0050_POSITION, title = POSITION_TITLE, inline = INLINE_0050, group = GROUP_ASSETS)
 MY_0050_COST = input.float(defval = INPUT_0050_COST, title = STOCK_COST_TITLE, inline = INLINE_0050, group = GROUP_ASSETS)
 
 // 加密貨幣 - 主要
-IS_BTC_DISPLAY = input.bool(defval = true, title = "BTC :", inline = INLINE_BTC, group = GROUP_ASSETS)
+IS_BTC_DISPLAY = input.bool(defval = true, title = "BTC", inline = INLINE_BTC, group = GROUP_ASSETS)
 // MY_BTC_POSITION = input.float(defval = INPUT_BTC_POSITION, title = POSITION_TITLE, inline = INLINE_BTC, group = GROUP_ASSETS)
 // MY_BTC_COST = input.float(defval = INPUT_BTC_COST, title = CRYPTO_COST_TITLE, inline = INLINE_BTC, group = GROUP_ASSETS)
 MY_BTC_POSITION = INPUT_BTC_POSITION
 MY_BTC_COST = INPUT_BTC_COST
 
-IS_ETH_DISPLAY = input.bool(defval = true, title = "ETH :", inline = INLINE_ETH, group = GROUP_ASSETS)
+IS_ETH_DISPLAY = input.bool(defval = true, title = "ETH", inline = INLINE_ETH, group = GROUP_ASSETS)
 // MY_ETH_POSITION = input.float(defval = INPUT_ETH_POSITION, title = POSITION_TITLE, inline = INLINE_ETH, group = GROUP_ASSETS)
 // MY_ETH_COST = input.float(defval = INPUT_ETH_COST, title = CRYPTO_COST_TITLE, inline = INLINE_ETH, group = GROUP_ASSETS)
 MY_ETH_POSITION = INPUT_ETH_POSITION
 MY_ETH_COST = INPUT_ETH_COST
 
-IS_ADA_DISPLAY = input.bool(defval = true, title = "ADA :", inline = INLINE_ADA, group = GROUP_ASSETS)
+IS_ADA_DISPLAY = input.bool(defval = true, title = "ADA", inline = INLINE_ADA, group = GROUP_ASSETS)
 // MY_ADA_POSITION = input.float(defval = INPUT_ADA_POSITION, title = POSITION_TITLE, inline = INLINE_ADA, group = GROUP_ASSETS)
 // MY_ADA_COST = input.float(defval = ADA_COST, title = CRYPTO_COST_TITLE, inline = INLINE_ADA, group = GROUP_ASSETS)
 MY_ADA_POSITION = INPUT_ADA_POSITION
 MY_ADA_COST = INPUT_ADA_COST
 
-IS_BNB_DISPLAY = input.bool(defval = true, title = "BNB :", inline = INLINE_BNB, group = GROUP_ASSETS)
+IS_BNB_DISPLAY = input.bool(defval = true, title = "BNB", inline = INLINE_BNB, group = GROUP_ASSETS)
 // MY_BNB_POSITION = input.float(defval = INPUT_BNB_POSITION, title = POSITION_TITLE, inline = INLINE_BNB, group = GROUP_ASSETS)
 // MY_BNB_COST = input.float(defval = INPUT_BNB_COST, title = CRYPTO_COST_TITLE, inline = INLINE_BNB, group = GROUP_ASSETS)
 MY_BNB_POSITION = INPUT_BNB_POSITION
 MY_BNB_COST = INPUT_BNB_COST
 
-IS_CRO_DISPLAY = input.bool(defval = true, title = "CRO :", inline = INLINE_CRO, group = GROUP_ASSETS)
+IS_CRO_DISPLAY = input.bool(defval = true, title = "CRO", inline = INLINE_CRO, group = GROUP_ASSETS)
 // MY_CRO_POSITION = input.float(defval = INPUT_CRO_POSITION, title = POSITION_TITLE, inline = INLINE_CRO, group = GROUP_ASSETS)
 // MY_CRO_COST = input.float(defval = INPUT_CRO_COST, title = CRYPTO_COST_TITLE, inline = INLINE_CRO, group = GROUP_ASSETS)
 MY_CRO_POSITION = INPUT_CRO_POSITION
@@ -371,6 +371,7 @@ const color DASH_GREEN = #5CDDBA
 const color DASH_RED = #FF8294
 const color DASH_BLUE = #82ADFF
 const color DASH_AMBER = #EABF73
+const color DASH_DEBT = #D9949A
 color DASH_NOTICE = color.new(#29251E, INPUT_DASHBOARD_TRANSPARENCY)
 var color COLOR_MY_WHITE = DASH_TEXT
 var color COLOR_BG = DASH_PANEL
@@ -1138,10 +1139,28 @@ dashboardDiff(float value) =>
 dashboardPnlColor(float value) =>
     na(value) or value == 0 ? DASH_TEXT : value > 0 ? DASH_GREEN : DASH_RED
 
-dashboardPnlText(float value, float ratio) =>
+dashboardPnlEmoji(float ratio) =>
     [stateIcon, stateColor] = lib.ratioStateJudge(na(ratio) ? 0 : ratio * 100, DASH_GREEN)
-    string suffix = na(value) or na(ratio) or stateIcon == lib.DISPLAY_NONE() ? "" : " " + stateIcon
+    stateIcon == lib.DISPLAY_NONE() ? "" : stateIcon
+
+dashboardPnlText(float value, float ratio) =>
+    string stateIcon = dashboardPnlEmoji(ratio)
+    string suffix = na(value) or na(ratio) or stateIcon == "" ? "" : " " + stateIcon
     dashboardSigned(value) + suffix
+
+dashboardPerformanceText(float value, float ratio, bool showEmoji = true) =>
+    string stateIcon = dashboardPnlEmoji(ratio)
+    string signedRatio = na(ratio) ? "—" : (ratio > 0 ? "+" : "") + str.tostring(ratio * 100, "0.0") + "%"
+    dashboardSigned(value) + "（" + signedRatio + "）" + (not showEmoji or na(value) or na(ratio) or stateIcon == "" ? "" : " " + stateIcon)
+
+dashboardCashHint() =>
+    "可用現金已包含交易所美金餘額，" + (INPUT_DISPLAY_CURRENCY == TWD ? "並折算為台幣計入。" : "依目前貨幣設定以美金計入；選擇台幣時折算為台幣。")
+
+dashboardTotalAssetsHint() =>
+    "總資產組成：現金 + 台股 + 加密資產"
+
+dashboardDebtHint() =>
+    "總負債項目：信貸"
 
 dashboardAssetName(string name) =>
     switch name
@@ -1159,13 +1178,19 @@ type DashboardColumnSpec
     string title
     int cells
 
+// 保留雙層模式：改為 true 即可恢復金額下方的持有量與對應合併列。
+const bool DASHBOARD_STACKED_HOLDINGS = false
+
+dashboardDetailStride() =>
+    DASHBOARD_STACKED_HOLDINGS ? 3 : 2
+
 var array<DashboardColumnSpec> DASHBOARD_COLUMNS = array.from(
- DashboardColumnSpec.new("asset", "資產", 6),
- DashboardColumnSpec.new("weight", "當前 / 目標", 8),
- DashboardColumnSpec.new("deviation", "偏離", 5),
+ DashboardColumnSpec.new("asset", "資產", 10),
+ DashboardColumnSpec.new("weight", "當前 / 目標", 7),
+ DashboardColumnSpec.new("deviation", "偏離", 4),
  DashboardColumnSpec.new("rebalance", "再平衡", 9),
- DashboardColumnSpec.new("value", "資產總值", 7),
- DashboardColumnSpec.new("pnl", "損益", 7),
+ DashboardColumnSpec.new("value", "資產總值", 6),
+ DashboardColumnSpec.new("pnl", "損益", 6),
  DashboardColumnSpec.new("realized", "已結盈虧", 6))
 
 dashboardValidateColumns() =>
@@ -1220,19 +1245,19 @@ dashboardSpan(int first, int last, int row) =>
 dashboardMergeDetailRow(int row, bool detail = false) =>
     int col = 0
     for spec in DASHBOARD_COLUMNS
-        if detail and spec.key != "value"
+        if detail and DASHBOARD_STACKED_HOLDINGS and spec.key != "value"
             table.merge_cells(displayTabel, col, row, col + spec.cells - 1, row + 1)
         else
             if spec.cells > 1
                 dashboardSpan(col, col + spec.cells - 1, row)
-                if detail
+                if detail and DASHBOARD_STACKED_HOLDINGS
                     dashboardSpan(col, col + spec.cells - 1, row + 1)
         col += spec.cells
 
 // The 48 equally-sized cells in row 8 fix the grid width. Cards span 11 cells
 // plus a gutter; detail widths are defined by dashboardColumn().
 dashboardInitOverview(int detailCount) =>
-    int lastRow = 14 + detailCount * 3
+    int lastRow = 14 + detailCount * dashboardDetailStride()
     for row = 0 to lastRow
         float rowHeight = dashboardFont() * 0.25
         if row == 1 or row == 6 or row == 10 or row == lastRow - 1
@@ -1245,9 +1270,9 @@ dashboardInitOverview(int detailCount) =>
             rowHeight := dashboardFont() * 0.2
         else if row == 8
             rowHeight := 1.5
-        else if row == 12 or (row >= 15 and (row - 15) % 3 == 0)
+        else if row == 12 or (row >= 13 and (row - 13) % dashboardDetailStride() == dashboardDetailStride() - 1)
             rowHeight := 0.15
-        else if row >= 14 and (row - 14) % 3 == 0
+        else if DASHBOARD_STACKED_HOLDINGS and row >= 14 and (row - 14) % 3 == 0
             rowHeight := 0.01
         for col = 0 to 47
             table.cell(displayTabel, col, row, "", bgcolor = DASH_BG, text_size = 1, height = rowHeight)
@@ -1266,29 +1291,41 @@ dashboardInitOverview(int detailCount) =>
     dashboardMergeDetailRow(11)
     dashboardSpan(0, 47, 12)
     for item = 0 to detailCount - 1
-        int row = 13 + item * 3
+        int row = 13 + item * dashboardDetailStride()
         dashboardMergeDetailRow(row, true)
-        dashboardSpan(0, 47, row + 2)
+        dashboardSpan(0, 47, row + dashboardDetailStride() - 1)
     dashboardSpan(0, 47, lastRow)
 
-dashboardCard(int card, string title, string value, string subtitle, color accent, color valueColor) =>
+dashboardCard(int card, string title, string value, string subtitle, color accent, color valueColor, string hint = "") =>
     int col = card * 12
     dashboardText(col, 2, "", accent, accent, 1, rowHeight = 0.35)
-    dashboardText(col, 3, "  " + title, DASH_MUTED, DASH_PANEL, dashboardFont())
-    dashboardText(col, 4, " " + value, valueColor, DASH_PANEL, dashboardFont() + 10)
-    dashboardText(col, 5, "  " + subtitle, DASH_MUTED, DASH_PANEL, math.max(9, dashboardFont() - 3))
+    dashboardText(col, 3, title, accent, DASH_PANEL, dashboardFont(), text.align_center, hint)
+    dashboardText(col, 4, value, valueColor, DASH_PANEL, dashboardFont() + 10, text.align_center, hint)
+    dashboardText(col, 5, subtitle == "" ? "" : "  " + subtitle, DASH_MUTED, DASH_PANEL, math.max(9, dashboardFont() - 3), hint = hint)
+
+// Separate function retained for the optional two-tier value layout.
+dashboardValueStacked(int row, float value, float holding, string holdingUnit, string valueHint) =>
+    bool hasHolding = holdingUnit != ""
+    string holdingText = na(holding) ? "— " + holdingUnit : (holding != 0 and math.abs(holding) < 0.00000001 ? str.tostring(holding) : str.tostring(holding, "#,##0.########")) + " " + holdingUnit
+    dashboardText(dashboardColumn("value"), row, dashboardNumber(value), DASH_TEXT, DASH_PANEL, dashboardFont(), text.align_center, valueHint)
+    dashboardText(dashboardColumn("value"), row + 1, hasHolding ? holdingText : "", DASH_MUTED, DASH_PANEL, math.max(8, dashboardFont() - 3), text.align_center, valueHint, rowHeight = hasHolding ? dashboardFont() * 0.18 : 0.01)
+
+dashboardHoldingInline(float holding) =>
+    na(holding) ? "—" : holding != 0 and math.abs(holding) < 0.00000001 ? str.tostring(holding) : holding != 0 and math.abs(holding) < 0.0001 ? str.tostring(holding, "#,##0.########") : str.tostring(holding, "#,##0.####")
 
 dashboardDetail(int row, string name, float ratio, float target, float value, float pnl, float pnlPercent, float rebalance, float realized, string actionHint = "", bool child = false, float judgeRatio = na, float holding = na, string holdingUnit = "") =>
     string ratioText = dashboardRatio(ratio) + (na(target) ? "" : " / " + dashboardRatio(target))
     string pnlHint = "持倉損益：" + dashboardSigned(pnl) + " " + INPUT_DISPLAY_CURRENCY + "\n持倉報酬率：" + dashboardRatio(pnlPercent) + "\n已結盈虧：" + dashboardSigned(realized) + " " + INPUT_DISPLAY_CURRENCY
-    dashboardText(dashboardColumn("asset"), row, dashboardAssetName(name), child ? DASH_MUTED : DASH_TEXT, DASH_PANEL, dashboardFont(), text.align_center)
+    string holdingHint = holdingUnit == "" ? "" : "持有量：" + str.tostring(holding) + " " + holdingUnit
+    string assetText = dashboardAssetName(name) + (not DASHBOARD_STACKED_HOLDINGS and holdingUnit != "" ? " · " + dashboardHoldingInline(holding) + (holdingUnit == "股" ? " 股" : "") : "")
+    dashboardText(dashboardColumn("asset"), row, (child ? "  " : "") + assetText, child ? DASH_MUTED : DASH_TEXT, DASH_PANEL, dashboardFont(), text.align_left, holdingHint)
     dashboardText(dashboardColumn("weight"), row, ratioText, DASH_TEXT, DASH_PANEL, dashboardFont(), text.align_center)
     dashboardText(dashboardColumn("deviation"), row, dashboardDiff(ratio - target), DASH_TEXT, DASH_PANEL, dashboardFont(), text.align_center)
-    bool hasHolding = holdingUnit != ""
-    string holdingText = na(holding) ? "— " + holdingUnit : (holding != 0 and math.abs(holding) < 0.00000001 ? str.tostring(holding) : str.tostring(holding, "#,##0.########")) + " " + holdingUnit
-    string valueHint = "資產總值：" + dashboardNumber(value) + " " + INPUT_DISPLAY_CURRENCY + (hasHolding ? "\n持有量：" + str.tostring(holding) + " " + holdingUnit : "")
-    dashboardText(dashboardColumn("value"), row, dashboardNumber(value), DASH_TEXT, DASH_PANEL, dashboardFont(), text.align_center, valueHint)
-    dashboardText(dashboardColumn("value"), row + 1, hasHolding ? holdingText : "", DASH_MUTED, DASH_PANEL, math.max(8, dashboardFont() - 3), text.align_center, valueHint, rowHeight = hasHolding ? dashboardFont() * 0.18 : 0.01)
+    string valueHint = "資產總值：" + dashboardNumber(value) + " " + INPUT_DISPLAY_CURRENCY + (holdingUnit != "" ? "\n" + holdingHint : "")
+    if DASHBOARD_STACKED_HOLDINGS
+        dashboardValueStacked(row, value, holding, holdingUnit, valueHint)
+    else
+        dashboardText(dashboardColumn("value"), row, dashboardNumber(value), DASH_TEXT, DASH_PANEL, dashboardFont(), text.align_center, valueHint)
     dashboardText(dashboardColumn("pnl"), row, dashboardPnlText(pnl, pnlPercent), dashboardPnlColor(pnl), DASH_PANEL, dashboardFont(), text.align_center, pnlHint)
     dashboardText(dashboardColumn("realized"), row, dashboardSigned(realized), dashboardPnlColor(realized), DASH_PANEL, dashboardFont(), text.align_center, "已結盈虧（" + INPUT_DISPLAY_CURRENCY + "）")
     string actionText = dashboardActionText(rebalance, actionHint, child)
@@ -1302,8 +1339,8 @@ dashboardDetail(int row, string name, float ratio, float target, float value, fl
     if child and not na(judgeRatio)
         rebalanceHint += "\n調整比例：" + dashboardRatio(relativeAdjustment) + " / 提示門檻：" + dashboardRatio(judgeRatio)
     dashboardText(dashboardColumn("rebalance"), row, actionText, actionColor, DASH_PANEL, dashboardFont(), text.align_center, rebalanceHint)
-    dashboardText(0, row + 2, "", DASH_LINE, DASH_LINE, 1, rowHeight = 0.15)
-    row + 3
+    dashboardText(0, row + dashboardDetailStride() - 1, "", DASH_LINE, DASH_LINE, 1, rowHeight = 0.15)
+    row + dashboardDetailStride()
 
 dashboardMiniRow(int row, string title, string value, color foreground, string hint = "") =>
     dashboardText(0, row, "  " + title, DASH_MUTED, DASH_PANEL, dashboardFont())
@@ -1322,7 +1359,7 @@ if barstate.islast
     if na(displayTabel)
         dashboardValidateColumns()
         // Keep the table backing transparent so cell backgrounds do not stack alpha.
-        displayTabel := table.new(compact ? position.top_right : lib.getTablePosition(INPUT_DISPLAY_POSITION), compact ? 2 : 48, compact ? 12 : 15 + visibleRows * 3, bgcolor = color.new(DASH_BG, 100), frame_width = 0, border_width = 0)
+        displayTabel := table.new(compact ? position.top_right : lib.getTablePosition(INPUT_DISPLAY_POSITION), compact ? 2 : 48, compact ? 12 : 15 + visibleRows * dashboardDetailStride(), bgcolor = color.new(DASH_BG, 100), frame_width = 0, border_width = 0)
         if compact
             for row = 0 to 11
                 for col = 0 to 1
@@ -1334,11 +1371,12 @@ if barstate.islast
 
     if compact
         dashboardText(0, 0, "  資產總覽  ·  " + INPUT_DISPLAY_CURRENCY, DASH_BLUE, DASH_PANEL, dashboardFont())
-        dashboardText(0, 1, "  總資產", DASH_MUTED, DASH_PANEL, dashboardFont())
-        dashboardText(0, 2, " " + dashboardNumber(totalAssets), DASH_TEXT, DASH_PANEL, dashboardFont() + 10)
-        dashboardMiniRow(3, "投資損益", dashboardPnlText(speculationPNL, speculationPNLRatio), dashboardPnlColor(speculationPNL), "投資報酬率 " + dashboardRatio(speculationPNLRatio))
-        dashboardMiniRow(4, "現金", dashboardNumber(totalCash), DASH_BLUE)
-        dashboardMiniRow(5, "總負債", dashboardNumber(allDebt), DASH_AMBER)
+        string totalAssetsHint = dashboardTotalAssetsHint()
+        dashboardText(0, 1, "  總資產", DASH_MUTED, DASH_PANEL, dashboardFont(), hint = totalAssetsHint)
+        dashboardText(0, 2, " " + dashboardNumber(totalAssets), DASH_TEXT, DASH_PANEL, dashboardFont() + 10, hint = totalAssetsHint)
+        dashboardMiniRow(3, "績效損益", dashboardPerformanceText(speculationPNL, speculationPNLRatio, false), dashboardPnlColor(speculationPNL), "投資報酬率 " + dashboardRatio(speculationPNLRatio))
+        dashboardMiniRow(4, "可用現金", dashboardNumber(totalCash), DASH_AMBER, dashboardCashHint())
+        dashboardMiniRow(5, "總負債", dashboardNumber(allDebt), DASH_AMBER, dashboardDebtHint())
         dashboardText(0, 6, "", DASH_LINE, DASH_LINE, 1, rowHeight = 0.2)
         dashboardMiniRow(7, "現金占比", dashboardRatio(cashRatioNow), DASH_BLUE)
         dashboardMiniRow(8, "台股占比", dashboardRatio(twStocksRatioNow), DASH_GREEN)
@@ -1359,10 +1397,10 @@ if barstate.islast
         dashboardText(0, 0, "  資產總覽", DASH_BLUE, DASH_BG, dashboardFont())
         dashboardText(32, 0, "匯率  :  " + INPUT_DISPLAY_CURRENCY + "  ", DASH_MUTED, DASH_BG, dashboardFont(), text.align_right)
         table.cell_set_height(displayTabel, 0, 1, 1.2)
-        dashboardCard(0, "💰 總資產", dashboardNumber(totalAssets), "現金 + 台股 + 加密資產", DASH_BLUE, DASH_TEXT)
-        dashboardCard(1, "投資損益", dashboardPnlText(speculationPNL, speculationPNLRatio), "報酬率 " + dashboardRatio(speculationPNLRatio), DASH_GREEN, dashboardPnlColor(speculationPNL))
-        dashboardCard(2, "可用現金", dashboardNumber(totalCash), "含交易所美金餘額", DASH_BLUE, DASH_BLUE)
-        dashboardCard(3, "總負債", dashboardNumber(allDebt), "信貸", DASH_AMBER, DASH_AMBER)
+        dashboardCard(0, "💰 總資產", dashboardNumber(totalAssets), "", DASH_BLUE, DASH_TEXT, dashboardTotalAssetsHint())
+        dashboardCard(1, "績效損益", dashboardPerformanceText(speculationPNL, speculationPNLRatio), "", DASH_GREEN, dashboardPnlColor(speculationPNL), "投資報酬率 " + dashboardRatio(speculationPNLRatio))
+        dashboardCard(2, "可用現金", dashboardNumber(totalCash), "", DASH_AMBER, DASH_AMBER, dashboardCashHint())
+        dashboardCard(3, "總負債", dashboardNumber(allDebt), "", DASH_DEBT, DASH_DEBT, dashboardDebtHint())
         table.cell_set_height(displayTabel, 0, 6, 1.8)
         dashboardText(0, 7, "  資產配置", DASH_TEXT, DASH_PANEL, dashboardFont())
         dashboardText(32, 7, "目前占比 / 總資產  ", DASH_MUTED, DASH_PANEL, math.max(9, dashboardFont() - 2), text.align_right)
@@ -1377,7 +1415,9 @@ if barstate.islast
         dashboardText(32, 9, "加密資產 " + dashboardRatio(cryptoRatioNow) + "  ", DASH_AMBER, DASH_PANEL, dashboardFont(), text.align_right)
         table.cell_set_height(displayTabel, 0, 10, 1.8)
         for spec in DASHBOARD_COLUMNS
-            dashboardText(dashboardColumn(spec.key), 11, INPUT_DISPLAY_TITLE ? spec.title : "", DASH_MUTED, DASH_PANEL, dashboardFont(), text.align_center)
+            string header = INPUT_DISPLAY_TITLE ? spec.title : ""
+            string headerAlign = spec.key == "asset" ? text.align_left : text.align_center
+            dashboardText(dashboardColumn(spec.key), 11, header, DASH_MUTED, DASH_PANEL, dashboardFont(), headerAlign)
         dashboardText(0, 12, "", DASH_LINE, DASH_LINE, 1, rowHeight = 0.15)
         int nextRow = 13
         if INPUT_DISPLAY_CASH
@@ -1429,7 +1469,7 @@ if barstate.islast
                 nextRow := dashboardDetail(nextRow, name, asset.nowRatio, targetRatio, asset.remain, asset.pnl, asset.pnlPercent, amount, realized, asset.rebalanceText, true, asset.judgeRatio, holding, name)
         if detailCount == 0
             nextRow := dashboardDetail(nextRow, "未顯示明細", na, na, na, na, na, na, na)
-        int footerRow = 14 + visibleRows * 3
+        int footerRow = 14 + visibleRows * dashboardDetailStride()
         table.cell_set_height(displayTabel, 0, footerRow - 1, 1)
         dashboardText(0, footerRow, "  " + INPUT_DISPLAY_CURRENCY + " · 滑過再平衡查看金額與入金提示；滑過損益查看報酬率 · " + currentDate + " " + currentTime + " Taipei", DASH_MUTED, DASH_BG, math.max(9, dashboardFont() - 3), rowHeight = dashboardFont() * 0.2)
     if DEBUG
@@ -1638,7 +1678,7 @@ plot(
  color        =  plotValue > 0 ? colour.LIME_GREEN(70) : colour.FIRE_BRICK(70),
  style        =  plot.style_area,
  linewidth    =  3,
- display      =  display.all
+ display      =  INPUT_DASHBOARD_MODE == "精簡監控" ? display.none : display.all
  )
 
 // getDebugValue(str.format_time(timenow, "yyyy/MM/dd HH:mm:ss", "Asia/Taipei") )
