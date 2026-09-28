@@ -571,15 +571,22 @@ cellBlank(int rowID) =>
 // 計算輔助函數
 // ============================================================================
 
-// 生成再平衡文字（顯示需要入金或提領的金額）
-// bankName : 銀行名稱
-// bankAval : 銀行可用餘額
-// rebalance : 再平衡金額
+// 生成再平衡文字（顯示該平台需要入金 / 免入金 / 賣出後提領的金額）
+// 語意：只回答「這個平台的錢夠不夠買」，多餘現金是否搬回銀行交給「現金」列提示
+//   rebalance > 0 且平台餘額足夠 → 買進 X（免入金）
+//   rebalance > 0 且平台餘額不足 → 入金 X（缺口 − 平台餘額）
+//   rebalance < 0                → 賣出後提領 X
+// bankName : 平台名稱
+// bankAval : 平台可用餘額（台幣）
+// rebalance : 再平衡金額（顯示幣別）
 getRebalanceText(string bankName, float bankAval, float rebalance) =>
     float _rebalance = INPUT_DISPLAY_CURRENCY == TWD ? rebalance : rebalance * pUsd_Twd
-    float diff = _rebalance - bankAval
-    string action =  diff > 0 ? "入金 " : "提領 "
-    string output = bankName + action + fm.fString(math.abs(diff), 0) + "\t" + TWD
+    string output = if _rebalance < 0
+        bankName + "賣出後提領 " + fm.fString(math.abs(_rebalance), 0) + "\t" + TWD
+    else if _rebalance > bankAval
+        bankName + "入金 " + fm.fString(_rebalance - bankAval, 0) + "\t" + TWD
+    else
+        bankName + "買進 " + fm.fString(_rebalance, 0) + "\t" + TWD + "（免入金）"
     output
 
 // 獲取顯示資訊文字和顏色（根據顯示模式）
@@ -1042,13 +1049,13 @@ color cashColor = math.abs(cashDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_TEXT
 // 台股再平衡
 float twStockDiffRatio = lib.getRatioDiff(twStocksRatioNow, twStocksRatio)
 string twStockDiffText = fm.fString(stockRebalance, 0) + "\t【" + fm.ratioString(twStockDiffRatio) + "】"
-string twStockPNLText = getRebalanceText("口袋 ", BANK3_AVAL, stockRebalance)
+string twStockPNLText = getRebalanceText("口袋 ", INPUT_BANK3, stockRebalance)
 color stockColor = math.abs(twStockDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_TEXT_COLOR
 
 // 幣圈再平衡
 float cryptoDiffRatio = lib.getRatioDiff(cryptoRatioNow, cryptoRatio)
 string cryptoDiffText = fm.fString(cryptoRebalance, 0) + "\t【" + fm.ratioString(cryptoDiffRatio) + "】"
-string cryptoPNLText = getRebalanceText("MAX ", (BITO_AVAL + EXCHANGE_USD) * usdEx, cryptoRebalance)
+string cryptoPNLText = getRebalanceText("MAX ", (INPUT_BITO + EXCHANGE_USD) * pUsd_Twd, cryptoRebalance)
 color cryptoColor = math.abs(cryptoDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_TEXT_COLOR
 
 // ============================================================================
