@@ -250,7 +250,9 @@ INPUT_DISPLAY_TWSTOCK = input.bool(defval = true, title = "台股", inline = "00
 INPUT_DISPLAY_CRYPTO = input.bool(defval = true, title = "幣圈", inline = "00", group = GROUP_SETTING)
 INPUT_DISPLAY_ASSETS_CHART = input.bool(defval = true, title = "資產走勢線圖", group = GROUP_SETTING)
 INPUT_SMOOTHING_ENABLED = input.bool(defval = true, title = "平滑化", group = GROUP_SETTING)
-INPUT_SMOOTHING_PERIOD = input.int(defval = 10, title = "平滑化週期", minval = 1, maxval = 50, group = GROUP_SETTING)
+INPUT_SMOOTHING_PERIOD = input.int(defval = 5, title = "平滑化週期", minval = 1, maxval = 50, group = GROUP_SETTING)
+INPUT_CHART_INTERPOLATE = input.bool(defval = true, title = "紀錄間線性內插", tooltip = "兩筆損益紀錄之間以直線連接，避免前向填充造成的階梯與尖峰。", group = GROUP_SETTING)
+INPUT_CHART_LABELS = input.bool(defval = true, title = "顯示走勢圖標籤（最高 / 最低）", tooltip = "在走勢圖上標示歷史最高與最低損益紀錄；最新值請看摘要卡的績效損益。", group = GROUP_SETTING)
 INPUT_DISPLAY_CURRENCY = input.string(defval = TWD, title = "貨幣顯示", options = [TWD, USD], group = GROUP_SETTING)
 INPUT_DISPLAY_SIZE = input.string(defval = SIZE_LARGE, title = "表格大小", options = [SIZE_TINY, SIZE_SMALL, SIZE_NORMAL, SIZE_LARGE], group = GROUP_SETTING)
 INPUT_DISPLAY_POSITION = input.string(defval = MIDDLE_CENTER, title = "表格位置", options = [MIDDLE_CENTER, BOTTOM_CENTER], group = GROUP_SETTING)
@@ -429,6 +431,17 @@ var float totalAssets = 0              // 總資產
 var float recordAssetsVariation = 0    // 記錄的資產變化（用於圖表）
 var float filledVariation = na         // 前向填充後的資產變化（用於平滑化）
 var float smoothedVariation = na       // 平滑化後的資產變化（用於圖表）
+var float interpolatedVariation = na   // 紀錄間線性內插後的資產變化（用於平滑化）
+var float chartPrevValue = na          // 最近一筆命中的損益紀錄值
+var int chartPrevTime = na             // 最近一筆命中的損益紀錄時間
+var float chartHighValue = na          // 歷史最高損益紀錄
+var int chartHighBar = na
+var int chartHighTime = na
+var float chartLowValue = na           // 歷史最低損益紀錄
+var int chartLowBar = na
+var int chartLowTime = na
+var label chartHighLabel = na
+var label chartLowLabel = na
 
 // ============================================================================
 // 表格變數 - 用於顯示資訊的表格
@@ -1486,6 +1499,16 @@ if array.size(rdArray) != 0
         // 遇到新的有效數據點，更新值
         recordAssetsVariation := temp.mNowTotal
         filledVariation := temp.mNowTotal
+        chartPrevValue := temp.mNowTotal
+        chartPrevTime := time
+        if na(chartHighValue) or temp.mNowTotal > chartHighValue
+            chartHighValue := temp.mNowTotal
+            chartHighBar := bar_index
+            chartHighTime := time
+        if na(chartLowValue) or temp.mNowTotal < chartLowValue
+            chartLowValue := temp.mNowTotal
+            chartLowBar := bar_index
+            chartLowTime := time
         if array.size(rdArray) != 1
             array.shift(rdArray)
     // 如果沒有新數據點，filledVariation 會自動保持上一個值（var 變數的特性）
@@ -1494,18 +1517,23 @@ else
     if na(filledVariation) and recordAssetsVariation != 0
         filledVariation := recordAssetsVariation
 
+// 紀錄間線性內插：以上一筆命中紀錄與下一筆待命中紀錄的時間比例取值，最後一筆之後維持不變
+interpolatedVariation := filledVariation
+if INPUT_CHART_INTERPOLATE and not na(chartPrevValue) and array.size(rdArray) > 0
+    RecordData nextRecord = array.get(rdArray, 0)
+    int nextRecordTime = timestamp("Asia/Taipei", nextRecord.mYear, nextRecord.mMonth, nextRecord.mDay, 0, 0)
+    if nextRecordTime > chartPrevTime and time < nextRecordTime
+        float progress = math.min(1.0, math.max(0.0, (time - chartPrevTime) / (nextRecordTime - chartPrevTime)))
+        interpolatedVariation := chartPrevValue + (nextRecord.mNowTotal - chartPrevValue) * progress
+
 // 計算移動平均平滑化（需要在條件塊外調用以保持一致性）
-smoothedVariationCalc = ta.sma(filledVariation, INPUT_SMOOTHING_PERIOD)
-if INPUT_SMOOTHING_ENABLED and not na(filledVariation)
+smoothedVariationCalc = ta.sma(interpolatedVariation, INPUT_SMOOTHING_PERIOD)
+if INPUT_SMOOTHING_ENABLED and not na(interpolatedVariation)
     smoothedVariation := smoothedVariationCalc
 else
     smoothedVariation := na
 
 if INPUT_DISPLAY_ASSETS_CHART
-    // 初始化基準線
-    if bar_index == 1
-        line.new(x1 = bar_index, y1 = 0, x2 = bar_index + 1, y2 = 0, extend = extend.both, color = colour.ANTIQUE_WHITE(70), width = 4)
-
     // 初始化歷史數據（測試用數據，僅在 rdArray 為空時執行）
     if array.size(rdArray) == 0
         array.push(rdArray, newData(2022, 5, 28, 5161))
@@ -1671,15 +1699,73 @@ if INPUT_DISPLAY_ASSETS_CHART
         array.push(rdArray, newData(2026, 9, 28, 42703)) //1.40%
 
 // 選擇要繪製的值（平滑化或原始值）
-plotValue = INPUT_SMOOTHING_ENABLED and not na(smoothedVariation) ? smoothedVariation : (not na(filledVariation) ? filledVariation : recordAssetsVariation)
+plotValue = INPUT_SMOOTHING_ENABLED and not na(smoothedVariation) ? smoothedVariation : (not na(interpolatedVariation) ? interpolatedVariation : recordAssetsVariation)
 
-plot(
+// 走勢圖：線條用面板色票，面積由線往 0 軸淡出，0 軸為細虛線
+bool chartVisible = INPUT_DISPLAY_ASSETS_CHART and INPUT_DASHBOARD_MODE != "精簡監控"
+bool chartPositive = plotValue >= 0
+color chartLineColor = chartPositive ? DASH_GREEN : DASH_RED
+color chartFillStrong = color.new(chartLineColor, 72)
+color chartFillFaint = color.new(chartLineColor, 97)
+
+chartLine = plot(
  series       =  plotValue,
- color        =  plotValue > 0 ? colour.LIME_GREEN(70) : colour.FIRE_BRICK(70),
- style        =  plot.style_area,
- linewidth    =  3,
- display      =  INPUT_DASHBOARD_MODE == "精簡監控" ? display.none : display.all
+ title        =  "損益走勢",
+ color        =  color.new(chartLineColor, 15),
+ linewidth    =  2,
+ display      =  chartVisible ? display.all : display.none
  )
+chartBase = plot(
+ series       =  0,
+ title        =  "損益基準",
+ color        =  color.new(DASH_LINE, 100),
+ display      =  display.none
+ )
+fill(
+ plot1        =  chartLine,
+ plot2        =  chartBase,
+ top_value    =  chartPositive ? plotValue : 0,
+ bottom_value =  chartPositive ? 0 : plotValue,
+ top_color    =  chartPositive ? chartFillStrong : chartFillFaint,
+ bottom_color =  chartPositive ? chartFillFaint : chartFillStrong,
+ title        =  "損益走勢填色",
+ display      =  chartVisible ? display.all : display.none
+ )
+hline(
+ price        =  0,
+ title        =  "損益 0 軸",
+ color        =  color.new(DASH_LINE, 20),
+ linestyle    =  hline.style_dotted,
+ linewidth    =  1,
+ display      =  chartVisible ? display.all : display.none
+ )
+
+// 歷史最高 / 最低損益紀錄標籤（以原始紀錄值與命中的 K 棒定位）
+chartLabelText(string prefix, float value, int labelTime) =>
+    prefix + " " + (value >= 0 ? "+" : "-") + str.tostring(math.abs(value), "#,##0") + "\n" + str.format_time(labelTime, "yyyy/MM/dd", "Asia/Taipei")
+
+if barstate.islast
+    bool showChartLabels = chartVisible and INPUT_CHART_LABELS
+    if showChartLabels and not na(chartHighValue)
+        string highText = chartLabelText("最高", chartHighValue, chartHighTime)
+        if na(chartHighLabel)
+            chartHighLabel := label.new(x = chartHighBar, y = chartHighValue, text = highText, style = label.style_label_down, textcolor = DASH_GREEN, color = color.new(DASH_PANEL, 20), size = size.small)
+        else
+            label.set_xy(chartHighLabel, chartHighBar, chartHighValue)
+            label.set_text(chartHighLabel, highText)
+    else if not na(chartHighLabel)
+        label.delete(chartHighLabel)
+        chartHighLabel := na
+    if showChartLabels and not na(chartLowValue)
+        string lowText = chartLabelText("最低", chartLowValue, chartLowTime)
+        if na(chartLowLabel)
+            chartLowLabel := label.new(x = chartLowBar, y = chartLowValue, text = lowText, style = label.style_label_up, textcolor = DASH_RED, color = color.new(DASH_PANEL, 20), size = size.small)
+        else
+            label.set_xy(chartLowLabel, chartLowBar, chartLowValue)
+            label.set_text(chartLowLabel, lowText)
+    else if not na(chartLowLabel)
+        label.delete(chartLowLabel)
+        chartLowLabel := na
 
 // getDebugValue(str.format_time(timenow, "yyyy/MM/dd HH:mm:ss", "Asia/Taipei") )
 
