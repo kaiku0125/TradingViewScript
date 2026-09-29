@@ -65,7 +65,7 @@
 - 自動生成持倉／USD／現金負債區與 `rdArray` 歷史資料沒有被版型修改碰觸；週同步與手動 `/sync` 的入口和結果維持一致。
 - Pine v6 在 TradingView 編譯成功，兩種模式實際截圖與參考方向接近，金額和提醒在常用圖表尺寸下可讀。
 
-目前已建立獨立預覽檔 `pnlRebalanceRefactor`，供比較兩種版型；正式 `PNLRebalance` 與同步流程尚未修改。預覽檔內的持倉、USD、現金與負債資料是建立當時的快照，不會由現有同步器自動更新。若日後改到工作流程、觸發方式或生成區規則，依 `AGENTS.md` 同步更新其文件。
+**2026-09-29 已完成**：預覽檔 `pnlRebalanceRefactor` 的內容已取代正式 `PNLRebalance`，預覽檔已刪除。同步流程（持倉、損益、每週同步）沿用 `--pnl-file` 預設值，因生成區標記、常數與 `rdArray` 區塊未變，腳本無需修改；已用暫存副本驗證新增日與同日覆寫、常數解析皆正常。舊版畫面可由 `git show ee0dce6:PNLRebalance` 取得。
 
 ## 預覽版視覺修正
 
@@ -83,10 +83,10 @@
 
 ## 欄位順序設定
 
-`pnlRebalanceRefactor` 的 `DASHBOARD_COLUMNS` 是唯一的明細欄位設定。每筆 `DashboardColumnSpec.new(key, title, cells)` 依序定義資料識別、欄名及欄寬；移動整筆設定即可改變顯示順序，欄名、內容、顏色、tooltip 與欄寬會一起移動。保留七個唯一 key，欄寬合計為 48。新增資料欄位需要另行補上 renderer，並非只新增欄名。
+`PNLRebalance` 的 `DASHBOARD_COLUMNS` 是唯一的明細欄位設定。每筆 `DashboardColumnSpec.new(key, title, cells)` 依序定義資料識別、欄名及欄寬；移動整筆設定即可改變顯示順序，欄名、內容、顏色、tooltip 與欄寬會一起移動。保留七個唯一 key，欄寬合計為 48。新增資料欄位需要另行補上 renderer，並非只新增欄名。
 
 目前順序：資產 → 目前／目標 → 偏離 → 再平衡 → 資產價值 → 損益 → 已結盈虧。排序設定不影響摘要卡片、配置條及精簡模式。
 
 持有量改為在「資產」欄代號旁同列呈現，例如 `₿ BTC · 0.3762`、`⟠ ETH · 7`、`0050 · 2,430 股`。數量使用實際 MY_*_POSITION，加千分位、最多四位小數；極小持倉增加精度避免顯示為零，tooltip 保留詳細數量。現金及分類合計不加持有量。「資產總值」恢復單行金額，資產欄加寬。預設每筆明細只有內容列與分隔列。
 
-保留 `dashboardValueStacked()` 雙層呈現函式；將 `DASHBOARD_STACKED_HOLDINGS` 改為 `true` 可恢復金額下方顯示持有量，列數、合併儲存格與頁尾位置會一起切換。TradingView 編譯與視覺驗收待完成。
+保留 `dashboardValueStacked()` 雙層呈現函式；將 `DASHBOARD_STACKED_HOLDINGS` 改為 `true` 可恢復金額下方顯示持有量，列數、合併儲存格與頁尾位置會一起切換。TradingView 編譯與視覺驗收已完成。
