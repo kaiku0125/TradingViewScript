@@ -244,6 +244,7 @@ var float INPUT_BNB_COST = math.ceil(BNB_COST * (1 - (BNB_POSITION_SOLD / BNB_PO
 INPUT_DASHBOARD_MODE = input.string(defval = "資產總覽", title = "Dashboard 模式", options = ["資產總覽", "精簡監控"], group = GROUP_SETTING)
 INPUT_DASHBOARD_WIDTH = input.int(defval = 88, title = "總覽寬度（圖表 %）", minval = 50, maxval = 98, group = GROUP_SETTING)
 INPUT_DASHBOARD_TRANSPARENCY = input.int(defval = 65, title = "背景透明度", minval = 0, maxval = 100, tooltip = "0 = 不透明，100 = 完全透明。套用至總覽與精簡模式背景；文字和配置色條保持清楚。", group = GROUP_SETTING)
+INPUT_PRIVACY = input.bool(defval = false, title = "隱藏敏感數字", tooltip = "以星號取代金額與持有量；百分比、動作與配置條照常顯示。走勢圖改以損益 ÷ 成本的百分比繪製。", group = GROUP_SETTING)
 INPUT_DETAIL_FONT_OFFSET = input.int(defval = 1, title = "明細字級調整", minval = -3, maxval = 4, tooltip = "明細列文字相對於整體字級的增減；表頭固定比明細小 2 級。", group = GROUP_SETTING)
 INPUT_DISPLAY_TITLE = input.bool(defval = true, title = "明細欄名", inline = "00", group = GROUP_SETTING)
 INPUT_DISPLAY_CASH = input.bool(defval = true, title = "現金", inline = "00", group = GROUP_SETTING)
@@ -1144,11 +1145,15 @@ dashboardFont() =>
 dashboardDetailFont() =>
     math.max(8, dashboardFont() + INPUT_DETAIL_FONT_OFFSET)
 
+// 敏感數字遮罩：金額六個全形星號、數量三個，固定長度讓欄寬不跳動。
+const string DASH_MASK_AMOUNT = "＊＊＊＊＊＊"
+const string DASH_MASK_QTY = "＊＊＊"
+
 dashboardNumber(float value) =>
-    na(value) ? "—" : str.tostring(value, "#,##0")
+    na(value) ? "—" : INPUT_PRIVACY ? DASH_MASK_AMOUNT : str.tostring(value, "#,##0")
 
 dashboardSigned(float value) =>
-    na(value) ? "—" : (value > 0 ? "+" : "") + dashboardNumber(value)
+    na(value) ? "—" : INPUT_PRIVACY ? DASH_MASK_AMOUNT : (value > 0 ? "+" : "") + dashboardNumber(value)
 
 dashboardRatio(float value) =>
     na(value) ? "—" : str.tostring(value * 100, "0.0") + "%"
@@ -1256,6 +1261,10 @@ dashboardActionText(float value, string originalText, bool child) =>
             for part in str.split(originalText, "\t")
                 if str.contains(part, "買進 ") or str.contains(part, "賣出 ")
                     output := part
+                    if INPUT_PRIVACY
+                        array<string> tokens = str.split(part, " ")
+                        if array.size(tokens) >= 3
+                            output := array.get(tokens, 0) + " " + DASH_MASK_QTY + " " + array.get(tokens, array.size(tokens) - 1)
     output
 
 dashboardText(int col, int row, string value, color foreground, color background, int fontSize, string align = text.align_left, string hint = "", float rowHeight = 0) =>
@@ -1333,19 +1342,19 @@ dashboardCard(int card, string title, string value, string subtitle, color accen
 // Separate function retained for the optional two-tier value layout.
 dashboardValueStacked(int row, float value, float holding, string holdingUnit, string valueHint) =>
     bool hasHolding = holdingUnit != ""
-    string holdingText = na(holding) ? "— " + holdingUnit : (holding != 0 and math.abs(holding) < 0.00000001 ? str.tostring(holding) : str.tostring(holding, "#,##0.########")) + " " + holdingUnit
+    string holdingText = na(holding) ? "— " + holdingUnit : INPUT_PRIVACY ? DASH_MASK_QTY + " " + holdingUnit : (holding != 0 and math.abs(holding) < 0.00000001 ? str.tostring(holding) : str.tostring(holding, "#,##0.########")) + " " + holdingUnit
     dashboardText(dashboardColumn("value"), row, dashboardNumber(value), DASH_TEXT, DASH_PANEL, dashboardDetailFont(), text.align_center, valueHint)
     dashboardText(dashboardColumn("value"), row + 1, hasHolding ? holdingText : "", DASH_MUTED, DASH_PANEL, math.max(8, dashboardDetailFont() - 3), text.align_center, valueHint, rowHeight = hasHolding ? dashboardFont() * 0.18 : 0.01)
 
 dashboardHoldingInline(float holding) =>
-    na(holding) ? "—" : holding != 0 and math.abs(holding) < 0.00000001 ? str.tostring(holding) : holding != 0 and math.abs(holding) < 0.0001 ? str.tostring(holding, "#,##0.########") : str.tostring(holding, "#,##0.####")
+    na(holding) ? "—" : INPUT_PRIVACY ? DASH_MASK_QTY : holding != 0 and math.abs(holding) < 0.00000001 ? str.tostring(holding) : holding != 0 and math.abs(holding) < 0.0001 ? str.tostring(holding, "#,##0.########") : str.tostring(holding, "#,##0.####")
 
 dashboardDetail(int row, string name, float ratio, float target, float value, float pnl, float pnlPercent, float rebalance, float realized, string actionHint = "", bool child = false, float judgeRatio = na, float holding = na, string holdingUnit = "") =>
     string ratioText = dashboardRatio(ratio) + (na(target) ? "" : " / " + dashboardRatio(target))
     // Tooltips only carry data the table does not already show.
     string pnlHint = na(pnlPercent) ? "" : "持倉報酬率：" + dashboardRatio(pnlPercent)
     string holdingInline = holdingUnit == "" ? "" : dashboardHoldingInline(holding)
-    string holdingHint = holdingUnit == "" or str.tostring(holding) == holdingInline ? "" : "持有量：" + str.tostring(holding) + " " + holdingUnit
+    string holdingHint = holdingUnit == "" or INPUT_PRIVACY or str.tostring(holding) == holdingInline ? "" : "持有量：" + str.tostring(holding) + " " + holdingUnit
     string assetText = dashboardAssetName(name) + (not DASHBOARD_STACKED_HOLDINGS and holdingUnit != "" ? " · " + dashboardHoldingInline(holding) + (holdingUnit == "股" ? " 股" : "") : "")
     // 分類列使用較亮的群組底色；數字欄靠右並補兩個空白作為右側留白。
     color rowBg = child ? DASH_PANEL : DASH_GROUP
@@ -1373,7 +1382,7 @@ dashboardDetail(int row, string name, float ratio, float target, float value, fl
     string actionText = dashboardActionText(rebalance, actionHint, child)
     // Keep only the funding / withdrawal instruction from the raw text; its amount, ratio and quantity are already on the row.
     bool hasFundingHint = str.contains(actionHint, "入金") or str.contains(actionHint, "提領")
-    string rebalanceHint = na(rebalance) ? "" : "再平衡金額（" + INPUT_DISPLAY_CURRENCY + "）：" + dashboardAction(rebalance) + (hasFundingHint ? "\n" + str.replace_all(actionHint, "\t", " ") : "")
+    string rebalanceHint = na(rebalance) or INPUT_PRIVACY ? "" : "再平衡金額（" + INPUT_DISPLAY_CURRENCY + "）：" + dashboardAction(rebalance) + (hasFundingHint ? "\n" + str.replace_all(actionHint, "\t", " ") : "")
     color actionColor = DASH_MUTED
     if not na(rebalance) and rebalance != 0
         actionColor := not child ? DASH_TEXT : aboveThreshold ? DASH_AMBER : DASH_MUTED
@@ -1751,6 +1760,14 @@ if INPUT_DISPLAY_ASSETS_CHART
 plotValue = INPUT_SMOOTHING_ENABLED and not na(smoothedVariation) ? smoothedVariation : (not na(interpolatedVariation) ? interpolatedVariation : recordAssetsVariation)
 
 // 走勢圖：線條用面板色票，面積由線往 0 軸淡出，0 軸為細虛線
+// 隱藏敏感數字時改以「損益 ÷ 成本」的百分比繪製，價格軸刻度不再露出金額。
+var float chartScale = 1.0
+if INPUT_PRIVACY
+    if not na(allCost) and allCost > 0
+        chartScale := 100.0 / allCost
+else
+    chartScale := 1.0
+float plotSeries = plotValue * chartScale
 bool chartVisible = INPUT_DISPLAY_ASSETS_CHART and INPUT_DASHBOARD_MODE != "精簡監控"
 bool chartPositive = plotValue >= 0
 color chartLineColor = chartPositive ? DASH_GREEN : DASH_RED
@@ -1758,7 +1775,7 @@ color chartFillStrong = color.new(chartLineColor, 72)
 color chartFillFaint = color.new(chartLineColor, 97)
 
 chartLine = plot(
- series       =  plotValue,
+ series       =  plotSeries,
  title        =  "損益走勢",
  color        =  color.new(chartLineColor, 15),
  linewidth    =  2,
@@ -1773,8 +1790,8 @@ chartBase = plot(
 fill(
  plot1        =  chartLine,
  plot2        =  chartBase,
- top_value    =  chartPositive ? plotValue : 0,
- bottom_value =  chartPositive ? 0 : plotValue,
+ top_value    =  chartPositive ? plotSeries : 0,
+ bottom_value =  chartPositive ? 0 : plotSeries,
  top_color    =  chartPositive ? chartFillStrong : chartFillFaint,
  bottom_color =  chartPositive ? chartFillFaint : chartFillStrong,
  title        =  "損益走勢填色",
@@ -1791,16 +1808,17 @@ hline(
 
 // 歷史最高 / 最低損益紀錄標籤（以原始紀錄值與命中的 K 棒定位）
 chartLabelText(string prefix, float value, int labelTime) =>
-    prefix + " " + (value >= 0 ? "+" : "-") + str.tostring(math.abs(value), "#,##0") + "\n" + str.format_time(labelTime, "yyyy/MM/dd", "Asia/Taipei")
+    string amount = INPUT_PRIVACY ? str.tostring(math.abs(value * chartScale), "0.0") + "%" : str.tostring(math.abs(value), "#,##0")
+    prefix + " " + (value >= 0 ? "+" : "-") + amount + "\n" + str.format_time(labelTime, "yyyy/MM/dd", "Asia/Taipei")
 
 if barstate.islast
     bool showChartLabels = chartVisible and INPUT_CHART_LABELS
     if showChartLabels and not na(chartHighValue)
         string highText = chartLabelText("最高", chartHighValue, chartHighTime)
         if na(chartHighLabel)
-            chartHighLabel := label.new(x = chartHighBar, y = chartHighValue, text = highText, style = label.style_label_down, textcolor = DASH_GREEN, color = color.new(DASH_PANEL, 20), size = size.small)
+            chartHighLabel := label.new(x = chartHighBar, y = chartHighValue * chartScale, text = highText, style = label.style_label_down, textcolor = DASH_GREEN, color = color.new(DASH_PANEL, 20), size = size.small)
         else
-            label.set_xy(chartHighLabel, chartHighBar, chartHighValue)
+            label.set_xy(chartHighLabel, chartHighBar, chartHighValue * chartScale)
             label.set_text(chartHighLabel, highText)
     else if not na(chartHighLabel)
         label.delete(chartHighLabel)
@@ -1808,9 +1826,9 @@ if barstate.islast
     if showChartLabels and not na(chartLowValue)
         string lowText = chartLabelText("最低", chartLowValue, chartLowTime)
         if na(chartLowLabel)
-            chartLowLabel := label.new(x = chartLowBar, y = chartLowValue, text = lowText, style = label.style_label_up, textcolor = DASH_RED, color = color.new(DASH_PANEL, 20), size = size.small)
+            chartLowLabel := label.new(x = chartLowBar, y = chartLowValue * chartScale, text = lowText, style = label.style_label_up, textcolor = DASH_RED, color = color.new(DASH_PANEL, 20), size = size.small)
         else
-            label.set_xy(chartLowLabel, chartLowBar, chartLowValue)
+            label.set_xy(chartLowLabel, chartLowBar, chartLowValue * chartScale)
             label.set_text(chartLowLabel, lowText)
     else if not na(chartLowLabel)
         label.delete(chartLowLabel)
