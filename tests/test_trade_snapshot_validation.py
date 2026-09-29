@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 import refresh_trade_rows
+from trade_history.generate_trade_history_pine import normalize_number
 from trade_history.update_trade_history import validate_snapshot_payload
 
 
@@ -19,6 +20,15 @@ VALID_SNAPSHOT = {
 
 
 class SnapshotValidationTest(unittest.TestCase):
+    def test_trade_pine_number_parser_accepts_thousands_comma_with_decimal_dot(self) -> None:
+        self.assertEqual(normalize_number("1,400.00"), 1400.0)
+
+    def test_trade_pine_number_parser_accepts_decimal_comma(self) -> None:
+        self.assertEqual(normalize_number("82,89"), 82.89)
+
+    def test_trade_pine_number_parser_accepts_plain_decimal(self) -> None:
+        self.assertEqual(normalize_number("137.83"), 137.83)
+
     def test_refresh_validator_accepts_valid_snapshot_without_spreadsheet_url(self) -> None:
         refresh_trade_rows.validate_payload(VALID_SNAPSHOT)
 

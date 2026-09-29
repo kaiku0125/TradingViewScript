@@ -51,8 +51,19 @@ def normalize_number(value: Any) -> float:
     if not text:
         return 0.0
 
-    # Pine numeric args cannot contain localized commas like "82,89".
-    text = text.replace(",", ".")
+    if "," in text and "." in text:
+        text = text.replace(",", "")
+    elif "," in text:
+        groups = text.split(",")
+        if (
+            len(groups) > 1
+            and groups[0]
+            and all(group.isdigit() and len(group) == 3 for group in groups[1:])
+        ):
+            text = "".join(groups)
+        else:
+            # Pine numeric args cannot contain localized decimal commas like "82,89".
+            text = text.replace(",", ".")
     return float(text)
 
 
