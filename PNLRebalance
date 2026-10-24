@@ -1591,8 +1591,9 @@ if INPUT_SMOOTHING_ENABLED and not na(interpolatedVariation)
 else
     smoothedVariation := na
 
-if INPUT_DISPLAY_ASSETS_CHART
-    // 初始化歷史數據（測試用數據，僅在 rdArray 為空時執行）
+// 損益歷史不綁走勢圖開關：頁尾的「最近損益紀錄」在圖關閉時也要能讀到最後一筆。
+// 下一行是 update_pnl_history.py 的錨點，縮排與文字不可改。
+if barstate.isfirst
     if array.size(rdArray) == 0
         array.push(rdArray, newData(2022, 5, 28, 5161))
         array.push(rdArray, newData(2022, 6, 1, 7161))
