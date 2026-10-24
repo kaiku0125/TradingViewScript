@@ -1354,7 +1354,9 @@ dashboardDetail(int row, string name, float ratio, float target, float value, fl
     // Tooltips only carry data the table does not already show.
     string pnlHint = na(pnlPercent) ? "" : "持倉報酬率：" + dashboardRatio(pnlPercent)
     string holdingInline = holdingUnit == "" ? "" : dashboardHoldingInline(holding)
-    string holdingHint = holdingUnit == "" or INPUT_PRIVACY or str.tostring(holding) == holdingInline ? "" : "持有量：" + str.tostring(holding) + " " + holdingUnit
+    // inline 文字帶千分位，去掉後再比對，才能判斷顯示值是否真的被四捨五入。
+    bool holdingRounded = str.tostring(holding) != str.replace_all(holdingInline, ",", "")
+    string holdingHint = holdingUnit == "" or INPUT_PRIVACY or not holdingRounded ? "" : "持有量：" + str.tostring(holding) + " " + holdingUnit
     string assetText = dashboardAssetName(name) + (not DASHBOARD_STACKED_HOLDINGS and holdingUnit != "" ? " · " + dashboardHoldingInline(holding) + (holdingUnit == "股" ? " 股" : "") : "")
     // 分類列使用較亮的群組底色；數字欄靠右並補兩個空白作為右側留白。
     color rowBg = child ? DASH_PANEL : DASH_GROUP
