@@ -115,6 +115,13 @@ var int IDX_ADA = 2
 var int IDX_BNB = 3
 var int IDX_CRO = 4
 
+// 產生區塊照試算表列序輸出，列序一變，數量與成本就會靜默套到別的幣上，所以每根 K 棒核對一次。
+// Pine 的 or 不短路，長度檢查要獨立一段，否則陣列太短時會先撞到索引錯誤。
+if array.size(symbols) != 5
+    runtime.error(message = "symbols 數量不是 5，預期 BTC, ETH, ADA, BNB, CRO：" + str.tostring(symbols))
+if array.get(symbols, IDX_BTC) != "BTC" or array.get(symbols, IDX_ETH) != "ETH" or array.get(symbols, IDX_ADA) != "ADA" or array.get(symbols, IDX_BNB) != "BNB" or array.get(symbols, IDX_CRO) != "CRO"
+    runtime.error(message = "symbols 順序與 IDX_* 不符，預期 BTC, ETH, ADA, BNB, CRO：" + str.tostring(symbols))
+
 // BTC
 var float PIONEX_BTC_POSITION = 0          // 網格 + 幣幣天地
 var float PIONEX_BTC_COST = 0
