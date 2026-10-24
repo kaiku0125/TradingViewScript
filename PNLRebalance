@@ -1762,13 +1762,14 @@ if INPUT_DISPLAY_ASSETS_CHART
 plotValue = INPUT_SMOOTHING_ENABLED and not na(smoothedVariation) ? smoothedVariation : (not na(interpolatedVariation) ? interpolatedVariation : recordAssetsVariation)
 
 // 走勢圖：線條用面板色票，面積由線往 0 軸淡出，0 軸為細虛線
+// rdArray 紀錄一律是台幣，乘上 twdEx 才是顯示貨幣；allCost 已是顯示貨幣。
 // 隱藏敏感數字時改以「損益 ÷ 成本」的百分比繪製，價格軸刻度不再露出金額。
 var float chartScale = 1.0
 if INPUT_PRIVACY
     if not na(allCost) and allCost > 0
-        chartScale := 100.0 / allCost
+        chartScale := 100.0 * twdEx / allCost
 else
-    chartScale := 1.0
+    chartScale := twdEx
 float plotSeries = plotValue * chartScale
 bool chartVisible = INPUT_DISPLAY_ASSETS_CHART and INPUT_DASHBOARD_MODE != "精簡監控"
 bool chartPositive = plotValue >= 0
@@ -1810,7 +1811,8 @@ hline(
 
 // 歷史最高 / 最低損益紀錄標籤（以原始紀錄值與命中的 K 棒定位）
 chartLabelText(string prefix, float value, int labelTime) =>
-    string amount = INPUT_PRIVACY ? str.tostring(math.abs(value * chartScale), "0.0") + "%" : str.tostring(math.abs(value), "#,##0")
+    float scaled = math.abs(value * chartScale)
+    string amount = INPUT_PRIVACY ? str.tostring(scaled, "0.0") + "%" : str.tostring(scaled, "#,##0")
     prefix + " " + (value >= 0 ? "+" : "-") + amount + "\n" + str.format_time(labelTime, "yyyy/MM/dd", "Asia/Taipei")
 
 if barstate.islast
