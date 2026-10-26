@@ -52,13 +52,13 @@ var float CRO_CRYPTO_RATIO = 10
 // 銀行現金設定
 // ============================================================================
 // === AUTO-GENERATED CASH LIABILITY START ===
-// updated_at: 2026-10-19T01:02:57.433Z
+// updated_at: 2026-10-26T10:57:46.482Z
 var float BANK1_AVAL = 136581.0  // LineBank (TWD)
 var float BANK2_AVAL = 0.0  // Bankee (TWD)
 var float BANK3_AVAL = 58375.0  // 台新 (TWD)
 var float BANK4_AVAL = 10627.0  // 樂天 (TWD)
 var float BITO_AVAL = 0.0  // 幣託 (USD)
-var float VISA_AVAL = 25500.0  // Visa (USD) 出金
+var float VISA_AVAL = 27000.0  // Visa (USD) 出金
 var float DEBT = -882507.0  // 負債(TWD)
 // === AUTO-GENERATED CASH LIABILITY END ===
 
@@ -66,12 +66,12 @@ var float DEBT = -882507.0  // 負債(TWD)
 // 交易所設定
 // ============================================================================
 // === AUTO-GENERATED USD START ===
-// updated_at: 2026-10-19T01:02:57.433Z
+// updated_at: 2026-10-26T10:57:46.482Z
 var float BYBIT_EXCHANGE_USD = 0.0
-var float BINANCE_EXCHANGE_USD = 1597.0
+var float BINANCE_EXCHANGE_USD = 895.0
 var float CRYPTO_DOT_COM_EXCHANGE_USD = 0.0
 var float OKX_EXCHANGE_USD = 0.0
-var float PIONEX_EXCHANGE_USD = 4243.0
+var float PIONEX_EXCHANGE_USD = 3772.0
 var float KRAKEN_EXCHANGE_USD = 0.0
 var float EXCHANGE_USD =
       BYBIT_EXCHANGE_USD +
@@ -100,10 +100,10 @@ var float _0050_INCOME = 344242
 // ============================================================================
 
 // === AUTO-GENERATED START ===
-// updated_at: 2026-10-19T01:02:57.433Z
+// updated_at: 2026-10-26T10:57:46.482Z
 var string[] symbols = array.from("BTC", "ETH", "ADA", "BNB", "CRO")
-var float[] buyQtys = array.from(0.7225, 12.55, 39575.0, 16.54, 122800.0)
-var float[] buyCosts = array.from(38773.0, 21486.0, 11883.0, 7872.0, 14439.0)
+var float[] buyQtys = array.from(0.7375, 12.55, 39575.0, 16.54, 122800.0)
+var float[] buyCosts = array.from(39975.0, 21486.0, 11883.0, 7872.0, 14439.0)
 var float[] sellQtys = array.from(0.3263, 5.55, 5299.0, 6.667, 20178.0)
 var float[] sellIncomes = array.from(9755.0, 17084.0, 6428.0, 6878.0, 5959.89)
 // === AUTO-GENERATED END ===
