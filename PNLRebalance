@@ -52,7 +52,7 @@ var float CRO_CRYPTO_RATIO = 10
 // 銀行現金設定
 // ============================================================================
 // === AUTO-GENERATED CASH LIABILITY START ===
-// updated_at: 2026-10-26T10:57:46.482Z
+// updated_at: 2026-11-02T01:00:29.930Z
 var float BANK1_AVAL = 136581.0  // LineBank (TWD)
 var float BANK2_AVAL = 0.0  // Bankee (TWD)
 var float BANK3_AVAL = 58375.0  // 台新 (TWD)
@@ -66,9 +66,9 @@ var float DEBT = -882507.0  // 負債(TWD)
 // 交易所設定
 // ============================================================================
 // === AUTO-GENERATED USD START ===
-// updated_at: 2026-10-26T10:57:46.482Z
+// updated_at: 2026-11-02T01:00:29.930Z
 var float BYBIT_EXCHANGE_USD = 0.0
-var float BINANCE_EXCHANGE_USD = 895.0
+var float BINANCE_EXCHANGE_USD = 0.0
 var float CRYPTO_DOT_COM_EXCHANGE_USD = 0.0
 var float OKX_EXCHANGE_USD = 0.0
 var float PIONEX_EXCHANGE_USD = 3772.0
@@ -100,10 +100,10 @@ var float _0050_INCOME = 344242
 // ============================================================================
 
 // === AUTO-GENERATED START ===
-// updated_at: 2026-10-26T10:57:46.482Z
+// updated_at: 2026-11-02T01:00:29.930Z
 var string[] symbols = array.from("BTC", "ETH", "ADA", "BNB", "CRO")
-var float[] buyQtys = array.from(0.7375, 12.55, 39575.0, 16.54, 122800.0)
-var float[] buyCosts = array.from(39975.0, 21486.0, 11883.0, 7872.0, 14439.0)
+var float[] buyQtys = array.from(0.7487, 12.55, 39575.0, 16.54, 122800.0)
+var float[] buyCosts = array.from(40849.0, 21486.0, 11883.0, 7872.0, 14439.0)
 var float[] sellQtys = array.from(0.3263, 5.55, 5299.0, 6.667, 20178.0)
 var float[] sellIncomes = array.from(9755.0, 17084.0, 6428.0, 6878.0, 5959.89)
 // === AUTO-GENERATED END ===
@@ -1767,6 +1767,7 @@ if barstate.isfirst
         array.push(rdArray, newData(2026, 9, 28, 42703)) //1.40%
         array.push(rdArray, newData(2026, 10, 5, 167976)) //5.03%
         array.push(rdArray, newData(2026, 10, 19, -53884)) //-1.71%
+        array.push(rdArray, newData(2026, 11, 2, -130338)) //-4.05%
 
 // 選擇要繪製的值（平滑化或原始值）
 plotValue = INPUT_SMOOTHING_ENABLED and not na(smoothedVariation) ? smoothedVariation : (not na(interpolatedVariation) ? interpolatedVariation : recordAssetsVariation)
