@@ -1641,7 +1641,7 @@ if barstate.islast
         string lastRecordText = ""
         if array.size(rdArray) > 0
             RecordData lastRecord = array.get(rdArray, array.size(rdArray) - 1)
-            lastRecordText = " · 最近損益紀錄 " + str.tostring(lastRecord.mMonth, "00") + "/" + str.tostring(lastRecord.mDay, "00")
+            lastRecordText := " · 最近損益紀錄 " + str.tostring(lastRecord.mMonth, "00") + "/" + str.tostring(lastRecord.mDay, "00")
         dashboardText(0, footerRow, "  更新 " + currentDate + " " + currentTime + " Taipei" + lastRecordText, DASH_MUTED, DASH_BG, math.max(9, dashboardFont() - 3), hint = "更新：即時價格時間\n最近損益紀錄：走勢圖最後一筆資料日期", rowHeight = dashboardFont() * 0.2)
     if DEBUG
         getCurrentSymbol(speculationPNL)
