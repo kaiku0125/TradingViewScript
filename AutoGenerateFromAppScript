@@ -170,7 +170,7 @@ const HoldingsService = (() => {
 })();
 
 const TradeHistoryService = (() => {
-  const TRADE_HISTORY_TABS = ["006208", "BTC", "ETH", "ADA", "平台幣"];
+  const TRADE_HISTORY_TABS = ["006208", "BTC", "ETH", "ADA", "平台幣", "MSTR"];
 
   function getSheetDisplayValuesOrEmpty(ss, sheetName) {
     const sheet = ss.getSheetByName(sheetName);

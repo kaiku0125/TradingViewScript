@@ -183,6 +183,34 @@ TAB_MAPPINGS = [
             "price": "R",
         },
     },
+    {
+        "tab": "MSTR",
+        "symbol": "MSTR",
+        "market": "US",
+        "side": "BUY",
+        "start_row": 3,
+        "stop_on_empty_qty": True,
+        "columns": {
+            "date": "A",
+            "qty": "D",
+            "amount": "B",
+            "price": "C",
+        },
+    },
+    {
+        "tab": "MSTR",
+        "symbol": "MSTR",
+        "market": "US",
+        "side": "SELL",
+        "start_row": 3,
+        "stop_on_empty_qty": True,
+        "columns": {
+            "date": "K",
+            "qty": "J",
+            "amount": "H",
+            "price": "I",
+        },
+    },
 ]
 
 

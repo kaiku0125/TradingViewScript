@@ -5,6 +5,7 @@ import ast
 import json
 import os
 import re
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional
 from urllib.parse import urlencode
@@ -16,6 +17,8 @@ DEFAULT_OUTPUT = Path("generated/holdings.pine")
 DEFAULT_PNL_FILE = Path("PNLRebalance")
 HOLDINGS_BLOCK_START = "// === AUTO-GENERATED START ==="
 HOLDINGS_BLOCK_END = "// === AUTO-GENERATED END ==="
+US_STOCK_BLOCK_START = "// === AUTO-GENERATED US STOCK START ==="
+US_STOCK_BLOCK_END = "// === AUTO-GENERATED US STOCK END ==="
 USD_BLOCK_START = "// === AUTO-GENERATED USD START ==="
 USD_BLOCK_END = "// === AUTO-GENERATED USD END ==="
 CASH_LIABILITY_BLOCK_START = "// === AUTO-GENERATED CASH LIABILITY START ==="
@@ -28,6 +31,35 @@ USD_EXCHANGE_MAP = {
     "pionex": "PIONEX_EXCHANGE_USD",
     "kraken": "KRAKEN_EXCHANGE_USD",
 }
+HOLDINGS_FIELDS = ("buy_qty", "buy_cost", "sell_qty", "sell_income")
+CRYPTO_MARKET = "CRYPTO"
+US_MARKET = "US"
+US_STOCK_SYMBOLS = ("MSTR",)
+
+
+@dataclass(frozen=True)
+class HoldingsMarket:
+    start_marker: str
+    end_marker: str
+    var_prefix: str
+
+    def var_name(self, base: str) -> str:
+        if not self.var_prefix:
+            return base
+        return self.var_prefix + base[0].upper() + base[1:]
+
+
+HOLDINGS_MARKETS = {
+    CRYPTO_MARKET: HoldingsMarket(HOLDINGS_BLOCK_START, HOLDINGS_BLOCK_END, ""),
+    US_MARKET: HoldingsMarket(US_STOCK_BLOCK_START, US_STOCK_BLOCK_END, "us"),
+}
+HOLDINGS_ARRAYS = (
+    ("symbols", "string", "symbol"),
+    ("buyQtys", "float", "buy_qty"),
+    ("buyCosts", "float", "buy_cost"),
+    ("sellQtys", "float", "sell_qty"),
+    ("sellIncomes", "float", "sell_income"),
+)
 CASH_LIABILITY_VARIABLES = {
     "BANK1_AVAL": "BANK1_AVAL",
     "BANK2_AVAL": "BANK2_AVAL",
@@ -53,28 +85,43 @@ def format_number(value: float, *, force_decimal: bool = False) -> str:
     return formatted
 
 
-def build_holdings_pine(payload: dict) -> str:
-    holdings = payload.get("holdings", [])
-    if not holdings:
-        raise ValueError("No holdings found in payload")
+def holding_market(item: dict) -> str:
+    return US_MARKET if item["symbol"] in US_STOCK_SYMBOLS else CRYPTO_MARKET
 
-    symbols = ", ".join(f'"{item["symbol"]}"' for item in holdings)
-    buy_qtys = ", ".join(format_number(item["buy_qty"], force_decimal=True) for item in holdings)
-    buy_costs = ", ".join(format_number(item["buy_cost"], force_decimal=True) for item in holdings)
-    sell_qtys = ", ".join(format_number(item["sell_qty"], force_decimal=True) for item in holdings)
-    sell_incomes = ", ".join(format_number(item["sell_income"], force_decimal=True) for item in holdings)
 
-    lines = [
-        HOLDINGS_BLOCK_START,
-        f"// updated_at: {payload.get('updated_at', 'unknown')}",
-        f"var string[] symbols = array.from({symbols})",
-        f"var float[] buyQtys = array.from({buy_qtys})",
-        f"var float[] buyCosts = array.from({buy_costs})",
-        f"var float[] sellQtys = array.from({sell_qtys})",
-        f"var float[] sellIncomes = array.from({sell_incomes})",
-        HOLDINGS_BLOCK_END,
-    ]
+def partition_holdings(holdings: List[dict]) -> Dict[str, List[dict]]:
+    partitions: Dict[str, List[dict]] = {market: [] for market in HOLDINGS_MARKETS}
+    for item in holdings:
+        partitions[holding_market(item)].append(item)
+    return partitions
+
+
+def format_pine_array(var_type: str, values: List[str]) -> str:
+    if not values:
+        return f"array.new_{var_type}()"
+    return f"array.from({', '.join(values)})"
+
+
+def build_market_block(market: str, rows: List[dict], updated_at: str) -> str:
+    spec = HOLDINGS_MARKETS[market]
+    lines = [spec.start_marker, f"// updated_at: {updated_at}"]
+    for base, var_type, field in HOLDINGS_ARRAYS:
+        if var_type == "string":
+            values = [f'"{item[field]}"' for item in rows]
+        else:
+            values = [format_number(item[field], force_decimal=True) for item in rows]
+        lines.append(f"var {var_type}[] {spec.var_name(base)} = {format_pine_array(var_type, values)}")
+    lines.append(spec.end_marker)
     return "\n".join(lines) + "\n"
+
+
+def build_holdings_blocks(payload: dict) -> Dict[str, str]:
+    partitions = partition_holdings(payload.get("holdings", []))
+    if not partitions[CRYPTO_MARKET]:
+        raise ValueError("No crypto holdings found in payload")
+
+    updated_at = payload.get("updated_at", "unknown")
+    return {market: build_market_block(market, rows, updated_at) for market, rows in partitions.items()}
 
 
 def build_usd_snapshot(payload: dict) -> Dict[str, float]:
@@ -144,14 +191,9 @@ def build_cash_liability_pine(payload: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def build_output_content(holdings_block: str, usd_block: str, cash_liability_block: str) -> str:
-    return (
-        holdings_block.rstrip("\n")
-        + "\n\n"
-        + usd_block.rstrip("\n")
-        + "\n\n"
-        + cash_liability_block
-    )
+def build_output_content(holdings_blocks: Dict[str, str], usd_block: str, cash_liability_block: str) -> str:
+    blocks = [holdings_blocks[market] for market in HOLDINGS_MARKETS] + [usd_block, cash_liability_block]
+    return "\n\n".join(block.rstrip("\n") for block in blocks) + "\n"
 
 
 def replace_named_block(content: str, start_marker: str, end_marker: str, replacement: str) -> str:
@@ -166,10 +208,11 @@ def replace_named_block(content: str, start_marker: str, end_marker: str, replac
 
 
 def update_pnl_file(
-    target_path: Path, holdings_block: str, usd_block: str, cash_liability_block: str
+    target_path: Path, holdings_blocks: Dict[str, str], usd_block: str, cash_liability_block: str
 ) -> None:
-    original = target_path.read_text(encoding="utf-8")
-    updated = replace_named_block(original, HOLDINGS_BLOCK_START, HOLDINGS_BLOCK_END, holdings_block)
+    updated = target_path.read_text(encoding="utf-8")
+    for market, spec in HOLDINGS_MARKETS.items():
+        updated = replace_named_block(updated, spec.start_marker, spec.end_marker, holdings_blocks[market])
     updated = replace_named_block(updated, USD_BLOCK_START, USD_BLOCK_END, usd_block)
     updated = replace_named_block(
         updated,
@@ -181,12 +224,12 @@ def update_pnl_file(
 
 
 def parse_array_values(content: str, var_name: str) -> list:
-    pattern = rf"var\s+\w+\[\]\s+{re.escape(var_name)}\s*=\s*array\.from\((.*?)\)"
+    pattern = rf"var\s+\w+\[\]\s+{re.escape(var_name)}\s*=\s*array\.(?:from\((.*?)\)|new_\w+\(\))"
     match = re.search(pattern, content, re.DOTALL)
     if not match:
         raise ValueError(f"Could not find array values for {var_name}")
 
-    raw_values = match.group(1).strip()
+    raw_values = (match.group(1) or "").strip()
     if not raw_values:
         return []
 
@@ -194,27 +237,19 @@ def parse_array_values(content: str, var_name: str) -> list:
 
 
 def parse_existing_holdings(content: str) -> List[Dict]:
-    symbols = parse_array_values(content, "symbols")
-    buy_qtys = parse_array_values(content, "buyQtys")
-    buy_costs = parse_array_values(content, "buyCosts")
-    sell_qtys = parse_array_values(content, "sellQtys")
-    sell_incomes = parse_array_values(content, "sellIncomes")
-
-    lengths = {len(symbols), len(buy_qtys), len(buy_costs), len(sell_qtys), len(sell_incomes)}
-    if len(lengths) != 1:
-        raise ValueError("Existing holdings arrays have inconsistent lengths")
-
     holdings = []
-    for index, symbol in enumerate(symbols):
-        holdings.append(
-            {
-                "symbol": str(symbol),
-                "buy_qty": float(buy_qtys[index]),
-                "buy_cost": float(buy_costs[index]),
-                "sell_qty": float(sell_qtys[index]),
-                "sell_income": float(sell_incomes[index]),
-            }
-        )
+    for market, spec in HOLDINGS_MARKETS.items():
+        if market != CRYPTO_MARKET and spec.start_marker not in content:
+            continue
+
+        columns = {field: parse_array_values(content, spec.var_name(base)) for base, _, field in HOLDINGS_ARRAYS}
+        if len({len(values) for values in columns.values()}) != 1:
+            raise ValueError(f"Existing {market} holdings arrays have inconsistent lengths")
+
+        for index, symbol in enumerate(columns["symbol"]):
+            holding = {"symbol": str(symbol), "market": market}
+            holding.update({field: float(columns[field][index]) for field in HOLDINGS_FIELDS})
+            holdings.append(holding)
     return holdings
 
 
@@ -282,8 +317,12 @@ def summarize_holdings_changes(previous: Optional[List[Dict]], current: List[Dic
     if previous is None:
         return ["No previous holdings snapshot found; treated as initial sync."]
 
-    previous_map = {item["symbol"]: item for item in previous}
-    current_map = {item["symbol"]: item for item in current}
+    def holding_label(item: dict) -> str:
+        market = holding_market(item)
+        return item["symbol"] if market == CRYPTO_MARKET else f"{item['symbol']} ({market})"
+
+    previous_map = {holding_label(item): item for item in previous}
+    current_map = {holding_label(item): item for item in current}
     summary = []
 
     for symbol in sorted(set(previous_map) | set(current_map)):
@@ -299,7 +338,7 @@ def summarize_holdings_changes(previous: Optional[List[Dict]], current: List[Dic
             continue
 
         field_changes = []
-        for field in ("buy_qty", "buy_cost", "sell_qty", "sell_income"):
+        for field in HOLDINGS_FIELDS:
             before_value = before[field]
             after_value = after[field]
             if before_value != after_value:
@@ -376,15 +415,15 @@ def main() -> int:
     current_holdings = payload.get("holdings", [])
     current_usd = build_usd_snapshot(payload)
     current_cash_liability = build_cash_liability_snapshot(payload)
-    holdings_block = build_holdings_pine(payload)
+    holdings_blocks = build_holdings_blocks(payload)
     usd_block = build_usd_pine(payload)
     cash_liability_block = build_cash_liability_pine(payload)
-    output_content = build_output_content(holdings_block, usd_block, cash_liability_block)
+    output_content = build_output_content(holdings_blocks, usd_block, cash_liability_block)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(output_content, encoding="utf-8")
     if not args.skip_pnl_update:
-        update_pnl_file(pnl_path, holdings_block, usd_block, cash_liability_block)
+        update_pnl_file(pnl_path, holdings_blocks, usd_block, cash_liability_block)
         print(f"Updated {output_path} and {pnl_path}")
     else:
         print(f"Updated {output_path}")

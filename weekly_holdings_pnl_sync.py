@@ -42,6 +42,8 @@ CRYPTO_PRICE_SOURCE_MAP = {
     "ADA": ("ADA/USDT", "https://api.binance.com/api/v3/ticker/price?symbol=ADAUSDT", ("price",)),
     "BNB": ("BNB/USDT", "https://api.binance.com/api/v3/ticker/price?symbol=BNBUSDT", ("price",)),
 }
+US_STOCK_PRICE_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?range=1d&interval=1d"
+BROWSER_HEADERS = {"User-Agent": "Mozilla/5.0"}
 FIXED_PRICE_SOURCE_MAP = {
     "0050": ("0050", "https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_0050.tw&json=1&delay=0"),
     "USD/TWD": ("USD/TWD", "https://open.er-api.com/v6/latest/USD"),
@@ -59,6 +61,7 @@ class MarketSnapshot:
     cash_twd: float
     total_assets_twd: float
     total_crypto_assets_twd: float
+    total_us_stocks_assets_twd: float
     all_cost_twd: float
     speculation_pnl_twd: float
     speculation_pnl_ratio: float
@@ -106,8 +109,8 @@ def load_local_env(path: Path) -> None:
         os.environ.setdefault(key, value)
 
 
-def fetch_json(url: str) -> Any:
-    with urlopen(url) as response:
+def fetch_json(url: str, headers: Optional[dict[str, str]] = None) -> Any:
+    with urlopen(Request(url, headers=headers or {})) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
@@ -219,7 +222,9 @@ def first_valid_float(values: list[Any], field_name: str) -> float:
     raise ValueError(f"Could not find a valid float for {field_name}")
 
 
-def fetch_market_prices(symbols: list[str]) -> tuple[Dict[str, float], Dict[str, str], list[str]]:
+def fetch_market_prices(
+    symbols: list[str], us_symbols: list[str]
+) -> tuple[Dict[str, float], Dict[str, str], list[str]]:
     prices: Dict[str, float] = {}
     symbol_price_labels: Dict[str, str] = {}
     unsupported_symbols: list[str] = []
@@ -232,6 +237,12 @@ def fetch_market_prices(symbols: list[str]) -> tuple[Dict[str, float], Dict[str,
         label, url, path = source
         payload = fetch_json(url)
         prices[label] = extract_nested_value(payload, path)
+        symbol_price_labels[symbol] = label
+
+    for symbol in us_symbols:
+        label = f"{symbol}/USD"
+        payload = fetch_json(US_STOCK_PRICE_URL.format(symbol=symbol), BROWSER_HEADERS)
+        prices[label] = float(payload["chart"]["result"][0]["meta"]["regularMarketPrice"])
         symbol_price_labels[symbol] = label
 
     twse = fetch_json(FIXED_PRICE_SOURCE_MAP["0050"][1])
@@ -353,8 +364,10 @@ def build_positions_and_costs(payload: dict) -> tuple[Dict[str, float], Dict[str
 
 def calculate_market_snapshot(payload: dict, pnl_content: str) -> MarketSnapshot:
     positions, costs = build_positions_and_costs(payload)
-    tracked_symbols = [symbol for symbol in positions if symbol != "0050"]
-    prices, symbol_price_labels, unsupported_symbols = fetch_market_prices(tracked_symbols)
+    partitions = holdings_sync.partition_holdings(payload.get("holdings", []))
+    tracked_symbols = [str(item["symbol"]) for item in partitions[holdings_sync.CRYPTO_MARKET]]
+    us_symbols = [str(item["symbol"]) for item in partitions[holdings_sync.US_MARKET]]
+    prices, symbol_price_labels, unsupported_symbols = fetch_market_prices(tracked_symbols, us_symbols)
     usd_snapshot = holdings_sync.build_usd_snapshot(payload)
 
     bank1 = parse_numeric_constant(pnl_content, "BANK1_AVAL")
@@ -386,9 +399,17 @@ def calculate_market_snapshot(payload: dict, pnl_content: str) -> MarketSnapshot
         unrealized_pnl_twd[symbol] = (remain_usd - costs[symbol]) * usd_twd
 
     total_crypto_assets_twd = main_crypto_assets_usd * usd_twd
-    total_assets_twd = total_cash_twd + total_stocks_assets_twd + total_crypto_assets_twd
+    us_stocks_assets_usd = 0.0
+    for symbol in us_symbols:
+        remain_usd = prices[symbol_price_labels[symbol]] * positions[symbol]
+        us_stocks_assets_usd += remain_usd
+        unrealized_pnl_twd[symbol] = (remain_usd - costs[symbol]) * usd_twd
+    total_us_stocks_assets_twd = us_stocks_assets_usd * usd_twd
+    speculation_assets_twd = total_stocks_assets_twd + total_us_stocks_assets_twd + total_crypto_assets_twd
+    total_assets_twd = total_cash_twd + speculation_assets_twd
+    # US stock principal was moved over from the crypto side and is already inside ALL_CRYPTO_COST.
     all_cost_twd = all_stocks_cost + all_crypto_cost - (bito + exchange_usd) * usd_twd
-    speculation_pnl_twd = total_stocks_assets_twd + total_crypto_assets_twd - all_cost_twd + visa * usd_twd
+    speculation_pnl_twd = speculation_assets_twd - all_cost_twd + visa * usd_twd
     speculation_pnl_ratio = speculation_pnl_twd / all_cost_twd
 
     return MarketSnapshot(
@@ -401,6 +422,7 @@ def calculate_market_snapshot(payload: dict, pnl_content: str) -> MarketSnapshot
         cash_twd=total_cash_twd,
         total_assets_twd=total_assets_twd,
         total_crypto_assets_twd=total_crypto_assets_twd,
+        total_us_stocks_assets_twd=total_us_stocks_assets_twd,
         all_cost_twd=all_cost_twd,
         speculation_pnl_twd=speculation_pnl_twd,
         speculation_pnl_ratio=speculation_pnl_ratio,
@@ -600,6 +622,7 @@ def build_summary_lines(
             "Key inputs:",
             f"Exchange USDT (counted as cash): {format_price(snapshot.exchange_usd)} USD",
             f"Cash: {snapshot.cash_twd:,.0f} TWD",
+            f"US stocks: {snapshot.total_us_stocks_assets_twd:,.0f} TWD",
             f"ALL_CRYPTO_COST = {format_price(parse_numeric_constant(pnl_content, 'ALL_CRYPTO_COST'))}",
             f"ALL_STOCKS_COST = {format_price(parse_numeric_constant(pnl_content, 'ALL_STOCKS_COST'))}",
             f"INPUT_CRYPTO_COM_VISA = {format_price(parse_numeric_constant(pnl_content, 'VISA_AVAL'))}",
@@ -675,6 +698,7 @@ def build_notion_weekly_review_lines(
         f"- 最大獲利來源：{biggest_profit_source_text}",
         f"- 交易所 USDT（計入現金）：{format_price(snapshot.exchange_usd)} USD",
         f"- 現金部位：{snapshot.cash_twd:,.0f} TWD",
+        f"- 美股部位：{snapshot.total_us_stocks_assets_twd:,.0f} TWD",
         "",
         "3. 本週最大失誤（手動填寫）",
         "- 本週最大失誤：",
@@ -924,7 +948,7 @@ def main() -> int:
     generated_updated = False
     pnl_updated = False
     trade_history_updated = False
-    holdings_block = holdings_sync.build_holdings_pine(payload)
+    holdings_blocks = holdings_sync.build_holdings_blocks(payload)
     usd_block = holdings_sync.build_usd_pine(payload)
     cash_liability_block = holdings_sync.build_cash_liability_pine(payload)
     pnl_history_summary = "skipped because source data did not change"
@@ -932,12 +956,12 @@ def main() -> int:
 
     if source_changed:
         output_content = holdings_sync.build_output_content(
-            holdings_block, usd_block, cash_liability_block
+            holdings_blocks, usd_block, cash_liability_block
         )
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(output_content, encoding="utf-8")
         holdings_sync.update_pnl_file(
-            pnl_path, holdings_block, usd_block, cash_liability_block
+            pnl_path, holdings_blocks, usd_block, cash_liability_block
         )
         generated_updated = True
         pnl_updated = True

@@ -37,9 +37,11 @@ indicator(
 // ============================================================================
 var float CASH_RATIO = 20
 var float SPECULATION_RATIO = 80
-var float CRYPTO_RATIO = 95
+var float CRYPTO_RATIO = 90
 var float TW_STOCKS_RATIO = 5
+var float US_STOCKS_RATIO = 5
 var float _0050_RATIO = 100
+var float MSTR_RATIO = 100
 
 // 加密貨幣配比
 var float BTC_CRYPTO_RATIO = 50
@@ -94,6 +96,42 @@ var float _0050_POSITION_BOUGHT = 400 + 3000  // 0050 (股)
 var float _0050_COST = 27780 + 214179         // 0050總投入 (TWD)
 var float _0050_POSITION_SOLD = 3400
 var float _0050_INCOME = 344242
+
+// ============================================================================
+// 美股資產設定
+// ============================================================================
+// === AUTO-GENERATED US STOCK START ===
+// updated_at: 2026-11-09T01:42:11.862Z
+var string[] usSymbols = array.new_string()
+var float[] usBuyQtys = array.new_float()
+var float[] usBuyCosts = array.new_float()
+var float[] usSellQtys = array.new_float()
+var float[] usSellIncomes = array.new_float()
+// === AUTO-GENERATED US STOCK END ===
+
+var string MSTR_TICKER = "MSTR"
+
+// 美股列可有可無：沒有 MSTR 時數量與成本為 0；出現 MSTR 以外的代號就報錯，避免持倉被靜默忽略。
+for usSymbol in usSymbols
+    if usSymbol != MSTR_TICKER
+        runtime.error(message = "usSymbols 只支援 MSTR，發現：" + usSymbol)
+if array.size(usSymbols) > 1
+    runtime.error(message = "usSymbols 中 MSTR 重複：" + str.tostring(usSymbols))
+
+usStockValue(array<float> values, int index) =>
+    float result = 0.0
+    if index >= 0
+        result := array.get(values, index)
+    result
+
+usHeldCost(float cost, float sold, float bought) =>
+    bought == 0 ? 0 : math.ceil(cost * (1 - (sold / bought)))
+
+var int IDX_MSTR = array.indexof(usSymbols, MSTR_TICKER)
+var float MSTR_POSITION_BOUGHT = usStockValue(usBuyQtys, IDX_MSTR)  // MSTR (股)
+var float MSTR_COST = usStockValue(usBuyCosts, IDX_MSTR)            // MSTR 總投入 (USD)
+var float MSTR_POSITION_SOLD = usStockValue(usSellQtys, IDX_MSTR)
+var float MSTR_INCOME = usStockValue(usSellIncomes, IDX_MSTR)
 
 // ============================================================================
 // 加密貨幣資產設定
@@ -211,6 +249,7 @@ var string GROUP_VERSION = "💬 關於   ©️"
 // 字串常數 - Inline IDs（用於輸入欄位對齊）
 // ============================================================================
 var string INLINE_0050 = "03"
+var string INLINE_MSTR = "04"
 var string INLINE_BTC = "06"
 var string INLINE_ETH = "07"
 var string INLINE_CRO = "08"
@@ -229,6 +268,9 @@ var string RELEASE_NOTE = VERSION_NAME + " Release note :" + "\n" + "[1] First r
 //Calculate default value
 var float INPUT_0050_POSITION = _0050_POSITION_BOUGHT - _0050_POSITION_SOLD
 var float INPUT_0050_COST = math.ceil(_0050_COST * (1 - (_0050_POSITION_SOLD / _0050_POSITION_BOUGHT)))
+
+var float INPUT_MSTR_POSITION = MSTR_POSITION_BOUGHT - MSTR_POSITION_SOLD
+var float INPUT_MSTR_COST = usHeldCost(MSTR_COST, MSTR_POSITION_SOLD, MSTR_POSITION_BOUGHT)
 
 var float INPUT_BTC_POSITION = BTC_POSITION_BOUGHT - BTC_POSITION_SOLD
 var float INPUT_BTC_COST = math.ceil(BTC_COST * (1 - (BTC_POSITION_SOLD / BTC_POSITION_BOUGHT)))
@@ -256,6 +298,7 @@ INPUT_DETAIL_FONT_OFFSET = input.int(defval = 1, title = "明細字級調整", m
 INPUT_DISPLAY_TITLE = input.bool(defval = true, title = "明細欄名", inline = "00", group = GROUP_SETTING)
 INPUT_DISPLAY_CASH = input.bool(defval = true, title = "現金", inline = "00", group = GROUP_SETTING)
 INPUT_DISPLAY_TWSTOCK = input.bool(defval = true, title = "台股", inline = "00", group = GROUP_SETTING)
+INPUT_DISPLAY_USSTOCK = input.bool(defval = true, title = "美股", inline = "00", group = GROUP_SETTING)
 INPUT_DISPLAY_CRYPTO = input.bool(defval = true, title = "幣圈", inline = "00", group = GROUP_SETTING)
 INPUT_DISPLAY_ASSETS_CHART = input.bool(defval = true, title = "資產走勢線圖", group = GROUP_SETTING)
 INPUT_SMOOTHING_ENABLED = input.bool(defval = true, title = "平滑化", group = GROUP_SETTING)
@@ -275,8 +318,9 @@ INPUT_SPECULATION_RATIO = input.float(defval = SPECULATION_RATIO, title = "資�
 INPUT_CASH_RATIO = input.float(defval = CASH_RATIO, title = "現金(%)", inline = "01", group = GROUP_RATIO)
 INPUT_CRYPTO_RATIO = input.float(defval = CRYPTO_RATIO, title = "幣圈(%)", inline = "02", group = GROUP_ASSETS_RATIO)
 INPUT_TW_STOCKS_RATIO = input.float(defval = TW_STOCKS_RATIO, title = "台股(%)", inline = "02", group = GROUP_ASSETS_RATIO)
+INPUT_US_STOCKS_RATIO = input.float(defval = US_STOCKS_RATIO, title = "美股(%)", inline = "02", group = GROUP_ASSETS_RATIO)
 INPUT_CRYPTO_JUDGE_RATIO = input.float(defval = 15, title = "幣圈提示門檻(%)", minval = 0, maxval = 100, step = 1, inline = "03", tooltip = "個別資產的相對偏離 abs((當前 − 目標) / 當前) 達到此比例時，再平衡與偏離欄改為琥珀色。", group = GROUP_ASSETS_RATIO)
-INPUT_STOCK_JUDGE_RATIO = input.float(defval = 30, title = "台股提示門檻(%)", minval = 0, maxval = 100, step = 1, inline = "03", group = GROUP_ASSETS_RATIO)
+INPUT_STOCK_JUDGE_RATIO = input.float(defval = 30, title = "股票提示門檻(%)", minval = 0, maxval = 100, step = 1, inline = "03", group = GROUP_ASSETS_RATIO)
 
 // ============================================================================
 // 輸入參數 - 現金設定
@@ -300,6 +344,11 @@ INPUT_CRYPTO_COM_VISA = input.float(defval = VISA_AVAL, title = "幣圈Visa(U)",
 IS_0050_DISPLAY = input.bool(defval = true, title = "0050", inline = INLINE_0050, group = GROUP_ASSETS)
 MY_0050_POSITION = input.float(defval = INPUT_0050_POSITION, title = POSITION_TITLE, inline = INLINE_0050, group = GROUP_ASSETS)
 MY_0050_COST = input.float(defval = INPUT_0050_COST, title = STOCK_COST_TITLE, inline = INLINE_0050, group = GROUP_ASSETS)
+
+// 美股
+IS_MSTR_DISPLAY = input.bool(defval = true, title = "MSTR", inline = INLINE_MSTR, group = GROUP_ASSETS)
+MY_MSTR_POSITION = INPUT_MSTR_POSITION
+MY_MSTR_COST = INPUT_MSTR_COST
 
 // 加密貨幣 - 主要
 IS_BTC_DISPLAY = input.bool(defval = true, title = "BTC", inline = INLINE_BTC, group = GROUP_ASSETS)
@@ -363,6 +412,11 @@ var string USD_TWD_SYMBOL = "FX_IDC:USDTWD"
 var string STOCK_0050_SYMBOL = "TWSE_DLY:0050"
 
 // ============================================================================
+// 字串常數 - TradingView 價格符號（美股）
+// ============================================================================
+var string MSTR_SYMBOL = "NASDAQ:MSTR"
+
+// ============================================================================
 // 字串常數 - TradingView 價格符號（主要加密貨幣）
 // ============================================================================
 var string BTC_SYMBOL = "COINBASE:BTCUSD"
@@ -384,6 +438,7 @@ const color DASH_GREEN = #5CDDBA
 const color DASH_RED = #FF8294
 const color DASH_BLUE = #82ADFF
 const color DASH_AMBER = #EABF73
+const color DASH_VIOLET = #B79CFF
 const color DASH_DEBT = #D9949A
 color DASH_NOTICE = color.new(#29251E, INPUT_DASHBOARD_TRANSPARENCY)
 color DASH_GROUP = color.new(#1C2534, INPUT_DASHBOARD_TRANSPARENCY)
@@ -428,6 +483,8 @@ type CryptoAssetData
 var float pUsd_Twd = na
 // 台股
 var float p0050 = na
+// 美股
+var float pMSTR = na
 // 主要加密貨幣
 var float pBTC = na
 var float pETH = na
@@ -950,7 +1007,7 @@ renderCryptoAsset(int rowID, CryptoAssetData asset, float usdEx) =>
 if INPUT_CASH_RATIO + INPUT_SPECULATION_RATIO != 100
     runtime.error(message = "現金資產配比問題")
 
-if INPUT_CRYPTO_RATIO + INPUT_TW_STOCKS_RATIO != 100
+if INPUT_CRYPTO_RATIO + INPUT_TW_STOCKS_RATIO + INPUT_US_STOCKS_RATIO != 100
     runtime.error(message = "加密資產與股票配比問題")
 
 // 驗證加密貨幣內部配比總和
@@ -970,6 +1027,8 @@ if checkCryptoRatio != 100
 pUsd_Twd := request.security(symbol = USD_TWD_SYMBOL, timeframe = TIME_FRAME, expression = close)
 // 台股
 p0050 := request.security(symbol =  STOCK_0050_SYMBOL, timeframe = TIME_FRAME, expression = close)
+// 美股
+pMSTR := request.security(symbol = MSTR_SYMBOL, timeframe = TIME_FRAME, expression = close)
 // 主要加密貨幣
 pBTC := request.security(symbol =  BTC_SYMBOL, timeframe = TIME_FRAME, expression = close)
 pETH := request.security(symbol =  ETH_SYMBOL, timeframe = TIME_FRAME, expression = close)
@@ -992,8 +1051,11 @@ speculationRatio = INPUT_SPECULATION_RATIO / 100
 // 資產內部配比
 cryptoRatio = INPUT_CRYPTO_RATIO / 100 * speculationRatio
 twStocksRatio = INPUT_TW_STOCKS_RATIO / 100 * speculationRatio
+usStocksRatio = INPUT_US_STOCKS_RATIO / 100 * speculationRatio
 // 台股內部配比
 _0050Ratio = twStocksRatio * _0050_RATIO
+// 美股內部配比
+mstrRatio = usStocksRatio * MSTR_RATIO
 // 加密貨幣內部配比
 btcRatio = cryptoRatio * BTC_CRYPTO_RATIO
 ethRatio = cryptoRatio * ETH_CRYPTO_RATIO
@@ -1011,6 +1073,8 @@ totalCashUsd = (INPUT_BITO + EXCHANGE_USD) * usdEx
 totalCash = totalCashTwd + totalCashUsd
 // 台股總價值
 totalStocksAssets = (p0050 * MY_0050_POSITION) * twdEx
+// 美股總價值（未持有時不受報價缺值影響）
+totalUsStocksAssets = (MY_MSTR_POSITION == 0 ? 0 : pMSTR * MY_MSTR_POSITION) * usdEx
 // 主要加密貨幣總價值
 mainCryptoAssets  = pBTC * MY_BTC_POSITION
 mainCryptoAssets += pETH * MY_ETH_POSITION
@@ -1021,8 +1085,8 @@ mainCryptoAssets += pBNB * MY_BNB_POSITION
 otherCryptoASssets  = 0
 // 加密貨幣總價值（主要部位 + 其他；交易所 USDT 已歸入現金）
 totalCryptoAssets = (mainCryptoAssets + otherCryptoASssets) * usdEx
-// 總投機資產（台股 + 加密貨幣）
-totalSpeculationAssets = totalStocksAssets + totalCryptoAssets
+// 總投機資產（台股 + 美股 + 加密貨幣）
+totalSpeculationAssets = totalStocksAssets + totalUsStocksAssets + totalCryptoAssets
 // 總資產（現金 + 投機）
 totalAssets := totalCash + totalSpeculationAssets
 
@@ -1030,6 +1094,7 @@ totalAssets := totalCash + totalSpeculationAssets
 // 步驟 6：計算成本和負債
 // ============================================================================
 // 總投入成本（股票+幣圈）- 幣託U - 交易所 USDT（買入前皆視為美金現金）
+// 美股本金是從幣圈轉出的資金，已含在 ALL_CRYPTO_COST，不另計以免重複。
 allCost = (ALL_STOCKS_COST + ALL_CRYPTO_COST) * twdEx - (INPUT_BITO + EXCHANGE_USD) * usdEx
 //allCost = (ALL_STOCKS_COST + ALL_CRYPTO_COST) * twdEx - INPUT_BITO * usdEx - INPUT_CRYPTO_COM_VISA * usdEx  // 總投入成本（股票+幣圈）- 幣託U - CRO卡
 // 總負債
@@ -1041,6 +1106,7 @@ allDebt = DEBT * twdEx
 // 當前配比
 cashRatioNow = totalCash / totalAssets
 twStocksRatioNow = totalStocksAssets / totalAssets
+usStocksRatioNow = totalUsStocksAssets / totalAssets
 cryptoRatioNow = totalCryptoAssets / totalAssets
 // 投機損益
 speculationPNL = totalSpeculationAssets - allCost + INPUT_CRYPTO_COM_VISA * usdEx
@@ -1052,6 +1118,7 @@ speculationPNLRatio = speculationPNL / allCost
 // ============================================================================
 cashRebalance = totalAssets * cashRatio - totalCash
 stockRebalance = totalAssets * twStocksRatio - totalStocksAssets
+usStockRebalance = totalAssets * usStocksRatio - totalUsStocksAssets
 cryptoRebalance = totalAssets * cryptoRatio - totalCryptoAssets
 
 // ============================================================================
@@ -1059,6 +1126,8 @@ cryptoRebalance = totalAssets * cryptoRatio - totalCryptoAssets
 // ============================================================================
 // 台股
 [remain0050, pnl0050, pnlPercent0050, now0050Ratio] = calculateAssetValue(p0050, MY_0050_POSITION, MY_0050_COST, totalAssets, twdEx)
+// 美股
+[remainMSTR, pnlMSTR, pnlPercentMSTR, nowMSTRRatio] = calculateAssetValue(pMSTR, MY_MSTR_POSITION, MY_MSTR_COST, totalAssets, usdEx)
 // 主要加密貨幣
 [remainBTC, pnlBTC, pnlPercentBTC, nowBTCRatio] = calculateAssetValue(pBTC, MY_BTC_POSITION, MY_BTC_COST, totalAssets, usdEx)
 [remainETH, pnlETH, pnlPercentETH, nowETHRatio] = calculateAssetValue(pETH, MY_ETH_POSITION, MY_ETH_COST, totalAssets, usdEx)
@@ -1094,6 +1163,10 @@ string twStockDiffText = fm.fString(stockRebalance, 0) + "\t【" + fm.ratioStrin
 string twStockPNLText = getRebalanceText("口袋 ", INPUT_BANK3, stockRebalance)
 color stockColor = math.abs(twStockDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_TEXT_COLOR
 
+// 美股再平衡
+float usStockDiffRatio = lib.getRatioDiff(usStocksRatioNow, usStocksRatio)
+string usStockPNLText = getRebalanceText("券商 ", 0, usStockRebalance)
+
 // 幣圈再平衡
 float cryptoDiffRatio = lib.getRatioDiff(cryptoRatioNow, cryptoRatio)
 string cryptoDiffText = fm.fString(cryptoRebalance, 0) + "\t【" + fm.ratioString(cryptoDiffRatio) + "】"
@@ -1106,6 +1179,10 @@ color cryptoColor = math.abs(cryptoDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_
 // 台股資產再平衡
 [_0050DiffRatio, _0050RebalanceValue, _0050RebalanceText] = calculateRebalanceInfo(now0050Ratio, _0050Ratio, remain0050, totalAssets)
 _0050RebalanceText := appendRebalanceQtyText(_0050RebalanceText, _0050RebalanceValue, p0050 * twdEx, false, "股")
+
+// 美股資產再平衡
+[mstrDiffRatio, mstrRebalanceValue, mstrRebalanceText] = calculateRebalanceInfo(nowMSTRRatio, mstrRatio, remainMSTR, totalAssets)
+mstrRebalanceText := appendRebalanceQtyText(mstrRebalanceText, mstrRebalanceValue, pMSTR, INPUT_DISPLAY_CURRENCY == TWD, "股")
 
 // 加密資產再平衡
 [btcDiffRatio, btcRebalanceValue, btcRebalaneText] = calculateRebalanceInfo(nowBTCRatio, btcRatio, remainBTC, totalAssets)
@@ -1197,7 +1274,7 @@ dashboardCashHint() =>
     "可用現金已包含交易所美金餘額，" + (INPUT_DISPLAY_CURRENCY == TWD ? "並折算為台幣計入。" : "依目前貨幣設定以美金計入；選擇台幣時折算為台幣。")
 
 dashboardTotalAssetsHint() =>
-    "總資產組成：現金 + 台股 + 加密資產"
+    "總資產組成：現金 + 台股 + 美股 + 加密資產"
 
 dashboardDebtHint() =>
     "總負債項目：信貸"
@@ -1329,8 +1406,8 @@ dashboardInitOverview(int detailCount) =>
             dashboardSpan(col, col + 10, row)
     dashboardSpan(0, 31, 7)
     dashboardSpan(32, 47, 7)
-    for item = 0 to 2
-        dashboardSpan(item * 16, item * 16 + 15, 10)
+    for item = 0 to 3
+        dashboardSpan(item * 12, item * 12 + 11, 10)
     dashboardMergeDetailRow(12)
     dashboardSpan(0, 47, 13)
     for item = 0 to detailCount - 1
@@ -1413,17 +1490,17 @@ dashboardGroupGap(int nextRow) =>
 if barstate.islast
     bool compact = INPUT_DASHBOARD_MODE == "精簡監控"
     int cryptoCount = (IS_BTC_DISPLAY ? 1 : 0) + (IS_ETH_DISPLAY ? 1 : 0) + (IS_ADA_DISPLAY ? 1 : 0) + (IS_BNB_DISPLAY ? 1 : 0) + (IS_CRO_DISPLAY ? 1 : 0)
-    int detailCount = (INPUT_DISPLAY_CASH ? 1 + (INPUT_DISPLAY_CASH_DETAIL ? 2 : 0) : 0) + (INPUT_DISPLAY_TWSTOCK ? 1 + (IS_0050_DISPLAY ? 1 : 0) : 0) + (INPUT_DISPLAY_CRYPTO ? 1 + cryptoCount : 0)
+    int detailCount = (INPUT_DISPLAY_CASH ? 1 + (INPUT_DISPLAY_CASH_DETAIL ? 2 : 0) : 0) + (INPUT_DISPLAY_TWSTOCK ? 1 + (IS_0050_DISPLAY ? 1 : 0) : 0) + (INPUT_DISPLAY_USSTOCK ? 1 + (IS_MSTR_DISPLAY ? 1 : 0) : 0) + (INPUT_DISPLAY_CRYPTO ? 1 + cryptoCount : 0)
     int visibleRows = math.max(detailCount, 1)
     if na(displayTabel)
         dashboardValidateColumns()
         // Keep the table backing transparent so cell backgrounds do not stack alpha.
-        displayTabel := table.new(compact ? position.top_right : lib.getTablePosition(INPUT_DISPLAY_POSITION), compact ? 2 : 48, compact ? 12 : 16 + visibleRows * dashboardDetailStride(), bgcolor = color.new(DASH_BG, 100), frame_width = 0, border_width = 0)
+        displayTabel := table.new(compact ? position.top_right : lib.getTablePosition(INPUT_DISPLAY_POSITION), compact ? 2 : 48, compact ? 13 : 16 + visibleRows * dashboardDetailStride(), bgcolor = color.new(DASH_BG, 100), frame_width = 0, border_width = 0)
         if compact
-            for row = 0 to 11
+            for row = 0 to 12
                 for col = 0 to 1
                     table.cell(displayTabel, col, row, "", bgcolor = DASH_PANEL)
-            for row in array.from(0, 1, 2, 6, 10, 11)
+            for row in array.from(0, 1, 2, 6, 11, 12)
                 dashboardSpan(0, 1, row)
         else
             dashboardInitOverview(visibleRows)
@@ -1439,19 +1516,23 @@ if barstate.islast
         dashboardText(0, 6, "", DASH_LINE, DASH_LINE, 1, rowHeight = 0.2)
         dashboardMiniRow(7, "現金占比", dashboardRatio(cashRatioNow), DASH_BLUE)
         dashboardMiniRow(8, "台股占比", dashboardRatio(twStocksRatioNow), DASH_GREEN)
-        dashboardMiniRow(9, "加密占比", dashboardRatio(cryptoRatioNow), DASH_AMBER)
-        bool validRatios = not na(cashRatioNow) and not na(twStocksRatioNow) and not na(cryptoRatioNow) and totalAssets > 0
+        dashboardMiniRow(9, "美股占比", dashboardRatio(usStocksRatioNow), DASH_VIOLET)
+        dashboardMiniRow(10, "加密占比", dashboardRatio(cryptoRatioNow), DASH_AMBER)
+        bool validRatios = not na(cashRatioNow) and not na(twStocksRatioNow) and not na(usStocksRatioNow) and not na(cryptoRatioNow) and totalAssets > 0
         float greatest = cashDiffRatio
         string greatestName = "現金"
         if math.abs(twStockDiffRatio) > math.abs(greatest)
             greatest := twStockDiffRatio
             greatestName := "台股"
+        if math.abs(usStockDiffRatio) > math.abs(greatest)
+            greatest := usStockDiffRatio
+            greatestName := "美股"
         if math.abs(cryptoDiffRatio) > math.abs(greatest)
             greatest := cryptoDiffRatio
             greatestName := "加密貨幣"
         string notice = not validRatios ? "配置資料不足" : math.abs(greatest) > 0.10 ? greatestName + " 偏離目標 " + dashboardDiff(greatest) : "配置接近目標"
-        dashboardText(0, 10, "  " + notice + "  ", DASH_AMBER, DASH_NOTICE, dashboardFont(), text.align_center)
-        dashboardText(0, 11, currentDate + "  " + currentTime + "  Taipei", DASH_MUTED, DASH_PANEL, math.max(9, dashboardFont() - 3), text.align_center)
+        dashboardText(0, 11, "  " + notice + "  ", DASH_AMBER, DASH_NOTICE, dashboardFont(), text.align_center)
+        dashboardText(0, 12, currentDate + "  " + currentTime + "  Taipei", DASH_MUTED, DASH_PANEL, math.max(9, dashboardFont() - 3), text.align_center)
     else
         dashboardText(0, 0, "  資產總覽", DASH_BLUE, DASH_BG, dashboardFont())
         // 右上：顯示幣別與換算匯率（參數）；左下：資料時間與最近損益紀錄日期（時效）。
@@ -1467,22 +1548,25 @@ if barstate.islast
         table.cell_set_height(displayTabel, 0, 6, 1.8)
         dashboardText(0, 7, "  資產配置", DASH_TEXT, DASH_PANEL, dashboardFont())
         dashboardText(32, 7, "目前占比 / 總資產  ", DASH_MUTED, DASH_PANEL, math.max(9, dashboardFont() - 2), text.align_right)
-        bool barValid = totalAssets > 0 and not na(cashRatioNow) and not na(twStocksRatioNow) and not na(cryptoRatioNow) and cashRatioNow >= 0 and twStocksRatioNow >= 0 and cryptoRatioNow >= 0
+        bool barValid = totalAssets > 0 and not na(cashRatioNow) and not na(twStocksRatioNow) and not na(usStocksRatioNow) and not na(cryptoRatioNow) and cashRatioNow >= 0 and twStocksRatioNow >= 0 and usStocksRatioNow >= 0 and cryptoRatioNow >= 0
         int cashCells = barValid ? int(math.round(cashRatioNow * 48)) : 0
         int stockEnd = barValid ? int(math.round((cashRatioNow + twStocksRatioNow) * 48)) : 0
+        int usStockEnd = barValid ? int(math.round((cashRatioNow + twStocksRatioNow + usStocksRatioNow) * 48)) : 0
         for col = 0 to 47
-            color fillColor = not barValid ? DASH_LINE : col < cashCells ? DASH_BLUE : col < stockEnd ? DASH_GREEN : DASH_AMBER
+            color fillColor = not barValid ? DASH_LINE : col < cashCells ? DASH_BLUE : col < stockEnd ? DASH_GREEN : col < usStockEnd ? DASH_VIOLET : DASH_AMBER
             table.cell_set_bgcolor(displayTabel, col, 8, fillColor)
         // 目標配置細條：對照上方目前占比，顏色較淡。
         int targetCashCells = int(math.round(cashRatio * 48))
         int targetStockEnd = int(math.round((cashRatio + twStocksRatio) * 48))
+        int targetUsStockEnd = int(math.round((cashRatio + twStocksRatio + usStocksRatio) * 48))
         for col = 0 to 47
-            color targetColor = col < targetCashCells ? color.new(DASH_BLUE, 60) : col < targetStockEnd ? color.new(DASH_GREEN, 60) : color.new(DASH_AMBER, 60)
+            color targetColor = col < targetCashCells ? color.new(DASH_BLUE, 60) : col < targetStockEnd ? color.new(DASH_GREEN, 60) : col < targetUsStockEnd ? color.new(DASH_VIOLET, 60) : color.new(DASH_AMBER, 60)
             table.cell_set_bgcolor(displayTabel, col, 9, targetColor)
-        string allocationHint = "上方粗條：目前占比\n下方細條：目標配置（現金 " + dashboardRatio(cashRatio) + " / 台股 " + dashboardRatio(twStocksRatio) + " / 加密資產 " + dashboardRatio(cryptoRatio) + "）"
+        string allocationHint = "上方粗條：目前占比\n下方細條：目標配置（現金 " + dashboardRatio(cashRatio) + " / 台股 " + dashboardRatio(twStocksRatio) + " / 美股 " + dashboardRatio(usStocksRatio) + " / 加密資產 " + dashboardRatio(cryptoRatio) + "）"
         dashboardText(0, 10, "  現金 " + dashboardRatio(cashRatioNow), DASH_BLUE, DASH_PANEL, dashboardFont(), hint = allocationHint)
-        dashboardText(16, 10, "台股 " + dashboardRatio(twStocksRatioNow), DASH_GREEN, DASH_PANEL, dashboardFont(), text.align_center, allocationHint)
-        dashboardText(32, 10, "加密資產 " + dashboardRatio(cryptoRatioNow) + "  ", DASH_AMBER, DASH_PANEL, dashboardFont(), text.align_right, allocationHint)
+        dashboardText(12, 10, "台股 " + dashboardRatio(twStocksRatioNow), DASH_GREEN, DASH_PANEL, dashboardFont(), text.align_center, allocationHint)
+        dashboardText(24, 10, "美股 " + dashboardRatio(usStocksRatioNow), DASH_VIOLET, DASH_PANEL, dashboardFont(), text.align_center, allocationHint)
+        dashboardText(36, 10, "加密資產 " + dashboardRatio(cryptoRatioNow) + "  ", DASH_AMBER, DASH_PANEL, dashboardFont(), text.align_right, allocationHint)
         table.cell_set_height(displayTabel, 0, 11, 1.8)
         for spec in DASHBOARD_COLUMNS
             string header = INPUT_DISPLAY_TITLE ? spec.title : ""
@@ -1505,8 +1589,15 @@ if barstate.islast
             if IS_0050_DISPLAY
                 float stockRealized = (_0050_INCOME - (_0050_COST - INPUT_0050_COST)) * twdEx
                 nextRow := dashboardDetail(nextRow, "0050", now0050Ratio, _0050Ratio / 100, remain0050, pnl0050, pnlPercent0050, _0050RebalanceValue, stockRealized, _0050RebalanceText, true, INPUT_STOCK_JUDGE_RATIO / 100, MY_0050_POSITION, "股")
-        if INPUT_DISPLAY_CRYPTO
+        if INPUT_DISPLAY_USSTOCK
             if INPUT_DISPLAY_CASH or INPUT_DISPLAY_TWSTOCK
+                dashboardGroupGap(nextRow)
+            nextRow := dashboardDetail(nextRow, "美股", usStocksRatioNow, usStocksRatio, totalUsStocksAssets, pnlMSTR, na, usStockRebalance, na, usStockPNLText)
+            if IS_MSTR_DISPLAY
+                float mstrRealized = (MSTR_INCOME - (MSTR_COST - INPUT_MSTR_COST)) * usdEx
+                nextRow := dashboardDetail(nextRow, "MSTR", nowMSTRRatio, mstrRatio / 100, remainMSTR, pnlMSTR, pnlPercentMSTR, mstrRebalanceValue, mstrRealized, mstrRebalanceText, true, INPUT_STOCK_JUDGE_RATIO / 100, MY_MSTR_POSITION, "股")
+        if INPUT_DISPLAY_CRYPTO
+            if INPUT_DISPLAY_CASH or INPUT_DISPLAY_TWSTOCK or INPUT_DISPLAY_USSTOCK
                 dashboardGroupGap(nextRow)
             float cryptoHoldingPnl = pnlBTC + pnlETH + pnlADA + pnlBNB + pnlCRO
             // 加密資產持倉報酬率：五種主要幣的持倉損益 / 其持倉成本（目前市值 − 持倉損益），與各幣 pnlPercent 同一口徑。
