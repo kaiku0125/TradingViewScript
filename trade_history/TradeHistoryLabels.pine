@@ -77,6 +77,8 @@ symbol_matches_chart(Trade trade) =>
         contains_all(chart_symbol, "BNB", "USD")
     else if trade_symbol == "CRO"
         contains_all(chart_symbol, "CRO", "USD")
+    else if trade_symbol == "MSTR"
+        str.contains(chart_symbol, "MSTR")
     else
         trade_symbol == chart_symbol
 
@@ -95,24 +97,27 @@ trade_timestamp(Trade trade) =>
 bar_start_date_key() =>
     date_key(year(time, TZ), month(time, TZ), dayofmonth(time, TZ))
 
-bar_end_date_key() =>
-    date_key(year(time_close - 1, TZ), month(time_close - 1, TZ), dayofmonth(time_close - 1, TZ))
+// Bar history is read once per bar here because is_trade_in_bar runs inside
+// a loop, where [1] would refer to the previous iteration instead of the previous bar.
+int bar_date_key = bar_start_date_key()
+int previous_bar_date_key = bar_date_key[1]
+int previous_bar_close = time_close[1]
+bool is_first_intraday_bar_of_date = bar_date_key != nz(previous_bar_date_key, -1)
 
-is_first_intraday_bar_of_date() =>
-    current_date_key = bar_start_date_key()
-    previous_date_key = nz(bar_start_date_key()[1], -1)
-    current_date_key != previous_date_key
-
+// Each bar owns the gap since the previous bar closed, so trades on days a
+// market has no bar (weekends, holidays) land on the next bar instead of vanishing.
 is_trade_in_bar(Trade trade) =>
+    trade_key = trade_date_key(trade)
     has_trade_date(trade) and
      (
          timeframe.isintraday ?
           (
-              trade_date_key(trade) == bar_start_date_key() and
-               is_first_intraday_bar_of_date()
+              is_first_intraday_bar_of_date and
+               trade_key <= bar_date_key and
+               trade_key > nz(previous_bar_date_key, bar_date_key - 1)
           ) :
           (
-              trade_timestamp(trade) >= time and
+              trade_timestamp(trade) >= nz(previous_bar_close, time) and
                trade_timestamp(trade) < time_close
           )
      )
