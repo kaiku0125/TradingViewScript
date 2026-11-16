@@ -645,6 +645,18 @@ load_generated_trades() =>
     add_trade("BNB", "CRYPTO", "SELL", 0, 0, 0, 0.66, 432.3, "655")
     add_trade("BNB", "CRYPTO", "SELL", 0, 0, 0, 0.66, 439.56, "666")
     add_trade("BNB", "CRYPTO", "SELL", 0, 0, 0, 0.637, 426.79, "670")
+    add_trade("MSTR", "US", "BUY", 2026, 11, 10, 2.5, 300.0, "120")
+    add_trade("MSTR", "US", "BUY", 2026, 11, 12, 2.54237, 300.0, "118")
+    add_trade("MSTR", "US", "BUY", 2026, 11, 12, 2.5862, 300.0, "116")
+    add_trade("MSTR", "US", "BUY", 2026, 11, 12, 2.63157, 300.0, "114")
+    add_trade("MSTR", "US", "BUY", 2026, 11, 13, 2.67857, 300.0, "112")
+    add_trade("MSTR", "US", "BUY", 2026, 11, 13, 2.72727, 300.0, "110")
+    add_trade("MSTR", "US", "BUY", 2026, 11, 14, 2.77777, 300.0, "108")
+    add_trade("MSTR", "US", "BUY", 2026, 11, 14, 2.83018, 300.0, "106")
+    add_trade("MSTR", "US", "BUY", 2026, 11, 14, 2.88461, 300.0, "104")
+    add_trade("MSTR", "US", "BUY", 2026, 11, 15, 2.94117, 300.0, "102")
+    add_trade("MSTR", "US", "BUY", 2026, 11, 15, 3.0, 300.0, "100")
+    add_trade("MSTR", "US", "BUY", 2026, 11, 15, 4.82173, 472.52, "98")
     // === AUTO-GENERATED TRADES END ===
 
 if barstate.isfirst

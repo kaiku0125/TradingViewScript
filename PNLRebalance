@@ -54,7 +54,7 @@ var float CRO_CRYPTO_RATIO = 10
 // 銀行現金設定
 // ============================================================================
 // === AUTO-GENERATED CASH LIABILITY START ===
-// updated_at: 2026-11-09T01:42:11.862Z
+// updated_at: 2026-11-16T01:18:34.676Z
 var float BANK1_AVAL = 114639.0  // LineBank (TWD)
 var float BANK2_AVAL = 0.0  // Bankee (TWD)
 var float BANK3_AVAL = 112801.0  // 台新 (TWD)
@@ -68,11 +68,11 @@ var float DEBT = -866366.0  // 負債(TWD)
 // 交易所設定
 // ============================================================================
 // === AUTO-GENERATED USD START ===
-// updated_at: 2026-11-09T01:42:11.862Z
+// updated_at: 2026-11-16T01:18:34.676Z
 var float BYBIT_EXCHANGE_USD = 0.0
 var float BINANCE_EXCHANGE_USD = 0.0
 var float CRYPTO_DOT_COM_EXCHANGE_USD = 0.0
-var float OKX_EXCHANGE_USD = 3772.0
+var float OKX_EXCHANGE_USD = 0.0
 var float PIONEX_EXCHANGE_USD = 0.0
 var float KRAKEN_EXCHANGE_USD = 0.0
 var float EXCHANGE_USD =
@@ -101,12 +101,12 @@ var float _0050_INCOME = 344242
 // 美股資產設定
 // ============================================================================
 // === AUTO-GENERATED US STOCK START ===
-// updated_at: 2026-11-09T01:42:11.862Z
-var string[] usSymbols = array.new_string()
-var float[] usBuyQtys = array.new_float()
-var float[] usBuyCosts = array.new_float()
-var float[] usSellQtys = array.new_float()
-var float[] usSellIncomes = array.new_float()
+// updated_at: 2026-11-16T01:18:34.676Z
+var string[] usSymbols = array.from("MSTR")
+var float[] usBuyQtys = array.from(34.92)
+var float[] usBuyCosts = array.from(3773.0)
+var float[] usSellQtys = array.from(0.0)
+var float[] usSellIncomes = array.from(0.0)
 // === AUTO-GENERATED US STOCK END ===
 
 var string MSTR_TICKER = "MSTR"
@@ -138,7 +138,7 @@ var float MSTR_INCOME = usStockValue(usSellIncomes, IDX_MSTR)
 // ============================================================================
 
 // === AUTO-GENERATED START ===
-// updated_at: 2026-11-09T01:42:11.862Z
+// updated_at: 2026-11-16T01:18:34.676Z
 var string[] symbols = array.from("BTC", "ETH", "ADA", "BNB", "CRO")
 var float[] buyQtys = array.from(0.7487, 12.55, 39575.0, 16.54, 122800.0)
 var float[] buyCosts = array.from(40849.0, 21486.0, 11883.0, 7872.0, 14439.0)
@@ -202,7 +202,7 @@ var float BNB_INCOME = array.get(sellIncomes, IDX_BNB)
 // 總成本設定
 // ============================================================================
 var float ALL_STOCKS_COST = _0050_COST  // 台股成本
-var float ALL_CRYPTO_COST = 3100000      // 幣圈成本
+var float ALL_CRYPTO_COST = 3100000      // 投機總本金（幣圈 + 美股）
 
 // ============================================================================
 // 字串常數 - 貨幣單位
@@ -1860,6 +1860,7 @@ if barstate.isfirst
         array.push(rdArray, newData(2026, 10, 19, -53884)) //-1.71%
         array.push(rdArray, newData(2026, 11, 2, -130338)) //-4.05%
         array.push(rdArray, newData(2026, 11, 9, -213147)) //-6.62%
+        array.push(rdArray, newData(2026, 11, 16, -495376)) //-14.82%
 
 // 選擇要繪製的值（平滑化或原始值）
 plotValue = INPUT_SMOOTHING_ENABLED and not na(smoothedVariation) ? smoothedVariation : (not na(interpolatedVariation) ? interpolatedVariation : recordAssetsVariation)
