@@ -1,11 +1,7 @@
 //@version=6
-// Dashboard preview copied from PNLRebalance on 2026-09-28.
-// This file is not updated by holdings/update_holdings_pine.py or /sync.
-// Refresh its generated data from PNLRebalance before treating values as current.
 
 // 1. Import library
 import kaiku0125/Debug/1 as debug
-import kaiku0125/Colour/8 as colour
 import kaiku0125/FormatSDK/1 as fm
 import kaiku0125/PNLRebalanceLib/5 as lib
 var bool DEBUG = false
@@ -13,8 +9,8 @@ var bool DEBUG = false
 // #                   |   Indicator  |
 // # ========================================================================= #
 indicator(
- title                = "PNLRebalance Dashboard Preview",
- shorttitle           = "損益再平衡預覽",
+ title                = "PNLRebalance",
+ shorttitle           = "損益再平衡",
  overlay              =  true,
 //  max_bars_back        =  100,
 //  format               =  ,
@@ -221,18 +217,10 @@ var string BOTTOM_CENTER = "中間靠下"
 var string MIDDLE_CENTER = "正中央"
 
 // ============================================================================
-// 字串常數 - 顯示選項（資產資訊顯示模式）
-// ============================================================================
-var string INFO_ALL_ASSETS = "資產 + 現金"
-var string INFO_UNSTEADY_ASSETS = "資產"
-var string INFO_PNL_ASSETS = "總資產 PNL"
-
-// ============================================================================
 // 字串常數 - 輸入欄位標題
 // ============================================================================
 var string POSITION_TITLE = "量體"
 var string STOCK_COST_TITLE = "股 ➔ 成本"
-var string CRYPTO_COST_TITLE = "顆 ➔ 成本"
 
 // ============================================================================
 // 字串常數 - 輸入群組名稱
@@ -255,8 +243,6 @@ var string INLINE_ETH = "07"
 var string INLINE_CRO = "08"
 var string INLINE_ADA = "10"
 var string INLINE_BNB = "15"
-var string INLINE_ILV = "20"
-var string INLINE_OTHER = "22"
 
 // ============================================================================
 // 字串常數 - 版本資訊
@@ -308,8 +294,6 @@ INPUT_CHART_LABELS = input.bool(defval = true, title = "顯示走勢圖標籤（
 INPUT_DISPLAY_CURRENCY = input.string(defval = TWD, title = "貨幣顯示", options = [TWD, USD], group = GROUP_SETTING)
 INPUT_DISPLAY_SIZE = input.string(defval = SIZE_LARGE, title = "表格大小", options = [SIZE_TINY, SIZE_SMALL, SIZE_NORMAL, SIZE_LARGE], group = GROUP_SETTING)
 INPUT_DISPLAY_POSITION = input.string(defval = MIDDLE_CENTER, title = "表格位置", options = [MIDDLE_CENTER, BOTTOM_CENTER], group = GROUP_SETTING)
-// Dashboard cards have fixed meanings; the old header selector is no longer exposed.
-INPUT_DISPLAY_INFO = INFO_ALL_ASSETS
 
 // ============================================================================
 // 輸入參數 - 配比設定
@@ -352,39 +336,24 @@ MY_MSTR_COST = INPUT_MSTR_COST
 
 // 加密貨幣 - 主要
 IS_BTC_DISPLAY = input.bool(defval = true, title = "BTC", inline = INLINE_BTC, group = GROUP_ASSETS)
-// MY_BTC_POSITION = input.float(defval = INPUT_BTC_POSITION, title = POSITION_TITLE, inline = INLINE_BTC, group = GROUP_ASSETS)
-// MY_BTC_COST = input.float(defval = INPUT_BTC_COST, title = CRYPTO_COST_TITLE, inline = INLINE_BTC, group = GROUP_ASSETS)
 MY_BTC_POSITION = INPUT_BTC_POSITION
 MY_BTC_COST = INPUT_BTC_COST
 
 IS_ETH_DISPLAY = input.bool(defval = true, title = "ETH", inline = INLINE_ETH, group = GROUP_ASSETS)
-// MY_ETH_POSITION = input.float(defval = INPUT_ETH_POSITION, title = POSITION_TITLE, inline = INLINE_ETH, group = GROUP_ASSETS)
-// MY_ETH_COST = input.float(defval = INPUT_ETH_COST, title = CRYPTO_COST_TITLE, inline = INLINE_ETH, group = GROUP_ASSETS)
 MY_ETH_POSITION = INPUT_ETH_POSITION
 MY_ETH_COST = INPUT_ETH_COST
 
 IS_ADA_DISPLAY = input.bool(defval = true, title = "ADA", inline = INLINE_ADA, group = GROUP_ASSETS)
-// MY_ADA_POSITION = input.float(defval = INPUT_ADA_POSITION, title = POSITION_TITLE, inline = INLINE_ADA, group = GROUP_ASSETS)
-// MY_ADA_COST = input.float(defval = ADA_COST, title = CRYPTO_COST_TITLE, inline = INLINE_ADA, group = GROUP_ASSETS)
 MY_ADA_POSITION = INPUT_ADA_POSITION
 MY_ADA_COST = INPUT_ADA_COST
 
 IS_BNB_DISPLAY = input.bool(defval = true, title = "BNB", inline = INLINE_BNB, group = GROUP_ASSETS)
-// MY_BNB_POSITION = input.float(defval = INPUT_BNB_POSITION, title = POSITION_TITLE, inline = INLINE_BNB, group = GROUP_ASSETS)
-// MY_BNB_COST = input.float(defval = INPUT_BNB_COST, title = CRYPTO_COST_TITLE, inline = INLINE_BNB, group = GROUP_ASSETS)
 MY_BNB_POSITION = INPUT_BNB_POSITION
 MY_BNB_COST = INPUT_BNB_COST
 
 IS_CRO_DISPLAY = input.bool(defval = true, title = "CRO", inline = INLINE_CRO, group = GROUP_ASSETS)
-// MY_CRO_POSITION = input.float(defval = INPUT_CRO_POSITION, title = POSITION_TITLE, inline = INLINE_CRO, group = GROUP_ASSETS)
-// MY_CRO_COST = input.float(defval = INPUT_CRO_COST, title = CRYPTO_COST_TITLE, inline = INLINE_CRO, group = GROUP_ASSETS)
 MY_CRO_POSITION = INPUT_CRO_POSITION
 MY_CRO_COST = INPUT_CRO_COST
-
-// 其他資產
-IS_OTHER_DISPLAY = input.bool(defval = false, title = "淨利(零)幣?", inline = INLINE_OTHER, group = GROUP_ASSETS)
-MY_OTHER_CRYPTO_COST = 0
-
 
 // ============================================================================
 // 輸入參數 - 版本資訊
@@ -392,14 +361,6 @@ MY_OTHER_CRYPTO_COST = 0
 INPUT_VERSION_NAME = input.string(defval = VERSION_NAME, title = "版本", options = [VERSION_NAME], tooltip = RELEASE_NOTE, group = GROUP_VERSION)
 
 // 3. Constant value initialization
-// ============================================================================
-// 字串常數 - 表格顯示標題和圖示
-// ============================================================================
-var string CASH_TITLE = "❶ 現金"
-var string TW_STOCKS_TITLE = "➋ 台股"
-var string CRYPTO_TITLE = "➌ 幣圈"
-var string ICON_MONEY = "💰 "
-
 // ============================================================================
 // 字串常數 - TradingView 價格符號（匯率）
 // ============================================================================
@@ -442,11 +403,6 @@ const color DASH_VIOLET = #B79CFF
 const color DASH_DEBT = #D9949A
 color DASH_NOTICE = color.new(#29251E, INPUT_DASHBOARD_TRANSPARENCY)
 color DASH_GROUP = color.new(#1C2534, INPUT_DASHBOARD_TRANSPARENCY)
-var color COLOR_MY_WHITE = DASH_TEXT
-var color COLOR_BG = DASH_PANEL
-var color DF_TEXT_COLOR = DASH_TEXT
-var color DF_CELL_COLOR = DASH_PANEL
-var color DF_ASSET_TITLE_COLOR = DASH_BLUE
 
 // 4. Variable declaration
 // ============================================================================
@@ -463,18 +419,15 @@ type RecordData
 // ============================================================================
 type CryptoAssetData
     float remain              // 當前資產價值（用於排序）
-    string displayType       // 顯示類型："withIncome", "withoutIncome", "blank", "blankWithIncome"
     string assetName         // 資產名稱
-    string titleRatio        // 配比標題文字
     float nowRatio           // 當前配比
-    string rebalanceText     // 再平衡文字（可選，用於 withIncome 和 withoutIncome）
-    float diffRatio          // 配比差異（可選，用於 withIncome 和 withoutIncome）
-    float judgeRatio         // 判斷閾值（可選，用於 withIncome 和 withoutIncome）
+    string rebalanceText     // 再平衡文字
+    float judgeRatio         // 判斷閾值
     float pnl                // 損益金額
     float pnlPercent         // 損益百分比
-    float income             // 已實現收入（可選，用於 withIncome 和 blankWithIncome）
-    float cost               // 原始總成本（可選，用於 withIncome 和 blankWithIncome）
-    float inputCost          // 當前持有資產成本（可選，用於 withIncome 和 blankWithIncome）
+    float income             // 已實現收入
+    float cost               // 原始總成本
+    float inputCost          // 當前持有資產成本
 
 // ============================================================================
 // 價格變數 - 從 TradingView 獲取的即時價格
@@ -516,156 +469,9 @@ var label chartLowLabel = na
 // 表格變數 - 用於顯示資訊的表格
 // ============================================================================
 var table displayTabel = na            // 主要顯示表格
-var table ratioTabel = na              // 配比表格（目前未使用）
 var array<RecordData> rdArray = array.new<RecordData>()  // 歷史記錄陣列
 
 // 5. Define functions
-// ============================================================================
-// 表格渲染函數
-// ============================================================================
-
-// 格式化 PNL 文字顯示
-// _stateIcon : 狀態圖示（如 🚀、😀 等）
-// _pnlText : 損益金額文字
-// _pnlPercentText : 損益百分比文字
-getPNLText(string _stateIcon, string _pnlText, string _pnlPercentText) =>
-    string output = lib.DISPLAY_NONE()
-    if _stateIcon != lib.DISPLAY_NONE()
-        output := "\t" + _pnlText + "\t【" + _pnlPercentText + "】" + _stateIcon
-    output
-
-// 渲染表格單元格（主要顯示表格）
-// columnID : 欄位編號
-// rowID : 行編號
-// displayText : 顯示文字
-// textColor : 文字顏色
-// background : 背景顏色
-cell(int columnID, int rowID, string displayText, color textColor, color background) =>
-    table.cell(
-     table_id       =  displayTabel,
-     column         =  columnID,
-     row            =  rowID,
-     text           =  displayText,
-     text_color     =  textColor,
-     text_size      =  lib.getTableSize(INPUT_DISPLAY_SIZE),
-     bgcolor        =  background
-     )
-
-// 渲染表格單元格（配比表格，目前未使用）
-// columnID : 欄位編號
-// rowID : 行編號
-// displayText : 顯示文字
-// textColor : 文字顏色
-// background : 背景顏色
-cellRatio(int columnID, int rowID, string displayText, color textColor, color background) =>
-    table.cell(
-     table_id       =  ratioTabel,
-     column         =  columnID,
-     row            =  rowID,
-     text           =  displayText,
-     text_color     =  textColor,
-     text_size      =  lib.getTableSize(INPUT_DISPLAY_SIZE),
-     bgcolor        =  background
-     )
-
-// 渲染空白再平衡行（無再平衡資訊）
-// rowID : 行編號
-// targetSymbol : 目標資產符號名稱
-// nowRatio : 當前配比（小數，如 0.15 表示 15%）
-cellBlankRebalance(int rowID, string targetSymbol, float nowRatio) =>
-    cell(0, rowID, targetSymbol, DF_ASSET_TITLE_COLOR, DF_CELL_COLOR)
-    cell(1, rowID, fm.ratioString(nowRatio), DF_TEXT_COLOR, DF_CELL_COLOR)
-    cell(2, rowID, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
-
-// 渲染再平衡行（無通知顏色）
-// rowID : 行編號
-// targetSymbol : 目標資產符號名稱
-// nowRatio : 當前配比（小數，如 0.15 表示 15%）
-// rebalanceText : 再平衡文字（包含金額和百分比差異）
-cellRebalance(int rowID, string targetSymbol, float nowRatio, string rebalanceText) =>
-    cell(0, rowID, targetSymbol, DF_ASSET_TITLE_COLOR, DF_CELL_COLOR)
-    cell(1, rowID, fm.ratioString(nowRatio), DF_TEXT_COLOR, DF_CELL_COLOR)
-    cell(2, rowID, rebalanceText, DF_TEXT_COLOR, DF_CELL_COLOR)
-
-// 渲染再平衡行（帶通知顏色，當偏差超過閾值時顯示紫色）
-// rowID : 行編號
-// targetSymbol : 目標資產符號名稱
-// nowRatio : 當前配比（小數，如 0.15 表示 15%）
-// rebalanceText : 再平衡文字（包含金額和百分比差異）
-// diffRatio : 配比差異（當前配比 - 目標配比）
-// judgeRatio : 判斷閾值（當偏差比例超過此值時顯示紫色警告）
-cellRebalanceWithNotify(int rowID, string targetSymbol, float nowRatio, string rebalanceText, float diffRatio, float judgeRatio) =>
-    // 若再平衡的%數 > judgeRatio 必須優先進行再平衡
-    mRatio = diffRatio / nowRatio
-    color ratioDiffColor = if math.abs(number = mRatio) > judgeRatio
-        colour.VIOLET(0)
-    else
-        DF_TEXT_COLOR
-    cell(0, rowID, targetSymbol, DF_ASSET_TITLE_COLOR, DF_CELL_COLOR)
-    cell(1, rowID, fm.ratioString(nowRatio), DF_TEXT_COLOR, DF_CELL_COLOR)
-    cell(2, rowID, rebalanceText, ratioDiffColor, DF_CELL_COLOR)
-
-// 渲染 PNL 行（價值、損益、損益百分比）
-// rowID : 行編號
-// remain : 當前資產價值（剩餘價值）
-// pnl : 損益金額
-// pnlPercent : 損益百分比（小數，如 0.15 表示 15%）
-cellPNL(int rowID, float remain, float pnl, float pnlPercent) =>
-    float mPnlPercent = na(pnlPercent) ? 0 : pnlPercent
-    string remainText = fm.fString(remain, 0)
-    cell(3, rowID, remainText, DF_TEXT_COLOR, DF_CELL_COLOR)
-
-    string pnlText = pnl == 0 ? lib.DISPLAY_NONE() : fm.fString(pnl, 0)
-    string pnlPercentText = mPnlPercent == 0 ? lib.DISPLAY_NONE() : fm.ratioString(mPnlPercent)
-    [stateIcon, stateColor] = lib.ratioStateJudge(mPnlPercent * 100, colour.LIME_GREEN(0))
-    cell(
-     columnID         =  4,
-     rowID            =  rowID,
-     displayText      =  getPNLText(stateIcon, pnlText, pnlPercentText),
-     textColor        =  stateColor,
-     background       =  DF_CELL_COLOR
-     )
-    int nextRow = rowID + 1
-    nextRow
-
-// 渲染已結盈虧行
-// rowID : 行編號
-// _income : 已實現收入（賣出獲得的金額）
-// _cost : 原始總成本
-// input_symbol_cost : 當前持有資產的成本
-cellIncome(int rowID, float _income, float _cost, float input_symbol_cost) =>
-    float settlement = _income - (_cost - input_symbol_cost)
-    string settleText = fm.fString(settlement, 0)
-    color textColor = if settlement < 0
-        color.red
-    else if settlement > 0
-        colour.LIME_GREEN(0)
-    else
-        DF_TEXT_COLOR
-    cell(5, rowID, settleText, textColor, DF_CELL_COLOR)
-
-// 渲染已結盈虧行（使用買賣價格計算）
-// rowID : 行編號
-// income : 賣出獲得的總收入
-// cost : 買入的總成本
-// sold : 已賣出的數量
-// bought : 總買入數量
-cellIncome2(int rowID, float income, float cost, float sold, float bought) =>
-    float buy_price = cost / bought
-    float sell_price = income / sold
-    float realized = (sell_price - buy_price) * sold
-    string settleText = fm.fString(realized, 0)
-    color textColor = realized >= 0 ? colour.LIME_GREEN(0) : colour.FIRE_BRICK(0)
-    cell(5, rowID, settleText, textColor, DF_CELL_COLOR)
-
-// 渲染空白行（用於分隔）
-// rowID : 行編號
-cellBlank(int rowID) =>
-    for i = 0 to 4
-        table.cell(displayTabel, column = i, row = rowID,  text = "", height = 1)
-    int nextRow = rowID + 1
-    nextRow
-
 // ============================================================================
 // 計算輔助函數
 // ============================================================================
@@ -688,28 +494,6 @@ getRebalanceText(string bankName, float bankAval, float rebalance) =>
         bankName + "買進 " + str.tostring(_rebalance, "#,##0") + "\t" + TWD + "（免入金）"
     output
 
-// 獲取顯示資訊文字和顏色（根據顯示模式）
-// _totalAssets : 總資產
-// _totalSpeculationAssets : 總投機資產（台股+幣圈）
-// _speculationPNL : 投機損益金額
-// _speculationPNLRatio : 投機損益百分比（小數，如 0.15 表示 15%）
-getDisplayInfo(float _totalAssets, float _totalSpeculationAssets, float _speculationPNL, float _speculationPNLRatio) =>
-    string opText = if INPUT_DISPLAY_INFO == INFO_UNSTEADY_ASSETS
-        ICON_MONEY + fm.fString(_totalSpeculationAssets, 0)
-    else if INPUT_DISPLAY_INFO == INFO_PNL_ASSETS
-        ICON_MONEY + fm.fString(_speculationPNL, 0) + "\t【" + fm.ratioString(_speculationPNLRatio) + "】\t"
-    else
-        ICON_MONEY + fm.fString(totalAssets, 0)
-
-    [mIcon, mColor] = lib.ratioStateJudge(_speculationPNLRatio * 100, colour.LIME_GREEN(0))
-    color opColor = if INPUT_DISPLAY_INFO == INFO_UNSTEADY_ASSETS
-        colour.GOLDER_ROD(0)
-    else if INPUT_DISPLAY_INFO == INFO_PNL_ASSETS
-        mColor
-    else
-        colour.GOLD(0)
-    [opText, opColor]
-
 // 創建新的記錄資料
 // _year : 年份
 // _month : 月份
@@ -724,14 +508,6 @@ newData(int _year, int _month, int _day, float _nowTotal) =>
 getCurrentSymbol(float value) =>
     string mOutput = fm.fString(value, 4)
     label debugLabel = debug.printLabel("圖表ID : " + syminfo.tickerid + ", 價格 : " + mOutput)
-    // label.delete(id = debugLabel[1])
-
-// 調試函數：顯示調試值
-// value : 要顯示的調試值
-getDebugValue(value) =>
-    string ddd = str.format("{0,time,HH:mm:ss.SSS}", timenow)
-    string mOutput = str.tostring(value = value)
-    label debugLabel = debug.printLabel(mOutput)
     // label.delete(id = debugLabel[1])
 
 // ============================================================================
@@ -786,78 +562,6 @@ appendRebalanceQtyText(string rebalanceText, float rebalanceValue, float price, 
     output
 
 // ============================================================================
-// 資產顯示函數
-// ============================================================================
-
-// 顯示加密貨幣資產行（帶已結盈虧）
-// rowID : 行編號
-// assetName : 資產名稱
-// titleRatio : 標題中的配比文字（如 "\t【15%】"）
-// nowRatio : 當前配比（小數，如 0.15 表示 15%）
-// rebalanceText : 再平衡文字（包含金額和百分比差異）
-// diffRatio : 配比差異（當前配比 - 目標配比）
-// judgeRatio : 判斷閾值（當偏差比例超過此值時顯示紫色警告）
-// remain : 當前資產價值（剩餘價值）
-// pnl : 損益金額
-// pnlPercent : 損益百分比（小數，如 0.15 表示 15%）
-// income : 已實現收入（賣出獲得的金額，USD）
-// cost : 原始總成本（USD）
-// inputCost : 當前持有資產的成本（USD）
-// usdEx : 美元匯率轉換係數
-displayCryptoAssetWithIncome(int rowID, string assetName, string titleRatio, float nowRatio, string rebalanceText, float diffRatio, float judgeRatio, float remain, float pnl, float pnlPercent, float income, float cost, float inputCost, float usdEx) =>
-    cellRebalanceWithNotify(rowID, assetName + titleRatio, nowRatio, rebalanceText, diffRatio, judgeRatio)
-    cellIncome(rowID, income * usdEx, cost * usdEx, inputCost * usdEx)
-    int nextRow = cellPNL(rowID, remain, pnl, pnlPercent)
-    nextRow
-
-// 顯示加密貨幣資產行（無已結盈虧）
-// rowID : 行編號
-// assetName : 資產名稱
-// titleRatio : 標題中的配比文字（如 "\t【15%】"）
-// nowRatio : 當前配比（小數，如 0.15 表示 15%）
-// rebalanceText : 再平衡文字（包含金額和百分比差異）
-// diffRatio : 配比差異（當前配比 - 目標配比）
-// judgeRatio : 判斷閾值（當偏差比例超過此值時顯示紫色警告）
-// remain : 當前資產價值（剩餘價值）
-// pnl : 損益金額
-// pnlPercent : 損益百分比（小數，如 0.15 表示 15%）
-displayCryptoAssetWithoutIncome(int rowID, string assetName, string titleRatio, float nowRatio, string rebalanceText, float diffRatio, float judgeRatio, float remain, float pnl, float pnlPercent) =>
-    cellRebalanceWithNotify(rowID, assetName + titleRatio, nowRatio, rebalanceText, diffRatio, judgeRatio)
-    cell(5, rowID, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
-    int nextRow = cellPNL(rowID, remain, pnl, pnlPercent)
-    nextRow
-
-// 顯示加密貨幣資產行（僅顯示，無再平衡）
-// rowID : 行編號
-// assetName : 資產名稱
-// nowRatio : 當前配比（小數，如 0.15 表示 15%）
-// remain : 當前資產價值（剩餘價值）
-// pnl : 損益金額
-// pnlPercent : 損益百分比（小數，如 0.15 表示 15%）
-displayCryptoAssetBlank(int rowID, string assetName, float nowRatio, float remain, float pnl, float pnlPercent) =>
-    cellBlankRebalance(rowID, assetName, nowRatio)
-    cell(5, rowID, lib.DISPLAY_NONE(), DF_TEXT_COLOR, DF_CELL_COLOR)
-    int nextRow = cellPNL(rowID, remain, pnl, pnlPercent)
-    nextRow
-
-// 顯示加密貨幣資產行（僅顯示，無再平衡，但有已結盈虧）
-// rowID : 行編號
-// assetName : 資產名稱
-// nowRatio : 當前配比（小數，如 0.15 表示 15%）
-// remain : 當前資產價值（剩餘價值）
-// pnl : 損益金額
-// pnlPercent : 損益百分比（小數，如 0.15 表示 15%）
-// income : 已實現收入（賣出獲得的金額，USD）
-// cost : 原始總成本（USD）
-// inputCost : 當前持有資產的成本（USD）
-// usdEx : 美元匯率轉換係數
-displayCryptoAssetBlankWithIncome(int rowID, string assetName, float nowRatio, float remain, float pnl, float pnlPercent, float income, float cost, float inputCost, float usdEx) =>
-    cellBlankRebalance(rowID, assetName, nowRatio)
-    cellIncome(rowID, income * usdEx, cost * usdEx, inputCost * usdEx)
-    int nextRow = cellPNL(rowID, remain, pnl, pnlPercent)
-    nextRow
-
-// ============================================================================
 // 動態排序相關函數
 // ============================================================================
 
@@ -865,24 +569,20 @@ displayCryptoAssetBlankWithIncome(int rowID, string assetName, float nowRatio, f
 // 返回包含所有要顯示資產的數組
 // 所有參數都是 runtime 計算的值，需要作為參數傳入
 collectCryptoAssets(
- float remainBTC, float pnlBTC, float pnlPercentBTC, float nowBTCRatio, string btcRebalaneText, float btcDiffRatio, string titleBTCRatio,
- float remainETH, float pnlETH, float pnlPercentETH, float nowETHRatio, string ethRebalaneText, float ethDiffRatio, string titleETHRatio,
- float remainADA, float pnlADA, float pnlPercentADA, float nowADARatio, string adaRebalaneText, float adaDiffRatio, string titleADARatio,
- float remainBNB, float pnlBNB, float pnlPercentBNB, float nowBNBRatio, string bnbRebalaneText, float bnbDiffRatio, string titleBNBRatio,
- float remainCRO, float pnlCRO, float pnlPercentCRO, float nowCRORatio, string croRebalaneText, float croDiffRatio, string titleCRORatio
+ float remainBTC, float pnlBTC, float pnlPercentBTC, float nowBTCRatio, string btcRebalaneText,
+ float remainETH, float pnlETH, float pnlPercentETH, float nowETHRatio, string ethRebalaneText,
+ float remainADA, float pnlADA, float pnlPercentADA, float nowADARatio, string adaRebalaneText,
+ float remainBNB, float pnlBNB, float pnlPercentBNB, float nowBNBRatio, string bnbRebalaneText,
+ float remainCRO, float pnlCRO, float pnlPercentCRO, float nowCRORatio, string croRebalaneText
  ) =>
     array<CryptoAssetData> assets = array.new<CryptoAssetData>()
 
-    // BTC - withIncome
     if IS_BTC_DISPLAY
         asset = CryptoAssetData.new(
          remain = remainBTC,
-         displayType = "withIncome",
          assetName = "₿\tBTC",
-         titleRatio = titleBTCRatio,
          nowRatio = nowBTCRatio,
          rebalanceText = btcRebalaneText,
-         diffRatio = btcDiffRatio,
          judgeRatio = INPUT_CRYPTO_JUDGE_RATIO / 100,
          pnl = pnlBTC,
          pnlPercent = pnlPercentBTC,
@@ -892,16 +592,12 @@ collectCryptoAssets(
          )
         array.push(assets, asset)
 
-    // ETH - withIncome
     if IS_ETH_DISPLAY
         asset = CryptoAssetData.new(
          remain = remainETH,
-         displayType = "withIncome",
          assetName = "⟠\tETH",
-         titleRatio = titleETHRatio,
          nowRatio = nowETHRatio,
          rebalanceText = ethRebalaneText,
-         diffRatio = ethDiffRatio,
          judgeRatio = INPUT_CRYPTO_JUDGE_RATIO / 100,
          pnl = pnlETH,
          pnlPercent = pnlPercentETH,
@@ -911,16 +607,12 @@ collectCryptoAssets(
          )
         array.push(assets, asset)
 
-    // ADA - withIncome
     if IS_ADA_DISPLAY
         asset = CryptoAssetData.new(
          remain = remainADA,
-         displayType = "withIncome",
          assetName = "ADA",
-         titleRatio = titleADARatio,
          nowRatio = nowADARatio,
          rebalanceText = adaRebalaneText,
-         diffRatio = adaDiffRatio,
          judgeRatio = INPUT_CRYPTO_JUDGE_RATIO / 100,
          pnl = pnlADA,
          pnlPercent = pnlPercentADA,
@@ -930,16 +622,12 @@ collectCryptoAssets(
          )
         array.push(assets, asset)
 
-    // BNB - withoutIncome
     if IS_BNB_DISPLAY
         asset = CryptoAssetData.new(
          remain = remainBNB,
-         displayType = "withIncome",
          assetName = "BNB",
-         titleRatio = titleBNBRatio,
          nowRatio = nowBNBRatio,
          rebalanceText = bnbRebalaneText,
-         diffRatio = bnbDiffRatio,
          judgeRatio = INPUT_CRYPTO_JUDGE_RATIO / 100,
          pnl = pnlBNB,
          pnlPercent = pnlPercentBNB,
@@ -949,16 +637,12 @@ collectCryptoAssets(
          )
         array.push(assets, asset)
 
-    // CRO - withIncome
     if IS_CRO_DISPLAY
         asset = CryptoAssetData.new(
          remain = remainCRO,
-         displayType = "withIncome",
          assetName = "CRO",
-         titleRatio = titleCRORatio,
          nowRatio = nowCRORatio,
          rebalanceText = croRebalaneText,
-         diffRatio = croDiffRatio,
          judgeRatio = INPUT_CRYPTO_JUDGE_RATIO / 100,
          pnl = pnlCRO,
          pnlPercent = pnlPercentCRO,
@@ -983,22 +667,6 @@ sortAssetsByRemain(array<CryptoAssetData> assets) =>
                     array.set(assets, j, asset2)
                     array.set(assets, j + 1, asset1)
     assets
-
-// 根據資產類型動態調用對應的顯示函數
-// rowID : 行編號
-// asset : 資產數據對象
-// usdEx : 美元匯率轉換係數
-renderCryptoAsset(int rowID, CryptoAssetData asset, float usdEx) =>
-    int nextRow = rowID
-    if asset.displayType == "withIncome"
-        nextRow := displayCryptoAssetWithIncome(rowID, asset.assetName, asset.titleRatio, asset.nowRatio, asset.rebalanceText, asset.diffRatio, asset.judgeRatio, asset.remain, asset.pnl, asset.pnlPercent, asset.income, asset.cost, asset.inputCost, usdEx)
-    else if asset.displayType == "withoutIncome"
-        nextRow := displayCryptoAssetWithoutIncome(rowID, asset.assetName, asset.titleRatio, asset.nowRatio, asset.rebalanceText, asset.diffRatio, asset.judgeRatio, asset.remain, asset.pnl, asset.pnlPercent)
-    else if asset.displayType == "blank"
-        nextRow := displayCryptoAssetBlank(rowID, asset.assetName, asset.nowRatio, asset.remain, asset.pnl, asset.pnlPercent)
-    else if asset.displayType == "blankWithIncome"
-        nextRow := displayCryptoAssetBlankWithIncome(rowID, asset.assetName, asset.nowRatio, asset.remain, asset.pnl, asset.pnlPercent, asset.income, asset.cost, asset.inputCost, usdEx)
-    nextRow
 
 // 6. Code logic start
 // ============================================================================
@@ -1081,10 +749,8 @@ mainCryptoAssets += pETH * MY_ETH_POSITION
 mainCryptoAssets += pCRO * MY_CRO_POSITION
 mainCryptoAssets += pADA * MY_ADA_POSITION
 mainCryptoAssets += pBNB * MY_BNB_POSITION
-// 其他加密貨幣總價值
-otherCryptoASssets  = 0
-// 加密貨幣總價值（主要部位 + 其他；交易所 USDT 已歸入現金）
-totalCryptoAssets = (mainCryptoAssets + otherCryptoASssets) * usdEx
+// 加密貨幣總價值（交易所 USDT 已歸入現金）
+totalCryptoAssets = mainCryptoAssets * usdEx
 // 總投機資產（台股 + 美股 + 加密貨幣）
 totalSpeculationAssets = totalStocksAssets + totalUsStocksAssets + totalCryptoAssets
 // 總資產（現金 + 投機）
@@ -1096,7 +762,6 @@ totalAssets := totalCash + totalSpeculationAssets
 // 總投入成本（股票+幣圈）- 幣託U - 交易所 USDT（買入前皆視為美金現金）
 // 美股本金是從幣圈轉出的資金，已含在 ALL_CRYPTO_COST，不另計以免重複。
 allCost = (ALL_STOCKS_COST + ALL_CRYPTO_COST) * twdEx - (INPUT_BITO + EXCHANGE_USD) * usdEx
-//allCost = (ALL_STOCKS_COST + ALL_CRYPTO_COST) * twdEx - INPUT_BITO * usdEx - INPUT_CRYPTO_COM_VISA * usdEx  // 總投入成本（股票+幣圈）- 幣託U - CRO卡
 // 總負債
 allDebt = DEBT * twdEx
 
@@ -1110,7 +775,6 @@ usStocksRatioNow = totalUsStocksAssets / totalAssets
 cryptoRatioNow = totalCryptoAssets / totalAssets
 // 投機損益
 speculationPNL = totalSpeculationAssets - allCost + INPUT_CRYPTO_COM_VISA * usdEx
-//speculationPNL = totalSpeculationAssets - allCost  // 投機損益（不含刷卡金額）
 speculationPNLRatio = speculationPNL / allCost
 
 // ============================================================================
@@ -1134,8 +798,6 @@ cryptoRebalance = totalAssets * cryptoRatio - totalCryptoAssets
 [remainCRO, pnlCRO, pnlPercentCRO, nowCRORatio] = calculateAssetValue(pCRO, MY_CRO_POSITION, MY_CRO_COST, totalAssets, usdEx)
 [remainADA, pnlADA, pnlPercentADA, nowADARatio] = calculateAssetValue(pADA, MY_ADA_POSITION, MY_ADA_COST, totalAssets, usdEx)
 [remainBNB, pnlBNB, pnlPercentBNB, nowBNBRatio] = calculateAssetValue(pBNB, MY_BNB_POSITION, MY_BNB_COST, totalAssets, usdEx)
-// 其他資產
-//[remainOther, pnlOther, pnlPercentOther, nowOthersRatio] = lib.calByRemain(otherCryptoASssets * usdEx, MY_OTHER_CRYPTO_COST * usdEx, totalAssets)
 // 現金明細比例（台幣 / 美金）
 cashTwdRatioNow = totalCashTwd / totalAssets
 cashUsdRatioNow = totalCashUsd / totalAssets
@@ -1143,8 +805,6 @@ cashUsdRatioNow = totalCashUsd / totalAssets
 // ============================================================================
 // 步驟 10：準備顯示資訊
 // ============================================================================
-// 獲取顯示資訊文字和顏色（根據顯示模式）
-[infoText, infoColor] = getDisplayInfo(totalAssets, totalSpeculationAssets, speculationPNL, speculationPNLRatio)
 // 獲取當前日期和時間
 string currentDate = str.format_time(timenow, "yyyy/MM/dd", "Asia/Taipei")
 string currentTime = str.format_time(timenow, "HH:mm:ss", "Asia/Taipei")
@@ -1154,14 +814,10 @@ string currentTime = str.format_time(timenow, "HH:mm:ss", "Asia/Taipei")
 // ============================================================================
 // 現金再平衡
 float cashDiffRatio = lib.getRatioDiff(cashRatioNow, cashRatio)
-string cashDiffText = str.tostring(cashRebalance, "#,##0") + "\t【" + fm.ratioString(cashDiffRatio) + "】"
-color cashColor = math.abs(cashDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_TEXT_COLOR
 
 // 台股再平衡
 float twStockDiffRatio = lib.getRatioDiff(twStocksRatioNow, twStocksRatio)
-string twStockDiffText = fm.fString(stockRebalance, 0) + "\t【" + fm.ratioString(twStockDiffRatio) + "】"
 string twStockPNLText = getRebalanceText("口袋 ", INPUT_BANK3, stockRebalance)
-color stockColor = math.abs(twStockDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_TEXT_COLOR
 
 // 美股再平衡
 float usStockDiffRatio = lib.getRatioDiff(usStocksRatioNow, usStocksRatio)
@@ -1169,9 +825,7 @@ string usStockPNLText = getRebalanceText("券商 ", 0, usStockRebalance)
 
 // 幣圈再平衡
 float cryptoDiffRatio = lib.getRatioDiff(cryptoRatioNow, cryptoRatio)
-string cryptoDiffText = fm.fString(cryptoRebalance, 0) + "\t【" + fm.ratioString(cryptoDiffRatio) + "】"
 string cryptoPNLText = getRebalanceText("MAX ", (INPUT_BITO + EXCHANGE_USD) * pUsd_Twd, cryptoRebalance)
-color cryptoColor = math.abs(cryptoDiffRatio) > 0.1 ? colour.FIRE_BRICK(0) : DF_TEXT_COLOR
 
 // ============================================================================
 // 步驟 12：計算個別資產再平衡資訊
@@ -1195,32 +849,6 @@ ethRebalaneText := appendRebalanceQtyText(ethRebalaneText, ethRebalanceValue, pE
 adaRebalaneText := appendRebalanceQtyText(adaRebalaneText, adaRebalanceValue, pADA, INPUT_DISPLAY_CURRENCY == TWD, "顆")
 bnbRebalaneText := appendRebalanceQtyText(bnbRebalaneText, bnbRebalanceValue, pBNB, INPUT_DISPLAY_CURRENCY == TWD, "顆")
 croRebalaneText := appendRebalanceQtyText(croRebalaneText, croRebalanceValue, pCRO, INPUT_DISPLAY_CURRENCY == TWD, "顆")
-// [arbDiffRatio, arbRebalanceValue, arbRebalaneText] = calculateRebalanceInfo(nowARBRatio, arbRatio, remainARB, totalAssets)
-// [opDiffRatio, opRebalanceValue, opRebalaneText] = calculateRebalanceInfo(nowOPRatio, opRatio, remainOP, totalAssets)
-
-// 其他資產再平衡（目前註釋）
-//float otherDiffRatio = lib.getRatioDiff(nowOthersRatio, otherRatio / 100)
-//float otherRebalanceValue = totalAssets * otherRatio / 100 - remainOther
-//string otherRebalaneText = fm.fString(otherRebalanceValue, 0) + "\t【" + fm.ratioString(otherDiffRatio) + "】"
-
-// ============================================================================
-// 步驟 13：生成表格標題中的配比文字
-// ============================================================================
-// 大類配比標題
-string titleCashRatio = "\t【" + fm.fString(INPUT_CASH_RATIO, 0) + "%】"
-string titleStockRatio = "\t【" + fm.fString(INPUT_SPECULATION_RATIO * INPUT_TW_STOCKS_RATIO / 100, 0) + "%】"
-string titleCryptoRatio = "\t【" + fm.fString(INPUT_SPECULATION_RATIO * INPUT_CRYPTO_RATIO / 100, 0) + "%】"
-// 台股配比標題
-string title0050Ratio = "\t【" + fm.fString(_0050Ratio , 0) + "%】"
-// 加密貨幣配比標題
-string titleBTCRatio = "\t【" + fm.fString(btcRatio , 0) + "%】"
-string titleETHRatio = "\t【" + fm.fString(ethRatio , 0) + "%】"
-string titleCRORatio = "\t【" + fm.fString(croRatio , 0) + "%】"
-string titleADARatio = "\t【" + fm.fString(adaRatio , 0) + "%】"
-string titleBNBRatio = "\t【" + fm.fString(bnbRatio , 0) + "%】"
-// string titleARBRatio = "\t【" + fm.fString(arbRatio , 0) + "%】"
-// string titleOPRatio = "\t【" + fm.fString(opRatio , 0) + "%】"
-//string titleOtherRatio = "\t【" + fm.fString(otherRatio , 0) + "%】"
 
 // PNG palette and a dedicated dashboard grid. All amounts use existing calculations.
 dashboardFont() =>
@@ -1577,7 +1205,7 @@ if barstate.islast
         dashboardText(0, 13, "", DASH_LINE, DASH_LINE, 1, rowHeight = 0.15)
         int nextRow = 14
         if INPUT_DISPLAY_CASH
-            nextRow := dashboardDetail(nextRow, "現金", cashRatioNow, cashRatio, totalCash, na, na, cashRebalance, na, cashDiffText)
+            nextRow := dashboardDetail(nextRow, "現金", cashRatioNow, cashRatio, totalCash, na, na, cashRebalance, na)
             if INPUT_DISPLAY_CASH_DETAIL
                 nextRow := dashboardDetail(nextRow, "台幣", cashTwdRatioNow, na, totalCashTwd, na, na, na, na, child = true)
                 nextRow := dashboardDetail(nextRow, "美金", cashUsdRatioNow, na, totalCashUsd, na, na, na, na, child = true)
@@ -1606,11 +1234,11 @@ if barstate.islast
             float cryptoHoldingPnlPercent = cryptoHoldingCost > 0 ? cryptoHoldingPnl / cryptoHoldingCost : na
             nextRow := dashboardDetail(nextRow, "加密資產", cryptoRatioNow, cryptoRatio, totalCryptoAssets, cryptoHoldingPnl, cryptoHoldingPnlPercent, cryptoRebalance, na, cryptoPNLText)
             array<CryptoAssetData> cryptoAssets = collectCryptoAssets(
-             remainBTC, pnlBTC, pnlPercentBTC, nowBTCRatio, btcRebalaneText, btcDiffRatio, titleBTCRatio,
-             remainETH, pnlETH, pnlPercentETH, nowETHRatio, ethRebalaneText, ethDiffRatio, titleETHRatio,
-             remainADA, pnlADA, pnlPercentADA, nowADARatio, adaRebalaneText, adaDiffRatio, titleADARatio,
-             remainBNB, pnlBNB, pnlPercentBNB, nowBNBRatio, bnbRebalaneText, bnbDiffRatio, titleBNBRatio,
-             remainCRO, pnlCRO, pnlPercentCRO, nowCRORatio, croRebalaneText, croDiffRatio, titleCRORatio)
+             remainBTC, pnlBTC, pnlPercentBTC, nowBTCRatio, btcRebalaneText,
+             remainETH, pnlETH, pnlPercentETH, nowETHRatio, ethRebalaneText,
+             remainADA, pnlADA, pnlPercentADA, nowADARatio, adaRebalaneText,
+             remainBNB, pnlBNB, pnlPercentBNB, nowBNBRatio, bnbRebalaneText,
+             remainCRO, pnlCRO, pnlPercentCRO, nowCRORatio, croRebalaneText)
             sortedAssets = sortAssetsByRemain(cryptoAssets)
             for asset in sortedAssets
                 string name = str.replace_all(str.replace_all(str.replace_all(asset.assetName, "₿", ""), "⟠", ""), "\t", "")
@@ -1941,9 +1569,3 @@ if barstate.islast
     else if not na(chartLowLabel)
         label.delete(chartLowLabel)
         chartLowLabel := na
-
-// getDebugValue(str.format_time(timenow, "yyyy/MM/dd HH:mm:ss", "Asia/Taipei") )
-
-// 粗略統計
-// 幣安 + OKX + 派網 + bybit + crypto.com  + coolWallet
-// 8862 + 23173 + 6119 + 752 + 5936 + 8593 = 53435
